@@ -40,6 +40,8 @@
     "allowToChangeInstallationDirectory": true,
     "perMachine": false,
     "artifactName": "Prvlar-${version}-windows-setup.${ext}",
-    "include": "resources/electron/migrate-old.nsh"
+    "include": "resources/electron/migrate-old.nsh",
+    "installerSidebar": "resources/electron/installerSidebar.bmp",
+    "uninstallerSidebar": "resources/electron/installerSidebar.bmp"
   }
 }

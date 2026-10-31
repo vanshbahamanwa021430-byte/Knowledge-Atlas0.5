@@ -1,11 +1,20 @@
-// Prvlar brand: deep violet-blue tile with a white geometric "P" monogram and a small amber spark, and the Home illustration.
+// Prvlar brand: a gold script "P" (hand-drawn strokes, our own design) with a sparkle, on a maroon tile, and the Home illustration.
 // Pure SVG strings (no DOM) shared by the app and the icon scripts in scripts/.
 import { iconPaths } from './icons.js';
 
 export const BRAND = {
   blue: '#2F6BFF', blueLight: '#7B61FF', blueDeep: '#2563EB', violet: '#8A7CF8', amber: '#FFC83D',
-  bg: '#F4F7FC', ink: '#0F1A3D', white: '#FFFFFF'
+  bg: '#F4F7FC', ink: '#0F1A3D', white: '#FFFFFF',
+  // 0.9.8 Prvlar: gold script P on maroon
+  maroon: '#4A0E18', maroonLight: '#7A1A26', maroonDeep: '#3A0912', gold: '#D9A856', goldLight: '#F3D79A', goldDeep: '#B9853A'
 };
+// The script P as three strokes (viewBox 0 0 100 100), drawn in this order by the launch animation.
+export const P_STROKES = [
+  { d: 'M41 55 C 31 58, 24 53, 27 46 C 31 36, 47 29, 60 27.5 C 76 25.5, 85 31, 81 40 C 77 49, 62 54, 49 52.5', w: 2.2 },
+  { d: 'M66 25 C 63 40, 58 60, 50 73 C 44 83, 35 88, 26 84', w: 3.6 },
+  { d: 'M60 27.5 C 69 24, 78 19.5, 86 17.5', w: 1.6 }
+];
+export const P_SPARK = 'M23.5 80.5c.3 1.6.8 2.1 2.4 2.4-1.6.3-2.1.8-2.4 2.4-.3-1.6-.8-2.1-2.4-2.4 1.6-.3 2.1-.8 2.4-2.4z';
 
 let uid = 0;
 // The app mark (0.9): a violet-to-blue tile with a white open book whose right page carries a little map route
@@ -13,21 +22,17 @@ let uid = 0;
 // vivid gradient tile, soft top highlight, a single warm accent.
 // tile: 'rounded' | 'square' | 'circle' | 'none'; inset scales the glyph (safe zones on Android).
 // mono: one colour only (Android themed icons / favicon at tiny sizes).
-export function markSVG({ size = 1024, tile = 'rounded', inset = 1, glyph = BRAND.white, mono = false } = {}) {
+export function markSVG({ size = 1024, tile = 'rounded', inset = 1, glyph = null, mono = false } = {}) {
   const id = 'km' + (uid++);
-  const r = tile === 'rounded' ? size * 0.23 : tile === 'circle' ? size / 2 : 0;
-  const k = (size * 0.62 * inset) / 24, off = (size - 24 * k) / 2;
-  const ink = tile === 'none' ? BRAND.blueDeep : `url(#${id})`;
-  const bg = tile === 'none' ? '' : `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BRAND.blueLight}"/><stop offset="1" stop-color="${BRAND.blueDeep}"/></linearGradient>
-<radialGradient id="${id}h" cx="0.25" cy="0.12" r="0.75"><stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
-<rect width="${size}" height="${size}" rx="${r}" fill="url(#${id})"/><rect width="${size}" height="${size}" rx="${r}" fill="url(#${id}h)"/>`;
-  // 0.9.8 Prvlar mark: a geometric serif-free "P" (stem + open bowl) with a thin baseline rule, plus the amber spark.
-  const spark = `<path d="M18.6 13.6c.22 1.15.65 1.58 1.8 1.8-1.15.22-1.58.65-1.8 1.8-.22-1.15-.65-1.58-1.8-1.8 1.15-.22 1.58-.65 1.8-1.8z" fill="${mono ? glyph : BRAND.amber}"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${bg}
-<g transform="translate(${off} ${off}) scale(${k})">
-<g transform="translate(1.1 0)"><rect x="6.4" y="3.6" width="2.9" height="16.8" rx="1.45" fill="${glyph}"/>
-<path d="M9.3 3.6h4.3a5.3 5.3 0 0 1 0 10.6H9.3v-2.9h4.3a2.4 2.4 0 0 0 0-4.8H9.3z" fill="${glyph}"/>
-${spark}</g></g></svg>`;
+  const r = tile === 'rounded' ? 23 : tile === 'circle' ? 50 : 0;
+  const k = inset, off = 50 - 50 * k;
+  const gold = mono ? (glyph || BRAND.white) : `url(#${id}g)`;
+  const bg = tile === 'none' ? '' : `<rect width="100" height="100" rx="${r}" fill="url(#${id}b)"/><rect width="100" height="100" rx="${r}" fill="url(#${id}h)"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="${size}" height="${size}"><defs>
+<linearGradient id="${id}b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BRAND.maroonLight}"/><stop offset="1" stop-color="${BRAND.maroonDeep}"/></linearGradient>
+<radialGradient id="${id}h" cx="0.25" cy="0.12" r="0.8"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BRAND.goldLight}"/><stop offset=".5" stop-color="${BRAND.gold}"/><stop offset="1" stop-color="${BRAND.goldDeep}"/></linearGradient></defs>${bg}
+<g transform="translate(${off} ${off}) scale(${k})"><g fill="none" stroke="${gold}" stroke-linecap="round" stroke-linejoin="round">${P_STROKES.map(p => `<path stroke-width="${p.w}" d="${p.d}"/>`).join('')}</g><path fill="${mono ? gold : BRAND.goldLight}" d="${P_SPARK}"/></g></svg>`;
 }
 
 // Home illustration: a glowing study brain on a platform, with documents orbiting it.

@@ -2,13 +2,14 @@
   "appId": "com.knowledgeatlas.app",
   "appName": "Prvlar",
   "webDir": "dist",
-  "backgroundColor": "#F4F7FC",
+  "backgroundColor": "#4A0E18",
   "server": {
     "androidScheme": "https",
     "cleartext": true
   },
   "android": {
-    "adjustMarginsForEdgeToEdge": "auto"
+    "adjustMarginsForEdgeToEdge": "auto",
+    "backgroundColor": "#4A0E18"
   },
   "ios": {
     "contentInset": "never",

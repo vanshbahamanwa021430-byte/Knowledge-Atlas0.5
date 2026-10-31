@@ -12,7 +12,8 @@ const platform = process.argv[2];
 const C = {
   bg: '#F4F7FC', bgNight: '#0A1430',            // app background: window, status bar, launch screen
   nav: '#F6F9FE', navLegacy: '#0F1A3D',         // navigation bar (before Android 8.1 its buttons are always light, so it stays dark there)
-  blue: '#2F6BFF', blueLight: '#9850FA', blueDeep: '#1FB9FF'
+  blue: '#2F6BFF', blueLight: '#9850FA', blueDeep: '#1FB9FF',
+  splash: '#4A0E18', iconLight: '#7A1A26', iconDeep: '#3A0912'   // 0.9.8 Prvlar maroon (launch screen = intro colour, no white flash)
 };
 const xml = body => `<?xml version="1.0" encoding="utf-8"?>\n${body}\n`;
 const put = (dir, file, body) => { mkdirSync(dir, { recursive: true }); writeFileSync(join(dir, file), xml(body)); };
@@ -46,10 +47,10 @@ if (platform === 'android') {
   put(join(res, 'drawable'), 'ic_stat_atlas.xml', `<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
     <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M12,7v14M3,18a1,1 0,0 1,-1 -1V4a1,1 0,0 1,1 -1h5a4,4 0,0 1,4 4a4,4 0,0 1,4 -4h5a1,1 0,0 1,1 1v13a1,1 0,0 1,-1 1h-6a3,3 0,0 0,-3 3a3,3 0,0 0,-3 -3z"/>
 </vector>`);
-  put(join(res, 'values'), 'ic_launcher_background.xml', `<resources>\n    <color name="ic_launcher_background">${C.blue}</color>\n</resources>`);
+  put(join(res, 'values'), 'ic_launcher_background.xml', `<resources>\n    <color name="ic_launcher_background">${C.splash}</color>\n</resources>`);
   // Adaptive icon (Android 8+): the white glyph on the brand's blue gradient; Android 13+ themed icons use the glyph alone.
   put(join(res, 'drawable'), 'atlas_icon_bg.xml', `<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient android:type="linear" android:angle="315" android:startColor="${C.blueLight}" android:endColor="${C.blueDeep}"/>
+    <gradient android:type="linear" android:angle="315" android:startColor="${C.iconLight}" android:endColor="${C.iconDeep}"/>
 </shape>`);
   const adaptive = `<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/atlas_icon_bg"/>
@@ -64,12 +65,13 @@ if (platform === 'android') {
   for (const dir of readdirSync(res)) if (dir.startsWith('drawable') && existsSync(join(res, dir, 'splash.png'))) unlinkSync(join(res, dir, 'splash.png'));
   writeFileSync(join(res, 'drawable/splash.xml'), `<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/atlas_bg"/>
+    <item android:drawable="@color/atlas_splash"/>
     <item><bitmap android:gravity="center" android:src="@drawable/splash_logo"/></item>
 </layer-list>
 `);
   put(join(res, 'values'), 'atlas_colors.xml', `<resources>
     <color name="atlas_bg">${C.bg}</color>
+    <color name="atlas_splash">${C.splash}</color>
     <color name="atlas_nav">${C.navLegacy}</color>
     <bool name="atlas_light_bars">true</bool>
 </resources>`);
@@ -84,7 +86,7 @@ if (platform === 'android') {
   patch(join(res, 'values/styles.xml'), s => s
     // Android 12+ system splash: app background behind the app icon.
     .replace(/(<style name="AppTheme\.NoActionBarLaunch" parent="Theme\.SplashScreen">)/,
-      '$1\n        <item name="windowSplashScreenBackground">@color/atlas_bg</item>\n        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>')
+      '$1\n        <item name="windowSplashScreenBackground">@color/atlas_splash</item>\n        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>')
     // Status and navigation bars in the app's background colour (light or dark with the phone), with matching icons.
     .replace(/(<style name="AppTheme\.NoActionBar" parent="Theme\.AppCompat\.DayNight\.NoActionBar">)/,
       '$1\n        <item name="colorPrimaryDark">@color/atlas_bg</item>\n        <item name="android:statusBarColor">@color/atlas_bg</item>\n        <item name="android:windowLightStatusBar">@bool/atlas_light_bars</item>\n        <item name="android:navigationBarColor">@color/atlas_nav</item>\n        <item name="android:windowLightNavigationBar">@bool/atlas_light_bars</item>\n        <item name="android:windowBackground">@color/atlas_bg</item>'));

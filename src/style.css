@@ -1333,7 +1333,7 @@ button.option:disabled { opacity: 1; cursor: default; }
 :root[data-theme="oldmoney"] :is(.eyebrow, .eyebrow-free, .h3, .fine.caps, .stat span, .theme-opt span, .tabbar span, .label) { letter-spacing: .12em; text-transform: uppercase; font-size: 10.5px; }
 :root[data-theme="oldmoney"] .wordmark { letter-spacing: .14em; text-transform: uppercase; font-size: 14px; color: var(--ink); }
 :root[data-theme="oldmoney"] .brand-mark { display: none; }
-:root[data-theme="oldmoney"] .brand::before { content: 'KA'; display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--gold); outline: 1px solid var(--gold-line); outline-offset: 3px; border-radius: 50%; font-family: var(--serif); font-size: 14px; letter-spacing: .06em; color: var(--gold); margin: 0 6px 0 4px; }
+:root[data-theme="oldmoney"] .brand::before { content: 'P'; display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--gold); outline: 1px solid var(--gold-line); outline-offset: 3px; border-radius: 50%; font-family: var(--serif); font-size: 14px; letter-spacing: .06em; color: var(--gold); margin: 0 6px 0 4px; }
 :root[data-theme="oldmoney"] :is(.card, .stat, .doc-card, .features, .badge, .rec, .result-row, .deck, .theme-opt, .ftile, .fc-card, .level-card, .today-card) { background: var(--surface); border: 1px solid var(--gold-line); border-radius: 12px; box-shadow: none; }
 :root[data-theme="oldmoney"] .theme-opt.is-on { border-color: var(--gold); outline: 1px solid var(--gold); outline-offset: 2px; }
 :root[data-theme="oldmoney"] .btn { border-radius: 4px; box-shadow: none; letter-spacing: .1em; text-transform: uppercase; font-size: 12.5px; font-weight: 600; }
@@ -1397,7 +1397,7 @@ button.option:disabled { opacity: 1; cursor: default; }
 :root[data-theme="vintage"] :is(.eyebrow, .eyebrow-free, .h3) { text-transform: uppercase; color: #8A4B32; }
 :root[data-theme="vintage"] .wordmark { font-family: var(--stamp); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; font-size: 15px; }
 :root[data-theme="vintage"] .brand-mark { display: none; }
-:root[data-theme="vintage"] .brand::before { content: 'KA'; display: inline-grid; place-items: center; width: 38px; height: 38px; margin: 0 6px 0 2px; border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%; background: radial-gradient(circle at 35% 30%, #B4474F, #7A2229 70%); box-shadow: inset 0 0 0 4px rgba(0, 0, 0, .12), 0 2px 3px rgba(70, 20, 20, .35); color: #F2D7C8; font: italic 700 14px var(--serif); transform: rotate(-8deg); }
+:root[data-theme="vintage"] .brand::before { content: 'P'; display: inline-grid; place-items: center; width: 38px; height: 38px; margin: 0 6px 0 2px; border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%; background: radial-gradient(circle at 35% 30%, #B4474F, #7A2229 70%); box-shadow: inset 0 0 0 4px rgba(0, 0, 0, .12), 0 2px 3px rgba(70, 20, 20, .35); color: #F2D7C8; font: italic 700 14px var(--serif); transform: rotate(-8deg); }
 /* die-cut sticker cards */
 :root[data-theme="vintage"] :is(.card, .doc-card, .features, .rec, .result-row, .deck, .theme-opt, .ftile, .fc-card, .level-card, .today-card) { background: var(--surface); border: 0; border-radius: 12px; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 5px rgba(120, 90, 60, .18), 0 8px 14px -8px rgba(70, 45, 20, .5); }
 :root[data-theme="vintage"] .card h2, :root[data-theme="vintage"] .section-h, :root[data-theme="vintage"] .h2 { position: relative; display: inline-block; padding: 1px 10px; background: linear-gradient(90deg, transparent 0 4px, rgba(214, 160, 150, .55) 4px calc(100% - 4px), transparent 0), repeating-linear-gradient(90deg, rgba(255, 255, 255, .25) 0 6px, transparent 6px 12px); transform: rotate(-1deg); }
@@ -1749,3 +1749,86 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .zoom-area{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:3}
 .area-mode{position:relative}.area-mode img{cursor:crosshair;touch-action:none}
 .area-rect{position:absolute;border:2px solid #6d5dfc;background:rgba(109,93,252,.15);pointer-events:none}
+/* 0.9.8 Prvlar gold script wordmark (Pinyon Script, OFL; @font-face in index.html) */
+.wordmark { font-family: 'Prvlar Script', 'Pinyon Script', cursive !important; font-weight: 400 !important; font-size: 28px !important; letter-spacing: 0 !important; text-transform: none !important; color: #A8762E !important; line-height: 1.15 !important; overflow: visible; }
+:root[data-theme="dark"] .wordmark, :root[data-theme="glass"] .wordmark { color: #E7C27A !important; }
+
+/* ===== 0.9.8 Royal (default for new installs) and Royal Ivory (daytime) — matches the Prvlar icon.
+   Maroon/burgundy base, gold accents and hairlines, ivory text; Playfair Display headings (OFL), Inter body. */
+.sw-royal { background: linear-gradient(135deg, #5A1418, #3A0D12); border: 1px solid #C9A24D; }
+.sw-royal i:nth-child(1) { background: #E8C27A; } .sw-royal i:nth-child(2) { background: #F6EEDC; } .sw-royal i:nth-child(3) { background: #7A1A26; }
+.sw-royal-ivory { background: #F6EEDC; border: 1px solid #C9A24D; }
+.sw-royal-ivory i:nth-child(1) { background: #5A1418; } .sw-royal-ivory i:nth-child(2) { background: #C9A24D; } .sw-royal-ivory i:nth-child(3) { background: #EADFC4; }
+:root[data-theme="royal"] {
+  --serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif; --gold: #E8C27A; --gold-2: #C9A24D; --gold-line: rgba(232, 194, 122, .34);
+  --gold-grad: linear-gradient(135deg, #F3D79A 0%, #E8C27A 40%, #C9A24D 100%);
+  --bg: #3A0D12; --surface: #4A1218; --surface-2: #521620; --surface-3: #5E1B25; --chip: #4A1218; --glass: rgba(46, 10, 15, .96); --dock-bg: rgba(46, 10, 15, .96);
+  --line: rgba(232, 194, 122, .26); --line-2: rgba(232, 194, 122, .5);
+  --ink: #F6EEDC; --ink-1: #F1E6CE; --ink-2: #E2D3B4; --ink-3: #CDB991;
+  --blue: #E8C27A; --blue-2: #F3D79A; --blue-wash: rgba(232, 194, 122, .13); --blue-ink: #F3D79A; --blue-line: rgba(232, 194, 122, .5);
+  --violet: #E8C27A; --violet-wash: rgba(232, 194, 122, .12); --sky: #E7B8A8; --sky-wash: rgba(231, 184, 168, .12);
+  --green: #A9C48E; --green-wash: rgba(169, 196, 142, .15); --green-ink: #CFE2BC;
+  --amber: #E8C27A; --amber-wash: rgba(232, 194, 122, .15); --amber-ink: #F3D79A;
+  --red: #F08C7E; --red-wash: rgba(240, 140, 126, .16); --red-ink: #FFC2B8;
+  --cta: #E8C27A; --cta-shadow: 0 6px 18px rgba(0, 0, 0, .28); --blue-shadow: 0 6px 18px rgba(0, 0, 0, .28);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .25); --shadow: 0 6px 20px rgba(0, 0, 0, .25); --shadow-lg: 0 14px 40px rgba(0, 0, 0, .35);
+  --n0: #E8C27A; --n0-ink: #3A0D12;
+  --n1: #521620; --n1-line: #E8C27A; --n1-ink: #F6EEDC; --n2: #3F2A1C; --n2-line: #C9A24D; --n2-ink: #F1E6CE;
+  --n3: #5E1B25; --n3-line: #E7B8A8; --n3-ink: #F6EEDC; --n4: #3A2420; --n4-line: #B9A07A; --n4-ink: #F1E6CE;
+  --e1: #E8C27A; --e2: #A9C48E; --e3: #E7B8A8; --e4: #B9A07A; --grid-dot: rgba(232, 194, 122, .14);
+  --hp1: #4A1218; --hp2: #5A1418; --hp3: #6A1C24;
+  --blobs: radial-gradient(120% 80% at 20% 0%, #5A1418 0%, #3A0D12 60%, #2E0A0F 100%);
+  --r: 10px; --r-md: 14px; --r-lg: 16px; --r-xl: 18px;
+  color-scheme: dark;
+}
+:root[data-theme="royal-ivory"] {
+  --serif: 'Playfair Display', 'Cormorant Garamond', Georgia, serif; --gold: #7A5818; --gold-2: #C9A24D; --gold-line: rgba(169, 125, 45, .38);
+  --gold-grad: linear-gradient(135deg, #F3D79A 0%, #E8C27A 40%, #C9A24D 100%);
+  --bg: #F6EEDC; --surface: #FFF9EC; --surface-2: #FBF2DE; --surface-3: #F1E5C9; --chip: #FFF9EC; --glass: rgba(251, 244, 228, .96); --dock-bg: rgba(251, 244, 228, .96);
+  --line: rgba(138, 100, 32, .24); --line-2: rgba(138, 100, 32, .45);
+  --ink: #3A0D12; --ink-1: #45141A; --ink-2: #5E2A2E; --ink-3: #6E4A3C;
+  --blue: #7A1A26; --blue-2: #5A1418; --blue-wash: rgba(122, 26, 38, .08); --blue-ink: #6A1520; --blue-line: rgba(122, 26, 38, .35);
+  --violet: #7A1A26; --violet-wash: rgba(122, 26, 38, .08); --sky: #8A4B3A; --sky-wash: rgba(138, 75, 58, .1);
+  --green: #3E6B2E; --green-wash: rgba(62, 107, 46, .12); --green-ink: #2F5323;
+  --amber: #8A6420; --amber-wash: rgba(201, 162, 77, .18); --amber-ink: #6E4E14;
+  --red: #A3291E; --red-wash: rgba(163, 41, 30, .1); --red-ink: #8A2016;
+  --cta: #5A1418; --cta-shadow: 0 6px 16px rgba(90, 20, 24, .18); --blue-shadow: 0 6px 16px rgba(90, 20, 24, .18);
+  --shadow-sm: 0 1px 2px rgba(58, 13, 18, .08); --shadow: 0 6px 18px rgba(58, 13, 18, .08); --shadow-lg: 0 14px 36px rgba(58, 13, 18, .14);
+  --n0: #5A1418; --n0-ink: #F6EEDC;
+  --n1: #FFF9EC; --n1-line: #C9A24D; --n1-ink: #3A0D12; --n2: #F3ECD6; --n2-line: #7E9479; --n2-ink: #3A0D12;
+  --n3: #F8E6DC; --n3-line: #B5553A; --n3-ink: #3A0D12; --n4: #EFE6D2; --n4-line: #8A7F6A; --n4-ink: #3A0D12;
+  --e1: #C9A24D; --e2: #7E9479; --e3: #B5553A; --e4: #8A7F6A; --grid-dot: rgba(138, 100, 32, .16);
+  --hp1: #FBF2DE; --hp2: #F1E5C9; --hp3: #E8D7B0;
+  --blobs: radial-gradient(120% 80% at 20% 0%, #FFF9EC 0%, #F6EEDC 60%, #EFE3C8 100%);
+  --r: 10px; --r-md: 14px; --r-lg: 16px; --r-xl: 18px;
+  color-scheme: light;
+}
+:root[data-theme="royal"] body, :root[data-theme="royal-ivory"] body { background: var(--blobs) fixed, var(--bg); color: var(--ink); }
+:root[data-theme="royal"] body { background-image: var(--blobs), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='1' cy='1' r='.5' fill='%23E8C27A' fill-opacity='.05'/%3E%3C/svg%3E"); }
+:root[data-theme="royal"] h1, :root[data-theme="royal"] h2, :root[data-theme="royal"] .title, :root[data-theme="royal"] .greet h1, :root[data-theme="royal"] .ph-title, :root[data-theme="royal"] .h2, :root[data-theme="royal"] .section-h, :root[data-theme="royal"] .section-title, :root[data-theme="royal"] .hero-title, :root[data-theme="royal"] .card h2, :root[data-theme="royal"] .fr-text b, :root[data-theme="royal"] .level-text b, :root[data-theme="royal"] .fc-card, :root[data-theme="royal"] .wl-title, :root[data-theme="royal"] .welcome h1, :root[data-theme="royal-ivory"] h1, :root[data-theme="royal-ivory"] h2, :root[data-theme="royal-ivory"] .title, :root[data-theme="royal-ivory"] .greet h1, :root[data-theme="royal-ivory"] .ph-title, :root[data-theme="royal-ivory"] .h2, :root[data-theme="royal-ivory"] .section-h, :root[data-theme="royal-ivory"] .section-title, :root[data-theme="royal-ivory"] .hero-title, :root[data-theme="royal-ivory"] .card h2, :root[data-theme="royal-ivory"] .fr-text b, :root[data-theme="royal-ivory"] .level-text b, :root[data-theme="royal-ivory"] .fc-card, :root[data-theme="royal-ivory"] .wl-title, :root[data-theme="royal-ivory"] .welcome h1 { font-family: var(--serif); font-weight: 600; letter-spacing: .005em; }
+:root[data-theme="royal"] .card, :root[data-theme="royal"] .stat, :root[data-theme="royal"] .doc-card, :root[data-theme="royal"] .features, :root[data-theme="royal"] .rec, :root[data-theme="royal"] .result-row, :root[data-theme="royal"] .deck, :root[data-theme="royal"] .theme-opt, :root[data-theme="royal"] .ftile, :root[data-theme="royal"] .fc-card, :root[data-theme="royal"] .level-card, :root[data-theme="royal"] .today-card, :root[data-theme="royal"] .q-card, :root[data-theme="royal"] .question, :root[data-theme="royal-ivory"] .card, :root[data-theme="royal-ivory"] .stat, :root[data-theme="royal-ivory"] .doc-card, :root[data-theme="royal-ivory"] .features, :root[data-theme="royal-ivory"] .rec, :root[data-theme="royal-ivory"] .result-row, :root[data-theme="royal-ivory"] .deck, :root[data-theme="royal-ivory"] .theme-opt, :root[data-theme="royal-ivory"] .ftile, :root[data-theme="royal-ivory"] .fc-card, :root[data-theme="royal-ivory"] .level-card, :root[data-theme="royal-ivory"] .today-card, :root[data-theme="royal-ivory"] .q-card, :root[data-theme="royal-ivory"] .question { background: var(--surface); border: 1px solid var(--gold-line); box-shadow: var(--shadow-sm); }
+:root[data-theme="royal"] .theme-opt.is-on, :root[data-theme="royal-ivory"] .theme-opt.is-on { border-color: var(--gold-2); outline: 1px solid var(--gold-2); outline-offset: 2px; }
+:root[data-theme="royal"] .btn.primary, :root[data-theme="royal"] .seg-btn.is-on, :root[data-theme="royal"] .focus-pill, :root[data-theme="royal-ivory"] .btn.primary, :root[data-theme="royal-ivory"] .seg-btn.is-on, :root[data-theme="royal-ivory"] .focus-pill { background: var(--gold-grad); color: #3A0D12; border: 1px solid #B9853A; box-shadow: 0 4px 14px rgba(58, 13, 18, .22), inset 0 1px 0 rgba(255, 255, 255, .35); text-shadow: none; }
+:root[data-theme="royal"] .btn.primary:hover, :root[data-theme="royal-ivory"] .btn.primary:hover { filter: brightness(1.05); }
+:root[data-theme="royal"] .btn.outline, :root[data-theme="royal"] .btn.soft, :root[data-theme="royal-ivory"] .btn.outline, :root[data-theme="royal-ivory"] .btn.soft { background: transparent; border: 1px solid var(--gold-line); color: var(--gold); }
+:root[data-theme="royal-ivory"] .btn.outline, :root[data-theme="royal-ivory"] .btn.soft { color: #5A1418; border-color: #C9A24D; }
+:root[data-theme="royal"] .seg, :root[data-theme="royal-ivory"] .seg { background: transparent; border: 1px solid var(--gold-line); }
+:root[data-theme="royal"] .icon-btn.round, :root[data-theme="royal-ivory"] .icon-btn.round, :root[data-theme="royal"] .ph .icon-btn, :root[data-theme="royal-ivory"] .ph .icon-btn { background: transparent; border: 1px solid var(--gold-line); color: var(--ink); box-shadow: none; }
+:root[data-theme="royal"] .meter, :root[data-theme="royal-ivory"] .meter { background: color-mix(in srgb, var(--gold-2) 18%, transparent); }
+:root[data-theme="royal"] .meter > span, :root[data-theme="royal-ivory"] .meter > span { background: var(--gold-grad); }
+:root[data-theme="royal"] .tabbar { background: #2E0A0F; border-top: 1px solid var(--gold-line); box-shadow: 0 -6px 18px rgba(0, 0, 0, .25); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-theme="royal-ivory"] .tabbar { background: #FBF4E4; border-top: 1px solid var(--gold-line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-theme="royal"] .tabbar button { color: #E2D3B4; }
+:root[data-theme="royal-ivory"] .tabbar button { color: #5E2A2E; }
+:root[data-theme="royal"] .tabbar button[aria-current], :root[data-theme="royal"] .tabbar .is-on, :root[data-theme="royal-ivory"] .tabbar button[aria-current], :root[data-theme="royal-ivory"] .tabbar .is-on { color: var(--gold); }
+:root[data-theme="royal-ivory"] .tabbar button[aria-current], :root[data-theme="royal-ivory"] .tabbar .is-on { color: #7A1A26; }
+:root[data-theme="royal"] .ftile-icon, :root[data-theme="royal-ivory"] .ftile-icon { background: transparent; border: 1px solid var(--gold-line); color: var(--gold); box-shadow: none; }
+:root[data-theme="royal-ivory"] .ftile-icon { color: #7A1A26; }
+:root[data-theme="royal"] .ph, :root[data-theme="royal"] header.ph, :root[data-theme="royal-ivory"] .ph, :root[data-theme="royal-ivory"] header.ph { border-bottom: 1px solid var(--gold-line); }
+:root[data-theme="royal"] .wordmark { color: #E8C27A !important; }
+:root[data-theme="royal-ivory"] .wordmark { color: #7A5818 !important; }
+:root[data-theme="royal"] .timer, :root[data-theme="royal"] .test-timer, :root[data-theme="royal"] .time-left, :root[data-theme="royal-ivory"] .timer, :root[data-theme="royal-ivory"] .test-timer, :root[data-theme="royal-ivory"] .time-left { font-family: var(--serif); color: var(--gold); }
+:root[data-theme="royal"] .opt.is-on, :root[data-theme="royal"] .option.is-on, :root[data-theme="royal"] .choice.is-on, :root[data-theme="royal-ivory"] .opt.is-on, :root[data-theme="royal-ivory"] .option.is-on, :root[data-theme="royal-ivory"] .choice.is-on { border-color: var(--gold-2); background: var(--blue-wash); }
+:root[data-theme="royal"] .timer-ring circle:last-of-type, :root[data-theme="royal-ivory"] .timer-ring circle:last-of-type { stroke: var(--gold-2); }
+:root[data-theme="royal"] .timer-ring b, :root[data-theme="royal"] .timer-ring strong, :root[data-theme="royal"] .timer-ring .t, :root[data-theme="royal-ivory"] .timer-ring b, :root[data-theme="royal-ivory"] .timer-ring strong, :root[data-theme="royal-ivory"] .timer-ring .t { font-family: var(--serif); }
+:root[data-theme="royal"] .onboard .ob-card { background: linear-gradient(180deg, #521620, #3A0D12); border: 1px solid var(--gold-line); }

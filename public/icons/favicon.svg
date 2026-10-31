@@ -1,7 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024"><defs><linearGradient id="km27" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7B61FF"/><stop offset="1" stop-color="#2563EB"/></linearGradient>
-<radialGradient id="km27h" cx="0.25" cy="0.12" r="0.75"><stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
-<rect width="1024" height="1024" rx="235.52" fill="url(#km27)"/><rect width="1024" height="1024" rx="235.52" fill="url(#km27h)"/>
-<g transform="translate(156.4672 156.4672) scale(29.627733333333335)">
-<g transform="translate(1.1 0)"><rect x="6.4" y="3.6" width="2.9" height="16.8" rx="1.45" fill="#FFFFFF"/>
-<path d="M9.3 3.6h4.3a5.3 5.3 0 0 1 0 10.6H9.3v-2.9h4.3a2.4 2.4 0 0 0 0-4.8H9.3z" fill="#FFFFFF"/>
-<path d="M18.6 13.6c.22 1.15.65 1.58 1.8 1.8-1.15.22-1.58.65-1.8 1.8-.22-1.15-.65-1.58-1.8-1.8 1.15-.22 1.58-.65 1.8-1.8z" fill="#FFC83D"/></g></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="1024" height="1024"><defs>
+<linearGradient id="km27b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7A1A26"/><stop offset="1" stop-color="#3A0912"/></linearGradient>
+<radialGradient id="km27h" cx="0.25" cy="0.12" r="0.8"><stop offset="0" stop-color="#fff" stop-opacity=".10"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="km27g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3D79A"/><stop offset=".5" stop-color="#D9A856"/><stop offset="1" stop-color="#B9853A"/></linearGradient></defs><rect width="100" height="100" rx="23" fill="url(#km27b)"/><rect width="100" height="100" rx="23" fill="url(#km27h)"/>
+<g transform="translate(-6.000000000000007 -6.000000000000007) scale(1.12)"><g fill="none" stroke="url(#km27g)" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="2.2" d="M41 55 C 31 58, 24 53, 27 46 C 31 36, 47 29, 60 27.5 C 76 25.5, 85 31, 81 40 C 77 49, 62 54, 49 52.5"/><path stroke-width="3.6" d="M66 25 C 63 40, 58 60, 50 73 C 44 83, 35 88, 26 84"/><path stroke-width="1.6" d="M60 27.5 C 69 24, 78 19.5, 86 17.5"/></g><path fill="#F3D79A" d="M23.5 80.5c.3 1.6.8 2.1 2.4 2.4-1.6.3-2.1.8-2.4 2.4-.3-1.6-.8-2.1-2.4-2.4 1.6-.3 2.1-.8 2.4-2.4z"/></g></svg>

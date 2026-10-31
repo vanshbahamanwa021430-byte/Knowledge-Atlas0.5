@@ -89,7 +89,9 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerSidebar": "resources/electron/installerSidebar.bmp",
+      "uninstallerSidebar": "resources/electron/installerSidebar.bmp"
     }
   }
 }

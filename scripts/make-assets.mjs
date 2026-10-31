@@ -1,5 +1,4 @@
-// SUPERSEDED in 0.9.0: app icons now come from the chosen artwork via scripts/icon-from-image.py (npm run assets).
-// Kept for reference only; running it would overwrite those icons with the old drawn mark.
+// 0.9.8: the source of truth again — renders the Prvlar gold script P (src/brand.js) at every size.
 // Renders the app icon, splash screens and web-app icons from scripts/brand.mjs.
 // Dev-only (needs Playwright). Output PNGs are committed in resources/ and public/icons/,
 // so CI builds never need an image tool. Run: node scripts/make-assets.mjs
@@ -20,7 +19,7 @@ const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath
 const page = await browser.newPage();
 const tmp = out('scripts/.render.html');
 async function shot(html, w, h, file, transparent = true) {
-  writeFileSync(tmp, `<!doctype html><html><head><style>@font-face{font-family:Inter;font-weight:100 900;src:url(${font}) format('woff2')}html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;${transparent ? 'background:transparent' : ''}}svg{display:block}</style></head><body>${html}</body></html>`);
+  writeFileSync(tmp, `<!doctype html><html><head><style>@font-face{font-family:PvScript;src:url(${pathToFileURL(resolve(root, 'public/fonts/PinyonScript-latin.ttf')).href})}@font-face{font-family:Inter;font-weight:100 900;src:url(${font}) format('woff2')}html,body{margin:0;width:${w}px;height:${h}px;overflow:hidden;${transparent ? 'background:transparent' : ''}}svg{display:block}</style></head><body>${html}</body></html>`);
   await page.setViewportSize({ width: w, height: h });
   await page.goto(pathToFileURL(tmp).href);
   await page.evaluate(() => document.fonts.ready);
@@ -44,8 +43,8 @@ for (const [d, k] of Object.entries(dens)) {
 
 // iOS launch screen: the icon with the name underneath, centred on the app background (cropped to any screen shape).
 const lockup = tile => `<div style="display:flex;flex-direction:column;align-items:center;gap:${tile * 0.2}px">${sized(markSVG({ tile: 'rounded' }), tile)}
-  <div style="font:800 ${tile * 0.27}px/1 Inter;color:${BRAND.ink};letter-spacing:-.02em;white-space:nowrap">Prvlar</div></div>`;
-await shot(`<div style="width:2732px;height:2732px;background:${BRAND.bg};display:flex;align-items:center;justify-content:center">${lockup(300)}</div>`, 2732, 2732, 'resources/ios/splash-2732.png', false);
+  <div style="font:${tile * 0.42}px/1.2 PvScript;color:#E8C27A;white-space:nowrap">Prvlar</div></div>`;
+await shot(`<div style="width:2732px;height:2732px;background:#4A0E18;display:flex;align-items:center;justify-content:center">${lockup(300)}</div>`, 2732, 2732, 'resources/ios/splash-2732.png', false);
 
 // Installable web app (PWA) icons.
 await shot(sized(markSVG({ tile: 'rounded' }), 192), 192, 192, 'public/icons/icon-192.png');

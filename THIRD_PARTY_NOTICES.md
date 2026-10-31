@@ -242,7 +242,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 ## Theme typefaces (SIL Open Font License 1.1, and Apache License 2.0 for Special Elite)
 
-Cormorant Garamond, Playfair Display and Dancing Script (Old Money theme) and Courier Prime (Vintage theme) are under the SIL Open Font License 1.1. Special Elite (Vintage theme) is under the Apache License 2.0. All are bundled via @fontsource. Each package's LICENSE under node_modules/@fontsource/ has the full licence text and copyright.
+Cormorant Garamond, Playfair Display and Dancing Script (Old Money and Royal themes) and Courier Prime (Vintage theme) are under the SIL Open Font License 1.1. Special Elite (Vintage theme) is under the Apache License 2.0. All are bundled via @fontsource. Each package's LICENSE under node_modules/@fontsource/ has the full licence text and copyright.
 
 ## Libraries
 - pdf.js (pdfjs-dist), Apache License 2.0
@@ -287,3 +287,5 @@ Focus sounds are synthesised on the device with the Web Audio API; no third-part
 - English trained data (tessdata, `eng.traineddata`, 4.0.0 best_int), Copyright Google Inc. https://github.com/tesseract-ocr/tessdata
 
 All three are licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0). They ship unmodified in `public/ocr/`. Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND.
+
+Pinyon Script (the Prvlar wordmark and launch intro; latin subset at public/fonts/PinyonScript-latin.ttf) — Copyright The PinyonScript Project Authors, SIL Open Font License 1.1 (full text: public/fonts/OFL-PinyonScript.txt). The Prvlar "P" app icon is original vector artwork drawn for this project (src/brand.js), not a font glyph.

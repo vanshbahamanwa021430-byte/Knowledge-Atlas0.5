@@ -106,9 +106,9 @@ const state = {
   reading: { size: 1, rate: 1 }
 };
 const THEME_NAMES = { system: 'Device', light: 'Light', dark: 'Dark', aesthetic: 'Aesthetic', anime: 'Anime', glass: 'Glass' };
-const THEMES = ['system', 'light', 'dark', 'aesthetic', 'anime', 'glass', 'oldmoney', 'vintage'];
+const THEMES = ['system', 'light', 'dark', 'aesthetic', 'anime', 'glass', 'oldmoney', 'vintage', 'royal', 'royal-ivory'];
 // Status bar and browser toolbar colour of each theme (dark = light status-bar icons).
-const THEME_BAR = { light: ['#F4F4F6', false], dark: ['#0B0B10', true], aesthetic: ['#FFFBF7', false], anime: ['#E2F1FF', false], glass: ['#4F5FD8', true] };
+const THEME_BAR = { light: ['#F4F4F6', false], dark: ['#0B0B10', true], aesthetic: ['#FFFBF7', false], anime: ['#E2F1FF', false], glass: ['#4F5FD8', true], royal: ['#3A0D12', true], 'royal-ivory': ['#F6EEDC', false] };
 
 /* ---------- saved preferences ---------- */
 const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
@@ -132,8 +132,12 @@ const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); 
   state.nudgeHidden = readJSON('prvlar-nudge', {});
 }
 // Preferences that a backup can restore (see BACKUP_PREFS in storage.js); numbers are kept within sensible ranges.
+function isExistingInstall() {
+  try { return ['prvlar-entry', 'prvlar-onboarded', 'prvlar-visited', 'prvlar-name', 'prvlar-goals', 'prvlar-remember'].some(k => localStorage.getItem(k) != null); } catch { return false; }
+}
 function loadPrefs() {
-  const t = readJSON('prvlar-theme', 'system');
+  // 0.9.8: Royal is the default look for NEW installs; anyone who already used the app keeps theirs (or Device).
+  const t = readJSON('prvlar-theme', null) ?? (isExistingInstall() ? 'system' : 'royal');
   state.theme = THEMES.includes(t) ? t : 'system';
   const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
   const g = readJSON('prvlar-goals', {}) || {};
@@ -1042,7 +1046,7 @@ function viewSettings() {
   const port = (p.url.match(/:(\d+)\//) || [, '3001'])[1];
   const sub = server ? `Connect to your ${SERVER_PRESETS[state.ai.mode]?.brand ? SERVER_PRESETS[state.ai.mode].brand : state.ai.mode === 'omniroute' ? 'OmniRoute' : state.ai.mode === 'litertlm' ? 'LiteRT-LM (Gemma)' : 'AI'} service` : 'Connect a free Gemini or Groq key, or OpenAI';
   const conn = state.conn ? `<div class="conn-box ${state.conn.ok ? 'ok' : 'err'}" role="status">${icon(state.conn.ok ? 'checkCircle' : 'alert', 22)}<div><b>${state.conn.ok ? 'Connected' : 'Not connected'}</b><span>${esc(state.conn.text)}</span></div></div>` : '';
-  const theme = [['system', 'Device', 'Follows your phone'], ['light', 'Light', 'Bright and clear'], ['dark', 'Dark', 'Navy, easy at night'], ['aesthetic', 'Aesthetic', 'Soft pastels'], ['anime', 'Anime', 'Pink, purple and cyan'], ['glass', 'Glass', 'Frosted glass'], ['oldmoney', 'Old Money', 'Navy, ivory and gold'], ['vintage', 'Vintage', 'Stickers and paper']];
+  const theme = [['system', 'Device', 'Follows your phone'], ['light', 'Light', 'Bright and clear'], ['dark', 'Dark', 'Navy, easy at night'], ['aesthetic', 'Aesthetic', 'Soft pastels'], ['anime', 'Anime', 'Pink, purple and cyan'], ['glass', 'Glass', 'Frosted glass'], ['oldmoney', 'Old Money', 'Navy, ivory and gold'], ['vintage', 'Vintage', 'Stickers and paper'], ['royal', 'Royal', 'Maroon and gold'], ['royal-ivory', 'Royal Ivory', 'Ivory and gold, for daytime']];
   const rd = state.reading;
   const where = isNative() ? (platform() === 'ios' ? 'iPhone or iPad' : 'Android phone or tablet') : isElectron() ? 'Windows PC' : 'browser';
   return `${backHead('Settings')}<div class="view narrow settings">
@@ -2293,7 +2297,7 @@ ${l ? `<section class="card lesson">${fmtAnswer(l.lesson, null)}${l.exercise ? `
 async function mountCodeEditor() {
   const host = app.querySelector('#cm-host'); if (!host || !state.code) return;
   try {
-    const dark = document.documentElement.matches('[data-theme="dark"],[data-theme="glass"],[data-theme="anime"]');
+    const dark = document.documentElement.matches('[data-theme="dark"],[data-theme="glass"],[data-theme="anime"],[data-theme="royal"]');
     await mountEditor(host, { code: state.code.src, lang: state.code.lang, dark, onChange: v => { state.code.src = v; saveCode(); } });
     host.querySelector('.cm-fallback')?.remove(); host.classList.add('is-cm');
   } catch { /* the plain textarea stays as a fallback */ }
@@ -2967,7 +2971,7 @@ const ownerPack = ownerPackController({
 });
 let booted = false;
 async function syncOwnerPack(opts) { const a = account(); const r = await ownerPack.sync(a?.email || '', opts).catch(e => ({ ok: false, error: e.message })); state.packStatus = ownerPack.status(); render(); return r; }
-if (account()) { startAutoSync(); refreshOwner(); }
+const ownerReady = account() ? (startAutoSync(), refreshOwner().catch(() => {})) : Promise.resolve();
 onSyncStatus(st => { if (st.changed) reloadAll().catch(() => {}); else if (state.view === 'settings' && !state.busy) render(); });
 setInterval(updateTimer, 1000);
 setInterval(() => { try { tickFocus(); tickReading(); } catch (e) { console.error(e); } }, 1000);
@@ -2986,4 +2990,10 @@ refresh().then(async () => {
   state.notifPerm = await permission(); state.exactPerm = await exactAlarm();
   booted = true; ED.onBoot();
   rescheduleReminders().catch(() => {});
-}).catch(fail);
+  // Startup work done behind the launch intro: data, settings/theme, Google session + owner pack (from cache), fonts.
+  await Promise.race([Promise.all([ownerReady, document.fonts?.ready]), new Promise(r => setTimeout(r, 4000))]);
+  appReady();
+  // Warm the heavier tab bundles in idle time so the first open is instant.
+  (globalThis.requestIdleCallback || (f => setTimeout(f, 1500)))(() => { import('./editor.js').catch(() => {}); import('pdfjs-dist/legacy/build/pdf.mjs').catch(() => {}); });
+}).catch(e => { appReady(); fail(e); });
+function appReady() { try { performance.mark('prvlar-ready'); } catch { /* old browsers */ } globalThis.__prvlarReady?.(); }
