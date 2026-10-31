@@ -1,4 +1,4 @@
-// Flashcards with spaced repetition (SM-2, the algorithm behind Anki and SuperMemo 2). Pure functions (unit-tested).
+// Flashcards with spaced repetition (the SM-2 algorithm). Pure functions (unit-tested).
 import { correctText } from './examprofile.js';
 // A card: { id, documentId, nodeId, front, back, source, created, due, interval, ease, reps, lapses, last, origin }
 //   interval: days until the next review; ease: growth factor (≥ 1.3); reps: successful reviews in a row; due: timestamp.

@@ -87,7 +87,7 @@ db.on('ready', async () => {
     const n = await copyMissing(db, data);
     ls.setItem(MIGRATED, JSON.stringify({ rows: n, at: Date.now() })); ls.removeItem(MIGRATE_FAILS);
   } catch (e) {
-    console.warn('Could not copy data from the old Knowledge Atlas database', e);
+    console.warn('Could not copy data from the old database', e);
     try { const f = Number(ls.getItem(MIGRATE_FAILS) || 0) + 1; ls.setItem(MIGRATE_FAILS, String(f)); if (f >= 3) ls.setItem(MIGRATED, JSON.stringify({ failed: true, error: String(e?.message || e).slice(0, 200), at: Date.now() })); } catch { /* storage full */ }
   }
 });
