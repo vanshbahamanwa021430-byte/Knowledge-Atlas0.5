@@ -1860,3 +1860,44 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
   :root[data-theme="glass"] .toggle-row, :root[data-theme="glass"] .th-profile, :root[data-theme="glass"] .ftile { background-color: rgba(10, 32, 26, .78); }
   :root[data-theme="glass"] .sidebar, :root[data-theme="glass"] .topbar, :root[data-theme="glass"] .tabbar { background: rgba(10, 32, 26, .86); }
 }
+
+/* ---------- 0.9.9 phone drawer, Smarty everywhere, study plan ---------- */
+.mbar { display: none; }
+@media (max-width: 959px) {
+  .tabbar { display: none !important; }
+  .mbar { display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 30; padding: calc(6px + env(safe-area-inset-top)) 10px 6px; background: var(--bg); border-bottom: 1px solid var(--line); }
+  .mbar .mbar-brand { background: none; border: 0; color: var(--ink); font: inherit; padding: 4px; }
+  .mbar .mbar-sp { flex: 1; }
+  .app, main { padding-bottom: env(safe-area-inset-bottom); }
+}
+.drawer-scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .45); animation: fadeIn .18s ease; }
+.drawer { position: fixed; top: 0; bottom: 0; left: 0; z-index: 81; width: min(86vw, 340px); display: flex; flex-direction: column; gap: 8px; overflow-y: auto; padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom)); background: var(--surface); color: var(--ink); border-right: 1px solid var(--line); box-shadow: 0 10px 40px rgba(0, 0, 0, .35); animation: drawerIn .22s ease; }
+@keyframes drawerIn { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.dr-top { display: flex; align-items: center; justify-content: space-between; }
+.dr-search { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--ink-3); }
+.dr-search input { flex: 1; border: 0; background: none; color: var(--ink); font: inherit; outline: none; min-width: 0; }
+.dr-h { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 10px 4px 2px; }
+.dr-list, .dr-chats { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.dr-link, .dr-chat, .dr-acct { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.dr-link.is-head { font-weight: 600; }
+.dr-link:hover, .dr-chat:hover, .dr-acct:hover, .dr-link:focus-visible, .dr-chat:focus-visible { background: var(--blue-wash); }
+.dr-link.is-on { background: var(--blue-wash); color: var(--blue); }
+.dr-chat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dr-bottom { margin-top: auto; border-top: 1px solid var(--line); padding-top: 8px; display: grid; gap: 2px; }
+.dr-acct img { width: 32px; height: 32px; border-radius: 50%; }
+.dr-acct > span { display: grid; }
+.sm-fab { position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 40; width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--blue); color: #fff; box-shadow: 0 6px 20px rgba(0, 0, 0, .3); cursor: pointer; display: grid; place-items: center; }
+.sm-fab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sm-ev { max-height: 80vh; overflow-y: auto; }
+.sm-ev-acts { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.sm-ev-res { margin-top: 10px; padding: 10px; border-radius: 12px; background: var(--blue-wash); }
+.sm-mic.is-on { color: var(--blue); animation: micPulse 1.2s ease infinite; }
+@keyframes micPulse { 50% { opacity: .5; } }
+.sp-days { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 10px; }
+.sp-day h3 { font-size: .95rem; margin: 0 0 4px; }
+.sp-day.is-today h3 { color: var(--blue); }
+.sp-day ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.sp-task { display: flex; align-items: center; gap: 8px; min-height: 40px; }
+.sp-task.is-done > span:nth-child(3) { text-decoration: line-through; color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) { .drawer, .drawer-scrim, .sm-mic.is-on { animation: none; } }

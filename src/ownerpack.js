@@ -6,7 +6,10 @@
 // is kept in secure storage (Android Keystore through the AtlasSecure plugin; elsewhere wrapped by a
 // non-extractable WebCrypto key in IndexedDB). Signing out or a non-owner sign-in removes the cache and passphrase.
 export const OWNER_PACK_FORMAT = 'ka-owner-pack', OWNER_PACK_VERSION = 1, OWNER_PACK_NAME = 'prvlar-owner-pack.json', LEGACY_OWNER_PACK_NAME = 'ka-owner-pack.json';
+import * as ed from '@noble/ed25519';
+import { PACK_SIGNING_KEYS } from './packkeys.js';
 const enc = new TextEncoder(), dec = new TextDecoder();
+export const MIN_PACK_PASS = 12;   // 0.9.9: new packs need 12+ characters; existing packs (8+) still open
 const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 async function pipe(bytes, Stream) { if (!globalThis[Stream]) return null; return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new globalThis[Stream]('gzip'))).arrayBuffer()); }
@@ -15,12 +18,31 @@ async function deriveKey(pass, salt, rounds) {
   return crypto.subtle.deriveKey({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: rounds }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 export async function encryptPack(pack, pass, rounds = 310000) {
-  if (!pass || String(pass).length < 8) throw Error('Use a passphrase of at least 8 characters.');
+  if (!pass || String(pass).length < MIN_PACK_PASS) throw Error(`Use a passphrase of at least ${MIN_PACK_PASS} characters.`);
   const plain = enc.encode(JSON.stringify({ ...pack, format: OWNER_PACK_FORMAT, version: OWNER_PACK_VERSION }));
   const gz = await pipe(plain, 'CompressionStream');
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await deriveKey(pass, salt, rounds), gz || plain));
   return { format: OWNER_PACK_FORMAT, version: OWNER_PACK_VERSION, encrypted: 'AES-GCM', kdf: 'PBKDF2-SHA256', rounds, gzip: !!gz, salt: b64(salt), iv: b64(iv), data: b64(ct) };
+}
+// ---- Signatures (0.9.9, review M5) ----
+// The owner signs the encrypted envelope with an Ed25519 key; the app checks it against PACK_SIGNING_KEYS BEFORE it
+// decrypts or runs anything. Old unsigned packs keep working on a device until it has once used a signed pack.
+const hex = h => Uint8Array.from(String(h).match(/../g) || [], x => parseInt(x, 16));
+const toHex = u8 => [...u8].map(b => b.toString(16).padStart(2, '0')).join('');
+export const signedBytes = e => enc.encode(JSON.stringify([e.format, e.version, e.encrypted, e.kdf, e.rounds || 310000, !!e.gzip, e.salt, e.iv, e.data]));
+export async function signPack(envelope, privateKeyHex) {
+  const sk = hex(privateKeyHex), pk = await ed.getPublicKeyAsync(sk), kid = toHex(pk).slice(0, 8);
+  const value = b64(await ed.signAsync(signedBytes(envelope), sk));
+  return { ...envelope, sig: { alg: 'Ed25519', kid, value } };
+}
+// 'ok' | 'unsigned' | 'bad'
+export async function verifyPackSig(envelope, keys = PACK_SIGNING_KEYS) {
+  const s = envelope?.sig;
+  if (!s) return 'unsigned';
+  const pk = s.alg === 'Ed25519' && keys[s.kid];
+  if (!pk || typeof s.value !== 'string') return 'bad';
+  try { return (await ed.verifyAsync(unb64(s.value), signedBytes(envelope), hex(pk))) ? 'ok' : 'bad'; } catch { return 'bad'; }
 }
 export const isPackEnvelope = x => x?.format === OWNER_PACK_FORMAT && x.encrypted === 'AES-GCM' && typeof x.data === 'string';
 export async function decryptPack(env, pass) {
@@ -65,13 +87,22 @@ export function ownerPackController(deps) {
   let active = null;
   const S = { status: 'off', error: '', version: '', built: 0 };
   const set = p => Object.assign(S, p);
+  const SIGNED_SEEN = 'owner-pack-signed-seen';
+  async function checkSig(env) {
+    const v = await verifyPackSig(env, deps.signingKeys || PACK_SIGNING_KEYS);
+    if (v === 'bad') throw Error('This owner pack’s signature does not match. It was not made by the owner, so it was not opened.');
+    if (v === 'unsigned' && await deps.secure.get(SIGNED_SEEN)) throw Error('This owner pack is not signed. This device only accepts signed packs now.');
+    if (v === 'ok') await deps.secure.set(SIGNED_SEEN, '1');
+    return v === 'ok';
+  }
   async function load(env, pass) {
+    const signed = await checkSig(env);
     const pack = await decryptPack(env, pass);
     const mod = await (deps.importModule || importModule)(pack.module);
     if (typeof mod.activate !== 'function') throw Error('The owner pack has no activate().');
     const handle = (await mod.activate(deps.ctx, pack)) || {};
     active = { handle, pack };
-    set({ status: 'on', error: '', version: pack.packVersion || '', built: pack.built || 0 });
+    set({ status: 'on', error: '', version: pack.packVersion || '', built: pack.built || 0, signed });
     return pack;
   }
   return {
@@ -92,6 +123,7 @@ export function ownerPackController(deps) {
     // Owner installs a pack from a file: checks the passphrase, uploads to their Drive, caches and activates.
     // upload: false = this device only (no Drive needed). A failed Drive upload still installs locally (driveError says why).
     async install(env, passphrase, { upload = true } = {}) {
+      await checkSig(env);
       await decryptPack(env, passphrase);
       let driveError = '';
       if (upload && deps.remote) { try { await deps.remote.upload(env); } catch (e) { driveError = e.message || 'Drive upload failed.'; } }

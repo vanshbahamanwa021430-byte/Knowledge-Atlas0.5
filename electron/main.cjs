@@ -1,5 +1,6 @@
 // Windows desktop shell. Serves the built web app from a privileged app:// scheme (not file://) so that
 // ES modules, web workers (pdf.js) and IndexedDB behave exactly as in a normal secure origin.
+const { aiUrlAllowed, googleSignIn } = require('./net-guard.cjs');
 const { app, BrowserWindow, session, protocol, net, ipcMain, shell } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -55,44 +56,27 @@ if (!app.requestSingleInstanceLock()) {
 
     session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
 
-    // AI requests from the page (see preload.cjs). Only our own app:// page may call this, only http(s) POSTs.
-    // Google sign-in on desktop: the system browser + a loopback page on http://localhost:53682/oauth (OAuth implicit
-    // token flow of the web client; that redirect URI must be listed on the web client). No secret is involved.
+    // Google sign-in on desktop (0.9.9, review M3). Two flows, neither puts a token in a URL query string:
+    //  - Desktop OAuth client configured (VITE_GOOGLE_DESKTOP_CLIENT_ID): authorization-code flow with PKCE (S256) on an
+    //    ephemeral loopback port (http://127.0.0.1:<random>/oauth), code exchanged here in the main process.
+    //  - Otherwise (web client, unchanged Google settings): implicit flow on the registered http://localhost:53682/oauth;
+    //    the token fragment is POSTed to /done (body, not query), checked against state + nonce.
     ipcMain.handle('google:token', async (event, req) => {
       if (!event.senderFrame || !event.senderFrame.url.startsWith(ORIGIN)) return { error: 'forbidden' };
-      const http = require('http'), crypto = require('crypto'), state = crypto.randomBytes(16).toString('hex'), PORT = 53682, redirect = `http://localhost:${PORT}/oauth`;
-      return new Promise(resolve => {
-        let done = false; const finish = r => { if (done) return; done = true; clearTimeout(timer); try { server.close(); } catch {} resolve(r); };
-        const server = http.createServer((q, res) => {
-          const u = new URL(q.url, redirect);
-          if (u.pathname === '/oauth') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><title>Prvlar</title><p style="font:16px system-ui;padding:24px">Finishing sign-in…</p><script>location.replace("/done?"+location.hash.slice(1))</script>'); return; }
-          if (u.pathname === '/done') {
-            res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><p style="font:16px system-ui;padding:24px">You can close this tab and return to Prvlar.</p>');
-            if (u.searchParams.get('state') !== state) return finish({ error: 'State mismatch' });
-            if (u.searchParams.get('error')) return finish({ error: u.searchParams.get('error') });
-            return finish({ access_token: u.searchParams.get('access_token'), expires_in: Number(u.searchParams.get('expires_in')) || 3600, scope: u.searchParams.get('scope') || '' });
-          }
-          res.writeHead(404); res.end();
-        });
-        const timer = setTimeout(() => finish({ error: 'timeout' }), 180000);
-        server.on('error', () => finish({ error: 'Port 53682 is busy' }));
-        server.listen(PORT, '127.0.0.1', () => {
-          const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-          for (const [k, v] of Object.entries({ client_id: String(req.clientId || ''), redirect_uri: redirect, response_type: 'token', scope: String(req.scope || ''), state, include_granted_scopes: 'true', prompt: req.consent ? 'consent select_account' : 'select_account' })) auth.searchParams.set(k, v);
-          shell.openExternal(auth.toString());
-        });
-      });
+      return googleSignIn(req || {}, { openExternal: u => shell.openExternal(u), fetch: (u, o) => net.fetch(u, o) });
     });
 
+    // AI requests from the page (see preload.cjs). 0.9.9 (review M4): https only, public hosts only; plain http just for
+    // a local AI server on this computer (localhost / 127.0.0.1), which the user opts into in Settings.
     ipcMain.handle('ai:post', async (event, req) => {
       try {
         if (!String(event.senderFrame?.url || '').startsWith(ORIGIN)) return { error: 'forbidden' };
         const u = new URL(String(req?.url));
-        if (u.protocol !== 'https:' && u.protocol !== 'http:') return { error: 'forbidden' };
+        if (!aiUrlAllowed(u, !!req?.local)) return { error: 'forbidden' };
         const headers = {};
         for (const [k, v] of Object.entries(req.headers || {})) if (/^(authorization|content-type)$/i.test(k)) headers[k] = String(v);
         const timeout = Math.min(Math.max(Number(req.timeout) || 120000, 5000), 600000);
-        const res = await net.fetch(u.toString(), { method: 'POST', headers, body: String(req.body ?? ''), signal: AbortSignal.timeout(timeout) });
+        const res = await net.fetch(u.toString(), { method: 'POST', headers, body: String(req.body ?? ''), signal: AbortSignal.timeout(timeout), redirect: 'error' });
         return { status: res.status, text: await res.text() };
       } catch (e) {
         return { error: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'timeout' : 'network', detail: String(e?.cause?.code || e?.cause?.message || e?.message || '') };

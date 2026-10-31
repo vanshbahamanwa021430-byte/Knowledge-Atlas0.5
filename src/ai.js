@@ -42,10 +42,14 @@ export function setFreeProxy(url, token = '') {
 }
 setFreeProxy((import.meta.env && import.meta.env.VITE_PRVLAR_PROXY) || '', (import.meta.env && import.meta.env.VITE_PRVLAR_PROXY_TOKEN) || '');
 // Apps Script web apps only accept "simple" requests (no custom headers), so the device id and token go in the body.
+// 0.9.9: the app hands over a Google ID token (when signed in) so the proxy can count per verified account.
+let idTokenSource = async () => '';
+export const setIdTokenSource = f => { idTokenSource = typeof f === 'function' ? f : async () => ''; };
 async function gasPost(endpoint, device, payload, timeout) {
+  const idToken = await Promise.race([idTokenSource().catch(() => ''), new Promise(r => setTimeout(() => r(''), 5000))]);
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
   try {
-    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: FREE.token, device, payload }), signal: ctl.signal, redirect: 'follow' });
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: FREE.token, device, payload, ...(idToken ? { idToken } : {}) }), signal: ctl.signal, redirect: 'follow' });
     const j = await r.json().catch(() => ({ status: 502, body: { error: { message: 'The free option returned an unreadable reply.' } } }));
     return new Response(JSON.stringify(j.body ?? {}), { status: Number(j.status) || 502, headers: { 'Content-Type': 'application/json' } });
   } finally { clearTimeout(t); }
@@ -449,4 +453,9 @@ async function webSearchOnce(key, question, { system = '', extra = '', model, fe
   for (const g of c.groundingMetadata?.groundingChunks || []) { const u = g.web?.uri; if (u && !seen.has(u)) { seen.add(u); sources.push({ title: g.web.title || new URL(u).hostname, url: u }); } }
   if (!text) throw Error('Web search returned no answer. Try rephrasing.');
   return { text, sources };
+}
+
+// 0.9.9 Smarty everywhere: one JSON request about what the student is viewing (see everywhere.js for the prompts).
+export async function smartyJson(ai, user) {
+  return callModel(ai, 'You are Smarty, a friendly study assistant inside the Prvlar app. Use only the screen text you are given plus general knowledge. Never reveal or invent secrets. Always reply with one JSON object as asked.', user);
 }

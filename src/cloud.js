@@ -10,6 +10,9 @@ import { syncLocalTables, applySyncDiff, syncFlags, BACKUP_PREFS, SECRET_PREFS, 
 export const SCOPES = ['https://www.googleapis.com/auth/drive.appdata', 'openid', 'email', 'profile'];
 const env = import.meta.env || {};
 export const WEB_CLIENT_ID = String(env.VITE_GOOGLE_WEB_CLIENT_ID || '').trim();
+// Optional (0.9.9): a Desktop-type OAuth client turns on the PKCE code flow in the Windows app. Google's desktop
+// "secret" is not confidential (installed apps can't keep one); without these the web client's flow is used.
+const DESKTOP_CLIENT = { clientId: String(env.VITE_GOOGLE_DESKTOP_CLIENT_ID || '').trim(), secret: String(env.VITE_GOOGLE_DESKTOP_CLIENT_SECRET || '').trim() };
 const ANDROID_ON = String(env.VITE_GOOGLE_ANDROID || '') === '1';
 const desktop = () => !!globalThis.window?.atlasNative?.googleToken;
 export const cloudAvailable = () => platform() === 'android' ? ANDROID_ON : platform() === 'ios' ? false /* needs a native iOS sign-in plugin: see docs/ios.md */ : platform() === 'web' ? !!WEB_CLIENT_ID && (location.protocol === 'https:' || location.hostname === 'localhost' || desktop()) : false;
@@ -25,6 +28,25 @@ let token = null, tokenExp = 0, passphrase = '';
 export const setPassphrase = p => { passphrase = String(p || ''); };
 export const hasPassphrase = () => !!passphrase;
 
+// Google ID token (0.9.9): sent to the free Prvlar AI proxy so its daily limit is per verified account, not per device.
+// Desktop: comes with sign-in. Web: Google's sign-in button library, silently (auto-select) when possible. Never stored.
+let idToken = '', idExp = 0;
+function setIdToken(t) { try { const p = JSON.parse(atob(String(t).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); idToken = t; idExp = Number(p.exp) * 1000 || 0; } catch { idToken = ''; idExp = 0; } }
+export async function getIdToken() {
+  if (!account()) return '';
+  if (idToken && Date.now() < idExp - 60000) return idToken;
+  if (platform() !== 'web' || desktop() || !WEB_CLIENT_ID) return '';
+  try {
+    const g = await loadGis();
+    return await new Promise(res => {
+      const t = setTimeout(() => res(''), 4000);
+      g.accounts.id.initialize({ client_id: WEB_CLIENT_ID, auto_select: true, login_hint: account()?.email, use_fedcm_for_prompt: true, callback: r => { clearTimeout(t); setIdToken(r?.credential); res(idToken); } });
+      g.accounts.id.prompt(n => { if (n?.isNotDisplayed?.() || n?.isSkippedMoment?.()) { clearTimeout(t); res(''); } });
+    });
+  } catch { return ''; }
+}
+export const _setIdTokenForTests = setIdToken;
+
 let gis = null;
 const loadGis = () => (gis ??= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = () => res(window.google); s.onerror = () => { gis = null; rej(Error('Could not load Google sign-in. Check your connection.')); }; document.head.append(s); }));
 const DRIVE_SCOPE = SCOPES[0];
@@ -38,10 +60,10 @@ async function getToken(interactive, consent = false) {
   }
   if (desktop()) {
     if (!interactive && !token) throw Object.assign(Error('Sign-in needed'), { code: 'NEEDS_UI' });
-    const r = await window.atlasNative.googleToken(WEB_CLIENT_ID, SCOPES.join(' '), consent);
+    const r = await window.atlasNative.googleToken(WEB_CLIENT_ID, SCOPES.join(' '), consent, DESKTOP_CLIENT);
     if (r?.error) throw Error(r.error === 'access_denied' ? 'Sign-in was cancelled.' : 'Google sign-in failed: ' + r.error);
     if (r.scope && !hasDriveScope(r.scope)) throw scopeError(r.access_token);
-    token = r.access_token; tokenExp = Date.now() + r.expires_in * 1000; return token;
+    token = r.access_token; tokenExp = Date.now() + r.expires_in * 1000; if (r.id_token) setIdToken(r.id_token); return token;
   }
   const g = await loadGis();
   return new Promise((res, rej) => {
@@ -64,7 +86,7 @@ export async function signIn() {
 }
 export function signOut() {
   if (token && platform() === 'web') try { window.google?.accounts?.oauth2?.revoke(token, () => {}); } catch { /* ignore */ }
-  token = null; tokenExp = 0; passphrase = '';
+  token = null; tokenExp = 0; passphrase = ''; idToken = ''; idExp = 0;
   localStorage.removeItem('prvlar-sync-account'); localStorage.removeItem('prvlar-sync-status');
 }
 

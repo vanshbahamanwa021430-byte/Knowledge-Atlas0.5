@@ -20,7 +20,7 @@ import { EXTRA_KINDS, normalizeProfile, buildPlan, scoreQuestion, answerText, co
 import { getUrl } from './net.js';
 import { BACKUP_PREFS, db, saveDocument, getDocuments, saveAttempt, getAttempts, getSetting, setSetting, requestPersistence, exportAll, importAll, getCards, saveCards, deleteCard, getSessions, saveSession, getPlans, savePlan, deletePlan, getDays, bumpDay, getProfiles, saveProfile, deleteProfile, getTraces, saveTrace, clearTraces, saveBlob, getBlob, deleteBlob } from './storage.js';
 import { chunkDocs, buildIndex, retrieve, searchTraces, traceFromAttempt, traceFromPractice, makeTrace, updateProfile, emptyProfile, weakTopics as tutorWeak, strongTopics, levelFor as tutorLevel, profileHint, practiceTargets } from './tutor.js';
-import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, explainSelection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice } from './ai.js';
+import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, explainSelection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice , setIdTokenSource , smartyJson } from './ai.js';
 import { matchSections, flatMap } from './aimap.js';
 import { flowchartSVG, defaultCollapsed, childrenMap, chartNodes, levelNames } from './flowchart.js';
 import { gradeMCQ, makeAttempt, isDue, EXAM_MINUTES, QUESTION_COUNT } from './engine.js';
@@ -39,7 +39,7 @@ import { OWNER_HASHES, isOwnerEmail, addedOwners, addOwner, removeOwner, maskSec
 installLogCapture();
 import { platform as gatePlatform } from './platform.js';
 import { needsWelcome, afterSignIn, afterGuest, afterSignOut } from './gate.js';
-import { cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, grantDrive, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
+import { getIdToken, cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, grantDrive, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
 import { registerPlugin } from '@capacitor/core';
 import { checkForUpdate, AUTO_INTERVAL, RELEASES_PAGE, UPDATE_REPO, setUpdateRepo } from './update.js';
 import { ownerPackController, webSecureStore, nativeSecureStore, memoryStore, isPackEnvelope, OWNER_PACK_NAME, LEGACY_OWNER_PACK_NAME } from './ownerpack.js';
@@ -52,6 +52,11 @@ Object.defineProperty(music, 'follow', { get: () => state.focusPrefs?.musicFollo
 music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'focus';
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
+import { drawerHTML, edgeSwipe } from './drawer.js';
+import { ACTIONS as SM_EV_ACTIONS, screenContext, actionPrompt, parseCards, parseTasks, parseNotes } from './everywhere.js';
+import { buildStudyPlan, adjustPlan, toggleTask, planProgress, addDay as planAddDay } from './countdown.js';
+import { weeklyReport, nextWeeklyAt } from './weekly.js';
+import { recognitionSupported, recordingSupported, listen as voiceListen, record as voiceRecord } from './voice.js';
 import { readAttachment, attachmentBlock, MAX_FILES } from './attach.js';
 import { SKILLS_KEY, normalizeSkill, upsertSkill, removeSkill, parseSlash, suggestSkill, skillPrompt } from './skills.js';
 import { draftSkill, webSearchAnswer } from './ai.js';
@@ -143,7 +148,7 @@ function loadPrefs() {
   const g = readJSON('prvlar-goals', {}) || {};
   state.goals = { dailyMinutes: num(g.dailyMinutes, 30, 5, 720), weeklyMinutes: num(g.weeklyMinutes, 180, 10, 5000), dailyCards: num(g.dailyCards, 20, 1, 500) };
   const r = readJSON('prvlar-remind', {}) || {};
-  state.remind = { daily: !!r.daily, time: /^\d\d:\d\d$/.test(r.time || '') ? r.time : '19:00', exams: r.exams !== false, todos: r.todos !== false };
+  state.remind = { daily: !!r.daily, time: /^\d\d:\d\d$/.test(r.time || '') ? r.time : '19:00', exams: r.exams !== false, todos: r.todos !== false, weekly: !!r.weekly };
   const f = readJSON('prvlar-focus', {}) || {};
   state.focusPrefs = { focus: num(f.focus, 25, 1, 180), short: num(f.short, 5, 1, 60), long: num(f.long, 15, 1, 90), longEvery: num(f.longEvery, 4, 2, 12), sound: SOUNDS.some(x => x[0] === f.sound) ? f.sound : 'off', volume: num(f.volume, 0.5, 0, 1), autoNext: f.autoNext !== false, stopAtEnd: f.stopAtEnd !== false, sleep: num(f.sleep, 0, 0, 240), musicFollow: f.musicFollow !== false };
   const rd = readJSON('prvlar-reading', {}) || {};
@@ -358,15 +363,30 @@ function render() {
     noticeTimer = setTimeout(() => { if (state.notice === noticeShown) { state.notice = ''; noticeShown = ''; document.querySelector('.toast.ok')?.remove(); } }, 5000);
   }
   updateTimer();
+  if (state.drawer && drawerJustOpened) { drawerJustOpened = false; requestAnimationFrame(() => document.getElementById('drawerq')?.focus()); }
+}
+let drawerJustOpened = false;
+function closeDrawer(rerender = true) {
+  if (!state.drawer) return; state.drawer = false; state.drawerQ = '';
+  if (rerender) { render(); document.querySelector('.mbar [data-action=drawerOpen]')?.focus(); }
+}
+// Swipe from the left edge opens the drawer on phones (the desktop layout keeps the sidebar).
+{ let sx = -1, sy = 0;
+  window.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t && !state.drawer && innerWidth < 960 ? t.clientX : -1; sy = t?.clientY || 0; }, { passive: true });
+  window.addEventListener('touchmove', e => { if (sx < 0) return; const t = e.touches[0]; if (edgeSwipe({ startX: sx, startY: sy, x: t.clientX, y: t.clientY })) { sx = -1; actions.drawerOpen(); } }, { passive: true });
+  window.addEventListener('touchend', () => { sx = -1; }, { passive: true });
+  // Swipe left on the open drawer closes it.
+  let dx = -1; window.addEventListener('touchstart', e => { dx = state.drawer && e.target.closest?.('.drawer') ? e.touches[0].clientX : -1; }, { passive: true });
+  window.addEventListener('touchmove', e => { if (dx >= 0 && dx - e.touches[0].clientX > 70) { dx = -1; closeDrawer(); } }, { passive: true });
 }
 
 function shellHTML() {
   const body = viewHTML();   // first: a section that no longer exists falls back to the map, which changes the view
   return `<div class="shell${state.dragging ? ' is-dragging' : ''}">
 ${sidebarHTML()}
-<div class="stage">${topbarHTML()}<main class="main v-${state.view}${examLive() && state.view === 'test' && !shown() ? ' is-exam' : ''}" id="main" tabindex="-1">${body}</main></div>
-<nav class="tabbar" aria-label="Main">${TABS.map(t => tabBtn(t)).join('')}</nav>
-${focusPill()}${toastsHTML()}${selExplainHTML()}
+<div class="stage">${topbarHTML()}${mbarHTML()}<main class="main v-${state.view}${examLive() && state.view === 'test' && !shown() ? ' is-exam' : ''}" id="main" tabindex="-1">${body}</main></div>
+${state.drawer ? drawerHTML({ groups: GROUPS, convs: state.smConvs || [], current: state.view, account: account(), query: state.drawerQ || '', canDev: canDo('dev') }, { icon, esc }) : ''}
+${smFabHTML()}${focusPill()}${toastsHTML()}${selExplainHTML()}
 ${state.showGrid && state.questions ? gridSheetHTML() : ''}${state.update.dialog && state.update.release ? updateDialogHTML() : ''}
 </div>`;
 }
@@ -375,6 +395,62 @@ const timerBadge = () => examLive() ? `<span class="nav-badge" data-timer-badge>
 function tabBtn(t) {
   const on = TAB_OF[state.view] === t.v;
   return `<button class="tab${on ? ' is-on' : ''}" data-view="${t.v}"${on ? ' aria-current="page"' : ''}>${icon(t.icon, 23, '', on ? 2.2 : 1.9)}<span>${t.label}</span>${t.v === 'test' ? timerBadge() : ''}</button>`;
+}
+
+// 0.9.9 phones: a slim top bar with the menu button (opens the side drawer); the drawer replaces the bottom tabs.
+function mbarHTML() {
+  return `<header class="mbar"><button class="icon-btn" data-action="drawerOpen" aria-label="Open menu" aria-controls="drawer" aria-expanded="${!!state.drawer}">${icon('menu', 22)}</button><button class="mbar-brand" data-view="home" aria-label="Prvlar home"><span class="wordmark">Prvlar</span></button><span class="mbar-sp"></span>${timerBadge()}</header>`;
+}
+// 0.9.9 Smarty everywhere: a floating Smarty button on every screen (not on Smarty itself or during a timed exam).
+function smFabHTML() {
+  const hide = state.view === 'smarty' || (examLive() && state.view === 'test');
+  const e = state.smEv;
+  const fab = hide ? '' : `<button class="sm-fab" data-action="smEvOpen" aria-label="Ask Smarty about this screen" aria-expanded="${!!e}">${icon('smarty', 24)}</button>`;
+  if (!e || hide) return fab;
+  const res = e.result;
+  return `${fab}<div class="sheet-backdrop" data-action="smEvClose"></div><section class="sheet sm-ev" role="dialog" aria-modal="true" aria-labelledby="smev-h">
+<div class="card-head"><h2 class="h2" id="smev-h">${icon('smarty', 20)}Smarty</h2><button class="icon-btn" data-action="smEvClose" aria-label="Close">${icon('x', 20)}</button></div>
+<p class="fine">Looking at: <b>${esc(e.ctx.viewLabel)}</b>${e.ctx.title ? ' · ' + esc(e.ctx.title) : ''}</p>
+<div class="sm-ev-acts">${SM_EV_ACTIONS.map(a => `<button class="chip chip-btn" data-smev="${a.id}"${e.busy ? ' disabled' : ''}>${icon(a.icon, 15)}${esc(a.label)}</button>`).join('')}</div>
+<div class="composer"><textarea class="input" id="smevq" rows="2" placeholder="Ask about this screen…" aria-label="Ask Smarty about this screen">${esc(e.draft || '')}</textarea><button class="send" data-smev="ask" aria-label="Send"${e.busy ? ' disabled' : ''}>${e.busy ? '<span class="spin"></span>' : icon('send', 19)}</button></div>
+${e.busy ? `<p class="fine" role="status"><span class="spin"></span> Smarty is working on “${esc(e.busyLabel || '')}”…</p>` : ''}
+${res ? `<div class="sm-ev-res" role="status">${res.html}</div>` : ''}
+${!aiAvailable() ? keyHelpHTML() : ''}</section>`;
+}
+function readScreen() {
+  const main = document.getElementById('main');
+  const clone = main ? main.cloneNode(true) : null;
+  clone?.querySelectorAll('input[type=password], .key-help, .toasts, script, style, svg').forEach(x => x.remove());
+  const label = (GROUPS.flatMap(g => [[g.tab, g.label], ...(g.links || []).map(l => [l[0], l[2]])]).find(([v]) => v === state.view) || [state.view, state.view])[1];
+  const doc = state.doc ? docById(state.doc) : null;
+  return screenContext({ view: state.view, viewLabel: label, title: ['study', 'section', 'test', 'notes'].includes(state.view) && doc ? docTitle(doc) : (main?.querySelector('h1')?.textContent || ''), text: clone?.innerText || clone?.textContent || '' });
+}
+async function smEvRun(id) {
+  const e = state.smEv; if (!e || e.busy) return;
+  const ai = requireAi('use Smarty on this screen'); if (!ai || !smartyConsent()) return;
+  const ask = id === 'ask' ? (document.getElementById('smevq')?.value || '').trim() : '';
+  if (id === 'ask' && !ask) return;
+  e.draft = ask; e.busy = id; e.busyLabel = (SM_EV_ACTIONS.find(a => a.id === id) || { label: 'your question' }).label; e.result = null; render();
+  try {
+    const pr = actionPrompt(id === 'ask' ? 'explain' : id, e.ctx, ask), r = await smartyJson(ai, pr.user);
+    if (id === 'cards') {
+      const list = parseCards(r); if (!list.length) throw Error('Smarty could not find flashcard material on this screen.');
+      const n = await addCards(list.map(c => newCard({ documentId: state.doc || null, front: c.front, back: c.back, source: e.ctx.viewLabel, origin: 'smarty' })));
+      e.result = { html: `<p>${icon('checkCircle', 16)} Added ${plural(n, 'flashcard')}. They are due for review today.</p><button class="btn outline sm" data-view="cards">${icon('cards', 16)}Review now</button>` };
+    } else if (id === 'notes' || id === 'test') {
+      const n = parseNotes(r, e.ctx.title || 'Smarty notes'), title = (id === 'notes' ? 'Notes · ' : 'Test prep · ') + n.title;
+      const d = await parseFile(new File([n.markdown], title.replace(/[\\/:*?"<>|]/g, '-').slice(0, 80) + '.md', { type: 'text/markdown' })); d.origin = 'smarty';
+      await saveDocument(d); state.docs = await getDocuments(); selectDoc(d.id);
+      if (id === 'test') { state.smEv = null; go('test'); return; }
+      e.result = { html: `<p>${icon('checkCircle', 16)} Saved notes as “${esc(docTitle(d))}”.</p><button class="btn outline sm" data-open="${esc(d.id)}">${icon('file', 16)}Open notes</button>` };
+    } else if (id === 'plan') {
+      const tasks = parseTasks(r, today(), planAddDay); if (!tasks.length) throw Error('Smarty could not make a plan from this screen.');
+      for (const t of tasks) { const pl = { id: uuid(), kind: 'todo', title: t.title, date: t.date, time: '', documentId: null, done: false, created: Date.now(), origin: 'smarty' }; await savePlan(pl); state.plans = [...state.plans, pl]; }
+      rescheduleReminders().catch(() => {});
+      e.result = { html: `<p>${icon('checkCircle', 16)} Added ${plural(tasks.length, 'task')} to your planner.</p><ul class="fine">${tasks.map(t => `<li>${esc(fmtDate(dayStart(t.date)))}: ${esc(t.title)}</li>`).join('')}</ul><button class="btn outline sm" data-go="planner">${icon('calendar', 16)}Open planner</button>` };
+    } else e.result = { html: fmtAnswer(String(r?.text || r?.answer || ''), null) };
+  } finally { if (state.smEv === e) { e.busy = ''; } }
+  render();
 }
 
 function sidebarHTML() {
@@ -1044,7 +1120,7 @@ const SERVER_HELP = {
 function viewSettings() {
   const server = usingServer(), p = preset();
   const opts = [['cloud', 'Gemini or Groq key (free), or OpenAI'], ...Object.entries(SERVER_PRESETS).map(([k, v]) => [k, v.label + (SELF_HOSTED.includes(k) ? ' (self-hosted)' : '')])];
-  const port = (p.url.match(/:(\d+)\//) || [, '3001'])[1];
+  const port = (p.url.match(/:(\d+)\//) || [null, '3001'])[1];
   const sub = server ? `Connect to your ${SERVER_PRESETS[state.ai.mode]?.brand ? SERVER_PRESETS[state.ai.mode].brand : state.ai.mode === 'omniroute' ? 'OmniRoute' : state.ai.mode === 'litertlm' ? 'LiteRT-LM (Gemma)' : 'AI'} service` : 'Connect a free Gemini or Groq key, or OpenAI';
   const conn = state.conn ? `<div class="conn-box ${state.conn.ok ? 'ok' : 'err'}" role="status">${icon(state.conn.ok ? 'checkCircle' : 'alert', 22)}<div><b>${state.conn.ok ? 'Connected' : 'Not connected'}</b><span>${esc(state.conn.text)}</span></div></div>` : '';
   const theme = [['system', 'Device', 'Follows your phone'], ['light', 'Light', 'Bright and clear'], ['dark', 'Dark', 'Navy, easy at night'], ['aesthetic', 'Aesthetic', 'Soft pastels'], ['anime', 'Anime', 'Pink, purple and cyan'], ['glass', 'Glass', 'Frosted glass'], ['oldmoney', 'Old Money', 'Navy, ivory and gold'], ['vintage', 'Vintage', 'Stickers and paper'], ['royal', 'Royal', 'Maroon and gold'], ['royal-ivory', 'Royal Ivory', 'Ivory and gold, for daytime']];
@@ -1413,6 +1489,7 @@ async function rescheduleReminders() {
   }
   const [h, m] = String(r.time || '19:00').split(':').map(Number);
   const daily = r.daily ? { hour: h || 19, minute: m || 0, title: 'Time to study', body: `Keep your streak going: your goal is ${fmtMin(state.goals.dailyMinutes)} today.` } : null;
+  if (r.weekly) { const w = thisWeek(); list.push({ id: 'weekly-report', title: 'Your week in Prvlar', body: `${fmtMin(w.minutes)} studied, ${w.reviews} cards reviewed, ${w.tests} tests taken.`, at: nextWeeklyAt(Date.now()) }); }
   return scheduleReminders(list, daily);
 }
 function viewPlanner() {
@@ -1427,6 +1504,17 @@ function viewPlanner() {
 <div class="field-row"><label class="field"><span>Date</span><input class="input" type="date" id="pl-date" min="${t}"></label><label class="field"><span>Document (optional)</span><select class="input select" id="pl-doc">${docOptions(state.doc || '')}</select></label></div>
 <button class="btn primary" data-action="planAdd" data-kind="exam">${icon('plus', 18)}Add exam</button></section>
 ${past.length ? `<h2 class="section-h">Past exams</h2><ul class="exam-list">${past.map(e => examRow(e, t)).join('')}</ul>` : ''}`;
+  } else if (tab === 'study') {
+    const up = exams.filter(e => daysUntil(e.date, t) >= 1), sps = state.plans.filter(p => p.kind === 'studyplan' && p.plan);
+    for (const rec of sps) { const a = adjustPlan(rec.plan, t); if (a !== rec.plan) { rec.plan = a; savePlan(rec).catch(() => {}); } }
+    const cur = sps.find(p => p.id === state.spSel) || sps[0];
+    const kindLbl = { learn: 'Learn', review: 'Review', revise: 'Revise', test: 'Test' };
+    body = `<section class="card"><h2 class="h2">${icon('route', 20)}Exam countdown plan</h2><p class="fine">Smarty plans every day until your exam. Missed tasks move to the days that are left.</p>
+${up.length ? `<div class="field-row"><label class="field"><span>Exam</span><select class="input select" id="sp-exam">${up.map(e => `<option value="${esc(e.id)}">${esc(e.title)} · ${esc(e.date)}</option>`).join('')}</select></label></div><button class="btn primary" data-action="studyPlanBuild">${icon('smarty', 18)}Make my plan</button>` : `<p class="muted">Add an exam with a future date first.</p><button class="btn outline sm" data-ptab="exams">${icon('calendar', 16)}Add an exam</button>`}</section>
+${sps.length > 1 ? `<div class="chips">${sps.map(p => `<button class="chip chip-btn${p === cur ? ' is-on' : ''}" data-spsel="${esc(p.id)}">${esc(p.plan.examTitle)}</button>`).join('')}</div>` : ''}
+${cur ? (() => { const pg = planProgress(cur.plan); return `<section class="card sp"><div class="card-head"><h2 class="h2">${esc(cur.title)}</h2><button class="icon-btn soft" data-action="studyPlanDelete" data-id="${esc(cur.id)}" aria-label="Delete plan">${icon('trash', 17)}</button></div>
+<p class="fine">${pg.done} of ${pg.total} tasks done · ${plural(Math.max(0, daysUntil(cur.plan.examDate, t)), 'day')} left${cur.plan.moved ? ` · ${plural(cur.plan.moved, 'missed task')} moved forward` : ''}</p><span class="tbar good"><span style="width:${Math.max(2, pct(pg.done, pg.total))}%"></span></span>
+<ol class="sp-days">${cur.plan.days.filter(d => d.date >= t).map(d => `<li class="sp-day${d.date === t ? ' is-today' : ''}"><h3>${d.date === t ? 'Today' : esc(fmtDate(dayStart(d.date)))}</h3><ul>${d.tasks.map(k => `<li><label class="sp-task${k.done ? ' is-done' : ''}"><input type="checkbox" data-sptask="${esc(k.id)}" data-spplan="${esc(cur.id)}"${k.done ? ' checked' : ''}><span class="chip sp-${k.kind}">${kindLbl[k.kind] || k.kind}</span><span>${esc(k.topic)}${k.from ? ' <span class="fine">(moved)</span>' : ''}</span><span class="fine">${k.minutes} min</span></label></li>`).join('')}</ul></li>`).join('')}</ol></section>`; })() : ''}`;
   } else if (tab === 'todo') {
     const open = todos.filter(x => !x.done), done = todos.filter(x => x.done);
     body = `<section class="card"><h2 class="h2">${icon('plus', 20)}Add a task or assignment</h2>
@@ -1451,10 +1539,11 @@ ${perm === 'granted' ? `<div class="status ok">${icon('checkCircle', 20)}<p>Noti
 ${perm === 'granted' && state.exactPerm === 'denied' ? `<div class="status warn">${icon('info', 20)}<div><p>On-time reminders are off, so Android may deliver reminders a few minutes late.</p><button class="btn primary sm" data-action="allowExact">${icon('bell', 17)}Allow on-time reminders</button></div></div>` : ''}
 <label class="toggle-row"><span><b>Daily study reminder</b><span>Every day at the time below.</span></span><input type="checkbox" data-remind="daily"${r.daily ? ' checked' : ''}><span class="switch${r.daily ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <label class="field"><span>Reminder time</span><input class="input" type="time" id="remind-time" value="${esc(r.time)}"></label>
+<label class="toggle-row"><span><b>Weekly report</b><span>Sunday 18:00: your study time, cards and tests this week.</span></span><input type="checkbox" data-remind="weekly"${r.weekly ? ' checked' : ''}><span class="switch${r.weekly ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <label class="toggle-row"><span><b>Exam reminders</b><span>A week before, a day before and on the morning of each exam.</span></span><input type="checkbox" data-remind="exams"${r.exams ? ' checked' : ''}><span class="switch${r.exams ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <label class="toggle-row"><span><b>Task reminders</b><span>At the due time, or 9:00 on the due day.</span></span><input type="checkbox" data-remind="todos"${r.todos ? ' checked' : ''}><span class="switch${r.todos ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label></section>`;
   }
-  return `${backHead('Planner')}<div class="view narrow">${seg('ptab', tab, [['exams', 'Exams', 'calendar'], ['todo', 'To-do', 'todo'], ['goals', 'Goals', 'target']])}<div class="plan-body">${body}</div></div>`;
+  return `${backHead('Planner')}<div class="view narrow">${seg('ptab', tab, [['exams', 'Exams', 'calendar'], ['study', 'Study plan', 'route'], ['todo', 'To-do', 'todo'], ['goals', 'Goals', 'target']])}<div class="plan-body">${body}</div></div>`;
 }
 function examRow(e, t) {
   const d = daysUntil(e.date, t), cls = d < 0 ? 'past' : d <= 3 ? 'soon' : d <= 14 ? 'near' : '';
@@ -1570,6 +1659,14 @@ const recIcon = { cards: 'cards', weak: 'target', study: 'read', test: 'test', e
 function recList(list) {
   return `<ul class="rec-list">${list.map(r => `<li><button class="rec" ${recAction(r)}><span class="feature-icon f-${r.kind === 'cards' ? 'amber' : r.kind === 'weak' || r.kind === 'errors' ? 'red' : r.kind === 'test' ? 'green' : 'blue'}">${icon(recIcon[r.kind] || 'bulb', 20)}</span><span class="lr-text"><b>${esc(r.title)}</b><span>${esc(r.why)}</span></span>${icon('chevR', 20)}</button></li>`).join('')}</ul>`;
 }
+function thisWeek() { return weeklyReport({ today: today(), day: d => ({ minutes: minutesOn(d), reviews: dayRow(d).reviews || 0 }), tests: state.attempts.map(a => ymdOf(a.submittedAt)), streak: progressStats().current }); }
+const ymdOf = v => { const d = new Date(v || 0); return isNaN(d) ? '' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+function weeklyCard() {
+  const w = thisWeek(), due = dueQueue(state.cards || []).length;
+  return `<section class="card weekly"><h2 class="h2">${icon('chart', 20)}This week</h2><div class="stats3"><div class="stat"><b>${fmtMin(w.minutes)}</b><span>Study time</span></div><div class="stat"><b>${w.reviews}</b><span>Cards reviewed</span></div><div class="stat"><b>${w.tests}</b><span>Tests taken</span></div></div>
+<p class="fine">${w.activeDays} of 7 days active · streak ${plural(w.streak, 'day')}${w.change !== null ? ` · ${w.change >= 0 ? "+" : ""}${w.change}% vs last week` : ""}</p>
+${due ? `<button class="btn primary sm" data-view="cards">${icon('cards', 16)}${plural(due, 'card')} due today</button>` : ''}</section>`;
+}
 function viewProgress() {
   const s = progressStats(), t = today(), days = lastDays(14, t), mins = days.map(minutesOn);
   const labels = days.map(d => new Date(dayStart(d)).toLocaleDateString(undefined, { weekday: 'short' }));
@@ -1580,6 +1677,7 @@ function viewProgress() {
   const correct = state.days.reduce((a, d) => a + (d.correct || 0), 0), weak = weakAll().slice(0, 6), recs = recommendations(), earned = new Set(earnedBadges(s).map(b => b.id));
   return `${backHead('Progress')}<div class="view narrow progress">
 ${themeBanner(s)}
+${weeklyCard()}
 <section class="card level-card"><div class="level-top"><div class="level-badge"><span>Level</span><b>${s.lvl.level}</b></div><div class="level-text"><b>${s.xp} XP</b><span class="fine">${s.lvl.need - s.lvl.into} XP to level ${s.lvl.level + 1}</span><span class="meter"><span style="width:${pct(s.lvl.into, s.lvl.need)}%"></span></span></div>
 <div class="streak${s.today ? ' is-lit' : ''}">${icon('flame', 26)}<b>${s.current}</b><span>day streak</span></div></div>
 <p class="fine">Best streak ${plural(s.longest, 'day')}. XP: 1 per study minute, 2 per flashcard, 5 per section, and up to 20 per test.</p></section>
@@ -1687,7 +1785,7 @@ function go(view, { push = true, keep = false } = {}) {
   if (view !== 'cards') state.fc = null;
   if (view !== 'section' || state.view !== 'section') stopReading();
   if (view !== 'errors') state.retry = null;
-  Object.assign(state, { view, menu: false, showGrid: false });
+  Object.assign(state, { view, menu: false, showGrid: false, drawer: false });
   if (!keep) Object.assign(state, { error: '', notice: '' });
   if (push && location.hash !== '#' + view) location.hash = view;   // lets the Android back button step between screens
   render(); window.scrollTo(0, 0);
@@ -2076,9 +2174,9 @@ function viewSmarty() {
   let body;
   if (tab === 'chat') {
     const th = state.smartyChat || [];
-    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.webNote ? `<p class="fine web-note">${icon('info', 13)} ${esc(m.webNote)}</p>` : ''}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft" data-smact="speak:${i}" aria-label="Read aloud" title="Read aloud">${icon('listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
+    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.webNote ? `<p class="fine web-note">${icon('info', 13)} ${esc(m.webNote)}</p>` : ''}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft${state.speaking === 'sm' + i ? ' is-on' : ''}" data-smact="speak:${i}" aria-label="${state.speaking === 'sm' + i ? 'Stop reading' : 'Read aloud'}" aria-pressed="${state.speaking === 'sm' + i}" title="${state.speaking === 'sm' + i ? 'Stop' : 'Read aloud'}">${icon(state.speaking === 'sm' + i ? 'stop' : 'listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
       : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Hi, I’m Smarty</h2><p class="muted">Ask about anything. I answer from your own notes first, show where each point came from, draw diagrams and explain at your level.</p><div class="prompts">${['Explain my weakest topic simply', 'Make a 5-step revision plan', 'Draw a diagram of the main process', 'Quiz me on one key idea'].map(t => `<button class="prompt" data-smsuggest="${esc(t)}">${icon('sparkles', 16)}<span>${esc(t)}</span></button>`).join('')}</div></div>`}
-${state.freeLimit && aiAvailable() ? keyHelpHTML() : ''}${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
+${state.freeLimit && aiAvailable() ? keyHelpHTML() : ''}${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="${state.voice ? 'Listening…' : 'Ask Smarty…'}" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea>${recognitionSupported() || recordingSupported() ? `<button class="icon-btn soft sm-mic${state.voice ? ' is-on' : ''}" data-action="smMic" aria-label="${state.voice ? 'Stop listening' : 'Speak your question'}" aria-pressed="${!!state.voice}" title="${state.voice ? 'Stop' : 'Speak'}">${icon(state.voice ? 'micOff' : 'mic', 19)}</button>` : ''}<button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
   } else if (tab === 'skills') {
     body = skillsHTML();
   } else if (tab === 'practice') {
@@ -2305,6 +2403,42 @@ async function mountCodeEditor() {
 }
 
 const actions = {
+  drawerOpen() { state.drawer = true; state.drawerQ = ''; drawerJustOpened = true; loadConvs().then(() => { if (state.drawer) render(); }).catch(() => {}); render(); },
+  drawerClose() { closeDrawer(); },
+  drawerNewChat() { actions.smNew(); go('smarty'); },
+  smEvOpen() { state.smEv = { ctx: readScreen(), busy: '', result: null, draft: '' }; render(); setTimeout(() => document.getElementById('smevq')?.focus(), 30); },
+  smEvClose() { state.smEv = null; render(); },
+  async smMic() {
+    if (state.voice) { state.voice.stop(); return; }
+    if (recognitionSupported()) {
+      const h = voiceListen({ onText: (fin, interim) => { const el = document.getElementById('smartyq'); if (el) el.value = (fin + ' ' + interim).trim(); state.smartyDraft = (fin + ' ' + interim).trim(); } });
+      state.voice = h; render();
+      try { const text = await h.done; state.smartyDraft = text; } finally { state.voice = null; render(); }
+      if (state.smartyDraft.trim()) return smartySend(state.smartyDraft);
+      return;
+    }
+    if (!recordingSupported()) throw Error('Voice input is not available on this device.');
+    const h = await voiceRecord(); state.voice = h; state.notice = 'Recording… tap the microphone again to send.'; render();
+    let audio; try { audio = await h.done; } finally { state.voice = null; }
+    state.smAtt = [...(state.smAtt || []), { id: uuid(), name: 'Voice message.wav', kind: 'audio', size: audio.length, audio, note: 'Voice message from the student.' }];
+    return smartySend('Please answer my voice message (transcribe it first in one line).');
+  },
+  async studyPlanBuild() {
+    const id = document.getElementById('sp-exam')?.value, ex = state.plans.find(p => p.id === id && p.kind === 'exam');
+    if (!ex) throw Error('Add an exam with a date first (Planner › Exams).');
+    const doc = ex.documentId && docById(ex.documentId);
+    if (!doc) throw Error('Link a document to this exam so Smarty knows the topics.');
+    let topics = (doc.sections || []).filter(n => n.depth <= 1 && n.title).map(n => ({ title: n.title, nodeId: n.id }));
+    if (!topics.length) topics = (doc.sections || []).slice(0, 40).map(n => ({ title: n.title || n.ref || 'Section', nodeId: n.id }));
+    const ai = aiAvailable() ? smartyAi() : null;
+    if (ai) { try { const r = await smartyJson(ai, `An exam is on ${ex.date}. Rate how important each topic is for revision (1 = normal, 2 = important, 3 = very important). Topics: ${JSON.stringify(topics.map(t => t.title).slice(0, 80))}. Reply as JSON: {"weights":[numbers in the same order]}.`); (r?.weights || []).forEach((w, i) => { if (topics[i]) topics[i].weight = w; }); } catch { /* the plan works without weights */ } }
+    const plan = buildStudyPlan({ examId: ex.id, examTitle: ex.title, examDate: ex.date, topics, today: today(), minutesPerDay: state.goals.dailyMinutes });
+    const rec = state.plans.find(p => p.kind === 'studyplan' && p.examId === ex.id) || { id: uuid(), kind: 'studyplan', examId: ex.id, created: Date.now() };
+    Object.assign(rec, { title: 'Study plan: ' + ex.title, date: ex.date, plan }); await savePlan(rec);
+    state.plans = [...state.plans.filter(p => p.id !== rec.id), rec]; state.spSel = rec.id;
+    state.notice = `Smarty planned ${plural(plan.days.length, 'day')} until ${ex.title}.`; render();
+  },
+  async studyPlanDelete(el) { await deletePlan(el.dataset.id); state.plans = state.plans.filter(p => p.id !== el.dataset.id); render(); },
   async fetchModels() {
     state.busy = 'models'; render();
     try { state.models = await fetchModels(state.ai.url.trim() || preset().url, state.key.trim()); if (!state.models.length) state.notice = 'The server returned no models. Keep “auto”.'; }
@@ -2660,9 +2794,14 @@ async function deleteDoc(id) {
 /* =================================================================== events */
 const run = fn => { Promise.resolve().then(fn).catch(fail); };
 app.addEventListener('click', e => {
-  const b = e.target.closest('[data-action],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-devrmrole],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
+  const b = e.target.closest('[data-action],[data-drconv],[data-smev],[data-sptask],[data-spsel],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-devrmrole],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
   if (!b || b.disabled) { if (state.menu && !e.target.closest('.menu-wrap')) { state.menu = false; render(); } return; }
   const d = b.dataset;
+  if (state.drawer && !b.closest('.drawer') && !d.action) closeDrawer(false);
+  if (d.drconv) { closeDrawer(false); return run(async () => { await loadConvs(); const c = state.smConvs.find(x => x.id === d.drconv); if (c) { saveConvs(); state.smConv = c.id; state.smartyChat = c.msgs; state.smartyTab = 'chat'; } go('smarty'); }); }
+  if (d.smev) return run(() => smEvRun(d.smev));
+  if (d.sptask) return run(async () => { const rec = state.plans.find(p => p.id === d.spplan); if (!rec) return; rec.plan = toggleTask(rec.plan, d.sptask); await savePlan(rec); render(); });
+  if (d.spsel) { state.spSel = d.spsel; return render(); }
   if (d.action) return run(() => actions[d.action](b));
   if (d.review !== undefined) return startReview(d.review || null);
   if (d.reviewNode) return startReview(state.doc, d.reviewNode);
@@ -2854,6 +2993,10 @@ app.addEventListener('input', e => {
   else if (t.dataset.note !== undefined) {
     state.notes[noteKey(t.dataset.note)] = t.value; persistNotes();
     const s = document.querySelector(`[data-note-status="${CSS.escape(t.dataset.note)}"]`); if (s) s.textContent = 'Saved.';
+  } else if (t.id === 'drawerq') {
+    state.drawerQ = t.value; const pos = t.selectionStart;
+    const old = document.querySelector('.drawer'); if (old) { const tmp = document.createElement('div'); tmp.innerHTML = drawerHTML({ groups: GROUPS, convs: state.smConvs || [], current: state.view, account: account(), query: state.drawerQ, canDev: canDo('dev') }, { icon, esc }); old.replaceWith(tmp.querySelector('.drawer')); const q = document.getElementById('drawerq'); q?.focus(); try { q.setSelectionRange(pos, pos); } catch { /* search inputs */ } }
+  } else if (t.id === 'smevq') { if (state.smEv) state.smEv.draft = t.value;
   } else if (t.id === 'gsearch' || t.id === 'lsearch') {
     state.search = t.value;
     clearTimeout(searchTimer);
@@ -2872,6 +3015,9 @@ let searchTimer;
 app.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey && (e.target.id === 'askq' || e.target.id === 'chatq' || e.target.id === 'smartyq')) { e.preventDefault(); return run(() => actions[e.target.id === 'askq' ? 'askSend' : e.target.id === 'smartyq' ? 'smartySend' : 'chatSend']()); }
   if (e.key === 'Escape' && state.showGrid) { state.showGrid = false; return render(); }
+  if (e.key === 'Escape' && state.drawer) { e.preventDefault(); return closeDrawer(); }
+  if (e.key === 'Escape' && state.smEv) { state.smEv = null; return render(); }
+  if (e.key === 'Tab' && state.drawer) { const f = [...document.querySelectorAll('.drawer button, .drawer input')].filter(x => !x.disabled); if (f.length) { const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } } }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('g[data-node], g[data-toggle]')) {
     e.preventDefault();
     const id = e.target.dataset.toggle || e.target.dataset.node, attr = e.target.dataset.toggle ? 'data-toggle' : 'data-node';
@@ -2914,7 +3060,7 @@ try {
 
 // Android back button: step back through screens, and leave the app from the first one.
 if (isNative() && platform() === 'android') {
-  import('@capacitor/app').then(({ App }) => App.addListener('backButton', ({ canGoBack }) => { if (state.showGrid) { state.showGrid = false; return render(); } if (state.fc) { state.fc = null; return render(); } if (canGoBack) history.back(); else App.exitApp(); })).catch(() => {});
+  import('@capacitor/app').then(({ App }) => App.addListener('backButton', ({ canGoBack }) => { if (state.drawer) return closeDrawer(); if (state.smEv) { state.smEv = null; return render(); } if (state.showGrid) { state.showGrid = false; return render(); } if (state.fc) { state.fc = null; return render(); } if (canGoBack) history.back(); else App.exitApp(); })).catch(() => {});
 }
 
 /* =================================================================== boot */
@@ -2972,6 +3118,7 @@ const ownerPack = ownerPackController({
 });
 let booted = false;
 async function syncOwnerPack(opts) { const a = account(); const r = await ownerPack.sync(a?.email || '', opts).catch(e => ({ ok: false, error: e.message })); state.packStatus = ownerPack.status(); render(); return r; }
+setIdTokenSource(getIdToken);
 const ownerReady = account() ? (startAutoSync(), refreshOwner().catch(() => {})) : Promise.resolve();
 onSyncStatus(st => { if (st.changed) reloadAll().catch(() => {}); else if (state.view === 'settings' && !state.busy) render(); });
 setInterval(updateTimer, 1000);

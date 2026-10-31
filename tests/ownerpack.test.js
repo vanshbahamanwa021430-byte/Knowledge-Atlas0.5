@@ -17,7 +17,7 @@ test('encrypt/decrypt round-trip, wrong passphrase and tampering are rejected', 
   const bad = { ...env, data: env.data.slice(0, -8) + 'AAAAAAAA' };
   await assert.rejects(decryptPack(bad, PASS), /Wrong|damaged/);
   await assert.rejects(decryptPack({ format: 'x' }, PASS), /not a Prvlar owner pack/);
-  await assert.rejects(encryptPack(PACK, 'short'), /at least 8/);
+  await assert.rejects(encryptPack(PACK, 'short'), /at least 12/);
 });
 
 test('the module loads from source', async () => {

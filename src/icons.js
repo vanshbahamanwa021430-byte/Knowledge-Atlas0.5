@@ -7,11 +7,11 @@ import {
   RotateCcw, Plug, Server, Key, Target, Workflow, MonitorSmartphone, HardDrive, Clock, Check, Map as MapIcon, Lock, Pencil,
   GraduationCap, Flame, Phone, Heart, Layers, CalendarDays, ListTodo, Volume2, VolumeX, Play, Pause, Square, Bell, BellOff,
   Award, TrendingUp, Type, Zap, CircleX, Headphones, SkipForward, Coffee, RefreshCw, Hourglass, Code, Bug, SquareTerminal, FlaskConical, Cloud, CloudOff, LogIn, LogOut, User, ShieldCheck
-  , BotMessageSquare
+  , BotMessageSquare, Menu, Mic, MicOff, Route
 } from 'lucide';
 
 const NODES = {
-  home: House, library: Library, study: BookOpen, read: BookOpenText, test: ClipboardCheck, more: LayoutGrid, brain: BrainCircuit, smarty: BotMessageSquare,
+  menu: Menu, mic: Mic, micOff: MicOff, route: Route, home: House, library: Library, study: BookOpen, read: BookOpenText, test: ClipboardCheck, more: LayoutGrid, brain: BrainCircuit, smarty: BotMessageSquare,
   sparkles: Sparkles, bulb: Lightbulb, chat: MessageCircle, send: Send, share: Share, upload: Upload, download: Download,
   moon: Moon, sun: Sun, monitor: Monitor, search: Search, plus: Plus, dots: Ellipsis, dotsV: EllipsisVertical, focus: Crosshair,
   network: Network, x: X, eye: Eye, eyeOff: EyeOff, checkCircle: CircleCheck, circle: Circle, bookmark: Bookmark,
