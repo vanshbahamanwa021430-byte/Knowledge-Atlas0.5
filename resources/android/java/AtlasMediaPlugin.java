@@ -43,7 +43,7 @@ public class AtlasMediaPlugin extends Plugin {
             if (keep) {
                 if (lock == null) {
                     PowerManager pm = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
-                    lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "KnowledgeAtlas:focusAudio");
+                    lock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Prvlar:focusAudio");
                     lock.setReferenceCounted(false);
                 }
                 lock.acquire(4 * 60 * 60 * 1000L);
@@ -64,7 +64,7 @@ public class AtlasMediaPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             Dialog d = new Dialog(getActivity(), android.R.style.Theme_DeviceDefault_Light_NoActionBar);
             LinearLayout box = new LinearLayout(getActivity()); box.setOrientation(LinearLayout.VERTICAL);
-            Button done = new Button(getActivity()); done.setText("Done — back to Knowledge Atlas");
+            Button done = new Button(getActivity()); done.setText("Done — back to Prvlar");
             WebView w = new WebView(getActivity());
             WebSettings s = w.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true);
             CookieManager.getInstance().setAcceptThirdPartyCookies(w, true);

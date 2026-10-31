@@ -1,6 +1,6 @@
 // "Report a problem" + automatic error reports. No server of ours: reports POST to the owner's Google Apps Script
 // (responses land in the owner's Google Sheet); copy/share and GitHub/email links are fallbacks. Pure helpers are tested.
-const KEYISH = /\b(AIza[\w-]{20,}|gsk_[\w-]{20,}|sk-[\w-]{20,}|ya29\.[\w.-]+|eyJ[\w-]+\.[\w-]+\.[\w-]+)\b/g;
+const KEYISH = /\b(AIza[\w-]{20,}|gsk_[\w-]{20,}|sk-[\w-]{20,}|ya29\.[\w.-]+|1\/\/[\w-]{20,}|GOCSPX-[\w-]{10,}|eyJ[\w-]+\.[\w-]+\.[\w-]+)\b/g;
 const EMAIL = /[\w.+-]+@[\w-]+\.[\w.]+/g, LONGNUM = /\b\d{9,}\b/g;
 export const scrub = s => String(s ?? '').replace(KEYISH, '[key]').replace(EMAIL, '[email]').replace(LONGNUM, '[number]').replace(/(token|key|password|secret)=([^&\s]+)/gi, '$1=[hidden]');
 export function buildReport({ text = '', kind = 'user', error = null, diag = null, contact = '' } = {}) {

@@ -29,7 +29,7 @@ test('WhatsApp button keeps white text readable', () => {
   assert.ok(ratio('#ffffff', bg) >= 4.5);
 });
 test('paper rows cannot overflow the card', () => { assert.match(css, /\.paper-list li\s*\{\s*min-width:\s*0/); });
-test('desktop sidebar selected item uses --blue-ink in dark, aesthetic and vintage', () => { assert.match(css, /\[data-theme="dark"\], \[data-theme="aesthetic"\], \[data-theme="vintage"\]\) \.side-link\.is-on \{ color: var\(--blue-ink\)/); });
+test('desktop sidebar selected item uses --blue-ink in dark, aesthetic and vintage', () => { assert.match(css, /:root\[data-theme="dark"\] \.side-link\.is-on, :root\[data-theme="aesthetic"\] \.side-link\.is-on, :root\[data-theme="vintage"\] \.side-link\.is-on \{ color: var\(--blue-ink\); \}/); });
 test('University subject list rows keep their height inside the scrolling list', () => { assert.match(css, /\.sub-list \{ grid-auto-rows: max-content/); });
 test('glass: body stays transparent so the fixed background layer shows on every screen; no opaque violet leftovers', () => {
   assert.match(css, /:root\[data-theme="glass"\] body \{ background: transparent; \}/);

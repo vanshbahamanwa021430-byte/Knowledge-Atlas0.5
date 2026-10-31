@@ -1,7 +1,7 @@
 /* Prvlar — bright study theme.
    Royal-blue actions, a blue-to-violet call to action, white rounded cards on a soft glowing background,
    blue chapters and green sections on the map. Light and dark (navy) themes.
-   Works back to 2019-era Android WebView / iOS 14 Safari: no :has(), :is(), color-mix(), inset or aspect-ratio. */
+   Works back to 2019-era Android WebView / iOS 14 Safari: no :has(), the is() selector, color-mix(), inset or aspect-ratio. */
 
 :root {
   --bg: #F4F7FC; --surface: #FFFFFF; --surface-2: #F1F4FA; --surface-3: #E6EBF4; --chip: #E8EDF6; --glass: rgba(246, 249, 254, .86);
@@ -1327,17 +1327,17 @@ button.option:disabled { opacity: 1; cursor: default; }
 }
 :root[data-theme="oldmoney"] body { background: #0F2340; color: var(--ink); }
 :root[data-theme="oldmoney"] .om-only { display: flex; }
-:root[data-theme="oldmoney"] :is(h1, h2, .title, .greet h1, .ph-title, .h2, .section-h, .section-title, .hero-title, .card h2, .wordmark, .fr-text b, .level-text b, .fc-card) { font-family: var(--serif); font-weight: 600; letter-spacing: .005em; }
+:root[data-theme="oldmoney"] h1, :root[data-theme="oldmoney"] h2, :root[data-theme="oldmoney"] .title, :root[data-theme="oldmoney"] .greet h1, :root[data-theme="oldmoney"] .ph-title, :root[data-theme="oldmoney"] .h2, :root[data-theme="oldmoney"] .section-h, :root[data-theme="oldmoney"] .section-title, :root[data-theme="oldmoney"] .hero-title, :root[data-theme="oldmoney"] .card h2, :root[data-theme="oldmoney"] .wordmark, :root[data-theme="oldmoney"] .fr-text b, :root[data-theme="oldmoney"] .level-text b, :root[data-theme="oldmoney"] .fc-card { font-family: var(--serif); font-weight: 600; letter-spacing: .005em; }
 :root[data-theme="oldmoney"] .greet h1 { font-size: 32px; font-weight: 500; }
 :root[data-theme="oldmoney"] .greet p { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; color: var(--ink-2); }
-:root[data-theme="oldmoney"] :is(.eyebrow, .eyebrow-free, .h3, .fine.caps, .stat span, .theme-opt span, .tabbar span, .label) { letter-spacing: .12em; text-transform: uppercase; font-size: 10.5px; }
+:root[data-theme="oldmoney"] .eyebrow, :root[data-theme="oldmoney"] .eyebrow-free, :root[data-theme="oldmoney"] .h3, :root[data-theme="oldmoney"] .fine.caps, :root[data-theme="oldmoney"] .stat span, :root[data-theme="oldmoney"] .theme-opt span, :root[data-theme="oldmoney"] .tabbar span, :root[data-theme="oldmoney"] .label { letter-spacing: .12em; text-transform: uppercase; font-size: 10.5px; }
 :root[data-theme="oldmoney"] .wordmark { letter-spacing: .14em; text-transform: uppercase; font-size: 14px; color: var(--ink); }
 :root[data-theme="oldmoney"] .brand-mark { display: none; }
 :root[data-theme="oldmoney"] .brand::before { content: 'P'; display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--gold); outline: 1px solid var(--gold-line); outline-offset: 3px; border-radius: 50%; font-family: var(--serif); font-size: 14px; letter-spacing: .06em; color: var(--gold); margin: 0 6px 0 4px; }
-:root[data-theme="oldmoney"] :is(.card, .stat, .doc-card, .features, .badge, .rec, .result-row, .deck, .theme-opt, .ftile, .fc-card, .level-card, .today-card) { background: var(--surface); border: 1px solid var(--gold-line); border-radius: 12px; box-shadow: none; }
+:root[data-theme="oldmoney"] .card, :root[data-theme="oldmoney"] .stat, :root[data-theme="oldmoney"] .doc-card, :root[data-theme="oldmoney"] .features, :root[data-theme="oldmoney"] .badge, :root[data-theme="oldmoney"] .rec, :root[data-theme="oldmoney"] .result-row, :root[data-theme="oldmoney"] .deck, :root[data-theme="oldmoney"] .theme-opt, :root[data-theme="oldmoney"] .ftile, :root[data-theme="oldmoney"] .fc-card, :root[data-theme="oldmoney"] .level-card, :root[data-theme="oldmoney"] .today-card { background: var(--surface); border: 1px solid var(--gold-line); border-radius: 12px; box-shadow: none; }
 :root[data-theme="oldmoney"] .theme-opt.is-on { border-color: var(--gold); outline: 1px solid var(--gold); outline-offset: 2px; }
 :root[data-theme="oldmoney"] .btn { border-radius: 4px; box-shadow: none; letter-spacing: .1em; text-transform: uppercase; font-size: 12.5px; font-weight: 600; }
-:root[data-theme="oldmoney"] :is(.btn.primary, .seg-btn.is-on, .focus-pill) { background: #F1EAD8; color: #0B1A33; border-color: #F1EAD8; box-shadow: none; }
+:root[data-theme="oldmoney"] .btn.primary, :root[data-theme="oldmoney"] .seg-btn.is-on, :root[data-theme="oldmoney"] .focus-pill { background: #F1EAD8; color: #0B1A33; border-color: #F1EAD8; box-shadow: none; }
 :root[data-theme="oldmoney"] .btn.outline, :root[data-theme="oldmoney"] .btn.soft { background: transparent; border: 1px solid var(--gold); color: var(--gold); }
 :root[data-theme="oldmoney"] .seg { background: transparent; border: 1px solid var(--gold-line); border-radius: 6px; }
 :root[data-theme="oldmoney"] .seg-btn { border-radius: 4px; }
@@ -1391,21 +1391,21 @@ button.option:disabled { opacity: 1; cursor: default; }
 }
 :root[data-theme="vintage"] body { background: var(--paper), #EADCC0; color: var(--ink); }
 :root[data-theme="vintage"] .vt-only { display: flex; }
-:root[data-theme="vintage"] :is(h1, h2, .title, .greet h1, .ph-title, .h2, .section-h, .section-title, .hero-title, .card h2, .wordmark, .fr-text b, .level-text b) { font-family: var(--serif); font-weight: 700; letter-spacing: 0; color: var(--ink); }
+:root[data-theme="vintage"] h1, :root[data-theme="vintage"] h2, :root[data-theme="vintage"] .title, :root[data-theme="vintage"] .greet h1, :root[data-theme="vintage"] .ph-title, :root[data-theme="vintage"] .h2, :root[data-theme="vintage"] .section-h, :root[data-theme="vintage"] .section-title, :root[data-theme="vintage"] .hero-title, :root[data-theme="vintage"] .card h2, :root[data-theme="vintage"] .wordmark, :root[data-theme="vintage"] .fr-text b, :root[data-theme="vintage"] .level-text b { font-family: var(--serif); font-weight: 700; letter-spacing: 0; color: var(--ink); }
 :root[data-theme="vintage"] .greet h1 { font-family: var(--script); font-size: 38px; color: #8E2F36; }
-:root[data-theme="vintage"] .greet p, :root[data-theme="vintage"] :is(.eyebrow, .eyebrow-free, .h3, .stat span, .theme-opt span, .tabbar span, .fine, .label, .cl-cal-d) { font-family: var(--type); letter-spacing: .04em; }
-:root[data-theme="vintage"] :is(.eyebrow, .eyebrow-free, .h3) { text-transform: uppercase; color: #8A4B32; }
+:root[data-theme="vintage"] .greet p, :root[data-theme="vintage"] .eyebrow, :root[data-theme="vintage"] .eyebrow-free, :root[data-theme="vintage"] .h3, :root[data-theme="vintage"] .stat span, :root[data-theme="vintage"] .theme-opt span, :root[data-theme="vintage"] .tabbar span, :root[data-theme="vintage"] .fine, :root[data-theme="vintage"] .label, :root[data-theme="vintage"] .cl-cal-d { font-family: var(--type); letter-spacing: .04em; }
+:root[data-theme="vintage"] .eyebrow, :root[data-theme="vintage"] .eyebrow-free, :root[data-theme="vintage"] .h3 { text-transform: uppercase; color: #8A4B32; }
 :root[data-theme="vintage"] .wordmark { font-family: var(--stamp); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; font-size: 15px; }
 :root[data-theme="vintage"] .brand-mark { display: none; }
 :root[data-theme="vintage"] .brand::before { content: 'P'; display: inline-grid; place-items: center; width: 38px; height: 38px; margin: 0 6px 0 2px; border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%; background: radial-gradient(circle at 35% 30%, #B4474F, #7A2229 70%); box-shadow: inset 0 0 0 4px rgba(0, 0, 0, .12), 0 2px 3px rgba(70, 20, 20, .35); color: #F2D7C8; font: italic 700 14px var(--serif); transform: rotate(-8deg); }
 /* die-cut sticker cards */
-:root[data-theme="vintage"] :is(.card, .doc-card, .features, .rec, .result-row, .deck, .theme-opt, .ftile, .fc-card, .level-card, .today-card) { background: var(--surface); border: 0; border-radius: 12px; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 5px rgba(120, 90, 60, .18), 0 8px 14px -8px rgba(70, 45, 20, .5); }
+:root[data-theme="vintage"] .card, :root[data-theme="vintage"] .doc-card, :root[data-theme="vintage"] .features, :root[data-theme="vintage"] .rec, :root[data-theme="vintage"] .result-row, :root[data-theme="vintage"] .deck, :root[data-theme="vintage"] .theme-opt, :root[data-theme="vintage"] .ftile, :root[data-theme="vintage"] .fc-card, :root[data-theme="vintage"] .level-card, :root[data-theme="vintage"] .today-card { background: var(--surface); border: 0; border-radius: 12px; box-shadow: 0 0 0 4px #FFFFFF, 0 0 0 5px rgba(120, 90, 60, .18), 0 8px 14px -8px rgba(70, 45, 20, .5); }
 :root[data-theme="vintage"] .card h2, :root[data-theme="vintage"] .section-h, :root[data-theme="vintage"] .h2 { position: relative; display: inline-block; padding: 1px 10px; background: linear-gradient(90deg, transparent 0 4px, rgba(214, 160, 150, .55) 4px calc(100% - 4px), transparent 0), repeating-linear-gradient(90deg, rgba(255, 255, 255, .25) 0 6px, transparent 6px 12px); transform: rotate(-1deg); }
 /* postage-stamp stats and badges */
-:root[data-theme="vintage"] :is(.stat, .badge) { background: #FFFDF6; border-radius: 2px; border: 0; box-shadow: none; outline: 2px dashed #C8B48E; outline-offset: -6px; -webkit-mask: radial-gradient(circle 4px, transparent 97%, #000) -5px -5px / 10px 10px, linear-gradient(#000 0 0) center / calc(100% - 10px) calc(100% - 10px) no-repeat; mask: radial-gradient(circle 4px, transparent 97%, #000) -5px -5px / 10px 10px, linear-gradient(#000 0 0) center / calc(100% - 10px) calc(100% - 10px) no-repeat; filter: drop-shadow(0 2px 2px rgba(70, 45, 20, .3)); }
+:root[data-theme="vintage"] .stat, :root[data-theme="vintage"] .badge { background: #FFFDF6; border-radius: 2px; border: 0; box-shadow: none; outline: 2px dashed #C8B48E; outline-offset: -6px; -webkit-mask: radial-gradient(circle 4px, transparent 97%, #000) -5px -5px / 10px 10px, linear-gradient(#000 0 0) center / calc(100% - 10px) calc(100% - 10px) no-repeat; mask: radial-gradient(circle 4px, transparent 97%, #000) -5px -5px / 10px 10px, linear-gradient(#000 0 0) center / calc(100% - 10px) calc(100% - 10px) no-repeat; filter: drop-shadow(0 2px 2px rgba(70, 45, 20, .3)); }
 :root[data-theme="vintage"] .stat b { font-family: var(--serif); color: #8A3A24; }
 :root[data-theme="vintage"] .btn { border-radius: 6px; font-family: var(--stamp); font-weight: 400; letter-spacing: .05em; }
-:root[data-theme="vintage"] :is(.btn.primary, .seg-btn.is-on, .focus-pill) { background: #B5553A; color: #FFFDF6; border-color: #B5553A; box-shadow: 0 2px 0 #7E3A26; }
+:root[data-theme="vintage"] .btn.primary, :root[data-theme="vintage"] .seg-btn.is-on, :root[data-theme="vintage"] .focus-pill { background: #B5553A; color: #FFFDF6; border-color: #B5553A; box-shadow: 0 2px 0 #7E3A26; }
 :root[data-theme="vintage"] .btn.outline, :root[data-theme="vintage"] .btn.soft { background: #FFFDF6; border: 1.5px dashed #8A4B32; color: #6E2C1A; box-shadow: none; }
 :root[data-theme="vintage"] .seg { background: #F1E5CC; border-radius: 8px; }
 :root[data-theme="vintage"] .icon-btn.round, :root[data-theme="vintage"] .ph .icon-btn { background: #FFFDF6; border-radius: 50%; box-shadow: 0 0 0 3px #fff, var(--shadow-sm); color: var(--ink); }
@@ -1490,15 +1490,15 @@ button.option:disabled { opacity: 1; cursor: default; }
 :root[data-theme="aesthetic"] { --ink-3: #756A8A; }
 :root[data-theme="anime"] { --ink-3: #685D82; }
 /* Links, outline buttons and role labels used --blue, which is too light/dark for text in some themes. */
-:root[data-theme="dark"] :is(.btn.outline, .link-btn, .eyebrow-free, .dev-role, .team-role, .file-btn.btn.outline) { color: #B3A2FF; }
-:root[data-theme="aesthetic"] :is(.btn.outline, .link-btn, .eyebrow-free, .dev-role, .team-role, .count, .file-btn.btn.outline) { color: #6646C4; }
+:root[data-theme="dark"] .btn.outline, :root[data-theme="dark"] .link-btn, :root[data-theme="dark"] .eyebrow-free, :root[data-theme="dark"] .dev-role, :root[data-theme="dark"] .team-role, :root[data-theme="dark"] .file-btn.btn.outline { color: #B3A2FF; }
+:root[data-theme="aesthetic"] .btn.outline, :root[data-theme="aesthetic"] .link-btn, :root[data-theme="aesthetic"] .eyebrow-free, :root[data-theme="aesthetic"] .dev-role, :root[data-theme="aesthetic"] .team-role, :root[data-theme="aesthetic"] .count, :root[data-theme="aesthetic"] .file-btn.btn.outline { color: #6646C4; }
 :root[data-theme="aesthetic"] .detected, :root[data-theme="anime"] .detected, :root[data-theme="light"] .detected { color: #15803D; }
 :root[data-theme="dark"] .chip.warn, :root[data-theme="oldmoney"] .chip.warn { background: rgba(251, 146, 60, .16); color: #FDBA74; }
 /* Planner chips: --card is not defined, so the fallback white background showed white text in dark themes. */
 .chip-btn { background: var(--surface); color: var(--ink); }
 /* Hero and level badge on light CTA colours need dark text. */
 :root[data-theme="dark"] .btn-hero { color: #0B0B10; }
-:root[data-theme="oldmoney"] :is(.btn-hero, .level-badge) { color: #0B1A33; }
+:root[data-theme="oldmoney"] .btn-hero, :root[data-theme="oldmoney"] .level-badge { color: #0B1A33; }
 /* WhatsApp green with white text was 2:1. */
 .wa-btn, .wa-btn:hover { background: #0B7A3B; border-color: #0B7A3B; }
 :root[data-theme="vintage"] { --ink-3: #6B563F; }
@@ -1507,7 +1507,7 @@ button.option:disabled { opacity: 1; cursor: default; }
 .paper-list { grid-template-columns: minmax(0, 1fr); }
 .paper-list li { min-width: 0; }
 /* Desktop sidebar: the selected item used --blue on --blue-wash (3.3–4.2:1); --blue-ink reads clearly. */
-:root:is([data-theme="dark"], [data-theme="aesthetic"], [data-theme="vintage"]) .side-link.is-on { color: var(--blue-ink); }
+:root[data-theme="dark"] .side-link.is-on, :root[data-theme="aesthetic"] .side-link.is-on, :root[data-theme="vintage"] .side-link.is-on { color: var(--blue-ink); }
 /* University subject list scrolls inside a max-height; grid rows were shrinking so long subject names spilled over the next row. */
 .sub-list { grid-auto-rows: max-content; margin-bottom: 12px; }
 /* ---------- 0.9.3 My program (owner pack) ---------- */
@@ -1814,7 +1814,7 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 :root[data-theme="royal-ivory"] .btn.outline, :root[data-theme="royal-ivory"] .btn.soft { color: #5A1418; border-color: #C9A24D; }
 :root[data-theme="royal"] .seg, :root[data-theme="royal-ivory"] .seg { background: transparent; border: 1px solid var(--gold-line); }
 :root[data-theme="royal"] .icon-btn.round, :root[data-theme="royal-ivory"] .icon-btn.round, :root[data-theme="royal"] .ph .icon-btn, :root[data-theme="royal-ivory"] .ph .icon-btn { background: transparent; border: 1px solid var(--gold-line); color: var(--ink); box-shadow: none; }
-:root[data-theme="royal"] .meter, :root[data-theme="royal-ivory"] .meter { background: color-mix(in srgb, var(--gold-2) 18%, transparent); }
+:root[data-theme="royal"] .meter, :root[data-theme="royal-ivory"] .meter { background: rgba(201, 162, 77, .18); }
 :root[data-theme="royal"] .meter > span, :root[data-theme="royal-ivory"] .meter > span { background: var(--gold-grad); }
 :root[data-theme="royal"] .tabbar { background: #2E0A0F; border-top: 1px solid var(--gold-line); box-shadow: 0 -6px 18px rgba(0, 0, 0, .25); -webkit-backdrop-filter: none; backdrop-filter: none; }
 :root[data-theme="royal-ivory"] .tabbar { background: #FBF4E4; border-top: 1px solid var(--gold-line); -webkit-backdrop-filter: none; backdrop-filter: none; }

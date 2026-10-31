@@ -79,12 +79,36 @@ const MIGRATED = 'prvlar-db-migrated';
 db.on('ready', async () => {
   const ls = globalThis.localStorage;
   try { if (!ls || ls.getItem(MIGRATED)) return; if (!(await Dexie.exists(LEGACY_DB_NAME))) { ls.setItem(MIGRATED, '1'); return; }
+    // Read the old database first, then copy in ONE transaction that only adds rows Prvlar does not have yet, so a
+    // retry after a failure can never overwrite anything edited in Prvlar since (0.9.8 review M2).
     const old = new Dexie(LEGACY_DB_NAME); await old.open();
-    let n = 0;
-    for (const t of old.tables) { if (!db.tables.some(x => x.name === t.name)) continue; const rows = await t.toArray(); if (rows.length) { await db.table(t.name).bulkPut(rows); n += rows.length; } }
-    old.close(); ls.setItem(MIGRATED, JSON.stringify({ rows: n, at: Date.now() }));
-  } catch (e) { console.warn('Could not copy data from the old Knowledge Atlas database', e); }
+    const data = [];
+    try { for (const t of old.tables) if (db.tables.some(x => x.name === t.name)) data.push([t.name, await t.toArray()]); } finally { old.close(); }
+    const n = await copyMissing(db, data);
+    ls.setItem(MIGRATED, JSON.stringify({ rows: n, at: Date.now() })); ls.removeItem(MIGRATE_FAILS);
+  } catch (e) {
+    console.warn('Could not copy data from the old Knowledge Atlas database', e);
+    try { const f = Number(ls.getItem(MIGRATE_FAILS) || 0) + 1; ls.setItem(MIGRATE_FAILS, String(f)); if (f >= 3) ls.setItem(MIGRATED, JSON.stringify({ failed: true, error: String(e?.message || e).slice(0, 200), at: Date.now() })); } catch { /* storage full */ }
+  }
 });
+const MIGRATE_FAILS = 'prvlar-db-migrate-fails';
+// Adds the rows whose primary key is missing in `target`, all tables in one read-write transaction (all or nothing).
+export async function copyMissing(target, data) {
+  const names = data.filter(([, rows]) => rows.length).map(([t]) => t);
+  if (!names.length) return 0;
+  let n = 0;
+  await target.transaction('rw', names.map(t => target.table(t)), async () => {
+    for (const [name, rows] of data) {
+      if (!rows.length) continue;
+      const tbl = target.table(name), pk = tbl.schema.primKey.keyPath;
+      const keys = rows.map(r => Array.isArray(pk) ? pk.map(k => r[k]) : r[pk]);
+      const have = await tbl.bulkGet(keys);
+      const add = rows.filter((_, i) => have[i] === undefined);
+      if (add.length) { await tbl.bulkAdd(add); n += add.length; }
+    }
+  });
+  return n;
+}
 export async function requestPersistence() { try { return await navigator.storage?.persist?.(); } catch { return false; } }
 
 export async function saveDocument(doc) { await db.documents.put(doc); }
