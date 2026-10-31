@@ -335,6 +335,7 @@ let noticeTimer = null, noticeShown = '';
 // Inner scrolling areas keep their place when the screen is redrawn; conversations stay scrolled to the newest message.
 const SCROLLERS = ['#chartwrap', '.thread', '.section-side .ask'];
 function render() {
+  if (state.error && isFreeLimit(state.error)) { state.freeLimit = true; state.error = ''; state.notice = 'You’ve used today’s free Prvlar AI messages. Add your own free Gemini key (takes a minute) to keep going, or come back tomorrow.'; }
   const t0 = performance.now();
   const before = SCROLLERS.map(sel => { const el = document.querySelector(sel); return el ? { top: el.scrollTop, left: el.scrollLeft, end: el.scrollHeight - el.scrollTop - el.clientHeight < 40 } : null; });
   app.innerHTML = shellHTML() + onboardingHTML() + timeUpHTML();
@@ -1679,7 +1680,7 @@ function refreshProgress() {
 }
 
 /* =================================================================== actions */
-function fail(e) { state.busy = ''; state.error = e?.message || String(e); render(); }
+function fail(e) { state.busy = ''; if (isFreeLimit(e)) { toast(e?.message || String(e)); return; } state.error = e?.message || String(e); render(); }   // free-limit → friendly key card
 function go(view, { push = true, keep = false } = {}) {
   if (!VIEWS.includes(view)) return;
   if (view !== 'test') state.review = null;
@@ -2060,7 +2061,7 @@ window.addEventListener('error', e => autoReport(e.error || e.message));
 window.addEventListener('unhandledrejection', e => autoReport(e.reason));
 // No AI yet: recommend the free Gemini key (Groq as a second option). Shown in Smarty and in Settings › AI providers.
 function keyHelpHTML() {
-  if (aiAvailable()) return '';
+  if (aiAvailable() && !state.freeLimit) return '';   // also shown when the free Prvlar AI limit is reached
   const r = state.khRes;
   return `<section class="card key-help" aria-labelledby="kh-h"><h2 class="h3" id="kh-h">${icon('sparkles', 20)}Get a free AI key</h2><p class="fine">Smarty needs an AI key. Google Gemini’s is free and takes about a minute.</p>
 <a class="btn primary block" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">${icon('share', 18)}Get free Gemini key</a>

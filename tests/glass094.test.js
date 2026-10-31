@@ -12,7 +12,7 @@ const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
 
 test('0.9.4 glass: photo keeps a dark tint layer and text tokens are bright', () => {
   assert.match(css, /data-theme="glass"\] body::before \{\s*background:\s*linear-gradient\(180deg,\s*rgba\(5,\s*20,\s*14,\s*\.6\)/);
-  assert.match(css, /var\(--glass-photo, linear-gradient/);   // the photo itself now comes from the owner pack or the user
+  assert.match(css, /var\(--glass-photo, var\(--glass-fallback, linear-gradient/);   // the photo itself now comes from the owner pack or the user
   assert.ok(!css.slice(css.indexOf('/* 0.9.4 Glass')).includes(':is('), 'no :is() for old WebViews');
   for (const ink of ['F4FAF6', 'EEF6F1', 'E3EFE8']) assert.ok(ratio(ink, '2E4639') >= 4.5, ink); // vs the photo's darkened mid-tone
   assert.ok(ratio('FFE8D6', '7C2D12') >= 4.5); assert.ok(ratio('D1FAE5', '064E3B') >= 4.5); assert.ok(ratio('0B1F17', 'E6F6EC') >= 4.5);

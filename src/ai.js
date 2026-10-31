@@ -165,8 +165,9 @@ async function callModel(ai, system, user, images = []) {
     // Requests with pictures go to a vision-capable provider first (Gemini, or a server marked "vision").
     const sees = c => typeof c === 'string' ? c.trim().startsWith('AIza') : !!(c?.server?.vision || String(c?.key || '').startsWith('AIza'));
     const order = images.length ? [...ai.chain.filter(sees), ...ai.chain.filter(c => !sees(c))] : ai.chain;
-    for (const c of order) { try { return await callModel(c, system, user, images); } catch (e) { last = e; if (!shouldFallback(e)) throw e; } }
-    throw last;
+    let limit;   // the free Prvlar limit wins over later errors, so the friendly 'add your own key' card shows
+    for (const c of order) { try { return await callModel(c, system, user, images); } catch (e) { last = e; if (isFreeLimit(e)) limit ??= e; if (!shouldFallback(e)) throw e; } }
+    throw limit || last;
   }
   const p = resolveAI(ai);
   const post = p.gas ? (e, h, pl, t) => gasPost(e, p.key, pl, t) : postJson;

@@ -1449,7 +1449,7 @@ button.option:disabled { opacity: 1; cursor: default; }
 }
 :root[data-theme="glass"] body::before {
   background: linear-gradient(180deg, rgba(10, 30, 22, .42) 0%, rgba(10, 30, 22, .22) 38%, rgba(10, 30, 22, .5) 100%),
-    var(--glass-photo, linear-gradient(160deg, #7d9c86, #3f5d4b 55%, #2a3f33)) center / cover no-repeat, #5E7A68;
+    var(--glass-photo, var(--glass-fallback, linear-gradient(160deg, #7d9c86, #3f5d4b 55%, #2a3f33))) center / cover no-repeat, #5E7A68;
 }
 :root[data-theme="glass"] .card, :root[data-theme="glass"] .stat, :root[data-theme="glass"] .doc-card, :root[data-theme="glass"] .rec,
 :root[data-theme="glass"] .toggle-row, :root[data-theme="glass"] .hero.is-compact, :root[data-theme="glass"] .th-profile {
@@ -1535,17 +1535,17 @@ button.option:disabled { opacity: 1; cursor: default; }
    The old violet glass values (--glass, --bg, sheet/menu colours and the no-backdrop-filter fallback) are replaced. */
 :root[data-theme="glass"] { --bg: #3E5A4A; --glass: rgba(16, 40, 31, .42); --dock-bg: rgba(16, 40, 31, .42); }
 :root[data-theme="glass"] body { background: transparent; }   /* a body background would paint over the fixed photo layer */
-:root[data-theme="glass"] :is(.sidebar, .topbar, .tabbar) {
+:root[data-theme="glass"] .sidebar, :root[data-theme="glass"] .topbar, :root[data-theme="glass"] .tabbar {
   background: var(--glass); -webkit-backdrop-filter: blur(20px) saturate(1.3); backdrop-filter: blur(20px) saturate(1.3);
 }
-:root[data-theme="glass"] :is(.sheet, .menu, .toast, .update-sheet) {
+:root[data-theme="glass"] .sheet, :root[data-theme="glass"] .menu, :root[data-theme="glass"] .toast, :root[data-theme="glass"] .update-sheet {
   background: rgba(16, 40, 31, .66); -webkit-backdrop-filter: blur(24px) saturate(1.3); backdrop-filter: blur(24px) saturate(1.3); border: 1px solid rgba(255, 255, 255, .32);
 }
-:root[data-theme="glass"] :is(.view, .app, main, .main, .fc-session, .focus-wrap, .exam) { background-color: transparent; }
+:root[data-theme="glass"] .view, :root[data-theme="glass"] .app, :root[data-theme="glass"] main, :root[data-theme="glass"] .main, :root[data-theme="glass"] .fc-session, :root[data-theme="glass"] .focus-wrap, :root[data-theme="glass"] .exam { background-color: transparent; }
 /* Phones whose WebView has no backdrop-filter: tinted glass that is still see-through, not an opaque panel. */
 @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
   :root[data-theme="glass"] { --surface: rgba(16, 40, 31, .68); --surface-2: rgba(26, 56, 44, .7); --chip: rgba(36, 70, 56, .72); --glass: rgba(16, 40, 31, .74); }
-  :root[data-theme="glass"] :is(.sheet, .menu, .toast, .update-sheet) { background: rgba(16, 40, 31, .84); }
+  :root[data-theme="glass"] .sheet, :root[data-theme="glass"] .menu, :root[data-theme="glass"] .toast, :root[data-theme="glass"] .update-sheet { background: rgba(16, 40, 31, .84); }
 }
 :root[data-theme="glass"] .sheet-backdrop { background: rgba(10, 30, 22, .28); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 :root[data-theme="glass"] { --ink-2: #E4EFE8; --ink-3: #D2E2D8; }
@@ -1554,7 +1554,7 @@ button.option:disabled { opacity: 1; cursor: default; }
    behind every glass card, brighter secondary text, and solid-tinted chips. The background photo stays visible. */
 :root[data-theme="glass"] body::before {
   background: linear-gradient(180deg, rgba(5, 20, 14, .6) 0%, rgba(5, 20, 14, .54) 40%, rgba(5, 20, 14, .66) 100%),
-    var(--glass-photo, linear-gradient(160deg, #7d9c86, #3f5d4b 55%, #2a3f33)) center / cover no-repeat, #2E4639;
+    var(--glass-photo, var(--glass-fallback, linear-gradient(160deg, #7d9c86, #3f5d4b 55%, #2a3f33))) center / cover no-repeat, #2E4639;
 }
 :root[data-theme="glass"] {
   --surface: rgba(8, 28, 20, .5); --surface-2: rgba(8, 28, 20, .42); --surface-3: rgba(12, 36, 27, .5); --chip: rgba(6, 24, 17, .6);
@@ -1832,3 +1832,31 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 :root[data-theme="royal"] .timer-ring circle:last-of-type, :root[data-theme="royal-ivory"] .timer-ring circle:last-of-type { stroke: var(--gold-2); }
 :root[data-theme="royal"] .timer-ring b, :root[data-theme="royal"] .timer-ring strong, :root[data-theme="royal"] .timer-ring .t, :root[data-theme="royal-ivory"] .timer-ring b, :root[data-theme="royal-ivory"] .timer-ring strong, :root[data-theme="royal-ivory"] .timer-ring .t { font-family: var(--serif); }
 :root[data-theme="royal"] .onboard .ob-card { background: linear-gradient(180deg, #521620, #3A0D12); border: 1px solid var(--gold-line); }
+
+/* 0.9.8 Glass fix: with no owner-pack/user photo the fallback was a flat dull green under a 60% tint, so the frosted
+   cards had nothing to blur and looked like dark panels. Now: a vivid aurora fallback (so blur + translucency show),
+   a lighter tint when no photo is set, a light glass sheen + hairline highlight on cards, and a stronger solid
+   fallback where backdrop-filter is unsupported. -webkit- prefixes kept for Android WebView / iOS; plain selector lists for old WebViews. */
+:root[data-theme="glass"] {
+  --glass-fallback: radial-gradient(60% 45% at 15% 12%, #34D399 0%, rgba(52, 211, 153, 0) 70%),
+    radial-gradient(55% 40% at 88% 22%, #60A5FA 0%, rgba(96, 165, 250, 0) 70%),
+    radial-gradient(60% 45% at 75% 85%, #A78BFA 0%, rgba(167, 139, 250, 0) 70%),
+    radial-gradient(50% 40% at 10% 90%, #F59E0B 0%, rgba(245, 158, 11, 0) 70%),
+    linear-gradient(160deg, #1F6F5A, #1E4B5E 50%, #2C2A5A);
+}
+:root[data-theme="glass"]:not([style*="--glass-photo"]) body::before {
+  background: linear-gradient(180deg, rgba(5, 20, 14, .36) 0%, rgba(5, 20, 14, .26) 40%, rgba(5, 20, 14, .42) 100%),
+    var(--glass-fallback) center / cover no-repeat, #1E4B5E;
+}
+:root[data-theme="glass"] .card, :root[data-theme="glass"] .stat, :root[data-theme="glass"] .doc-card, :root[data-theme="glass"] .rec,
+:root[data-theme="glass"] .toggle-row, :root[data-theme="glass"] .hero.is-compact, :root[data-theme="glass"] .th-profile, :root[data-theme="glass"] .ftile {
+  background-image: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .03) 60%);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, .34); border-top-color: rgba(255, 255, 255, .55);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .22);
+}
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  :root[data-theme="glass"] .card, :root[data-theme="glass"] .stat, :root[data-theme="glass"] .doc-card, :root[data-theme="glass"] .rec,
+  :root[data-theme="glass"] .toggle-row, :root[data-theme="glass"] .th-profile, :root[data-theme="glass"] .ftile { background-color: rgba(10, 32, 26, .78); }
+  :root[data-theme="glass"] .sidebar, :root[data-theme="glass"] .topbar, :root[data-theme="glass"] .tabbar { background: rgba(10, 32, 26, .86); }
+}

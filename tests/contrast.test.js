@@ -33,7 +33,7 @@ test('desktop sidebar selected item uses --blue-ink in dark, aesthetic and vinta
 test('University subject list rows keep their height inside the scrolling list', () => { assert.match(css, /\.sub-list \{ grid-auto-rows: max-content/); });
 test('glass: body stays transparent so the fixed background layer shows on every screen; no opaque violet leftovers', () => {
   assert.match(css, /:root\[data-theme="glass"\] body \{ background: transparent; \}/);
-  assert.match(css, /:root\[data-theme="glass"\] :is\(\.sidebar, \.topbar, \.tabbar\)/);
+  assert.match(css, /:root\[data-theme="glass"\] \.sidebar, :root\[data-theme="glass"\] \.topbar, :root\[data-theme="glass"\] \.tabbar \{/);   // 0.9.8: no :is() (old WebViews)
   const fallback = [...css.matchAll(/@supports not[^{]*\{\s*:root\[data-theme="glass"\] \{([^}]*)\}/g)].at(-1)[1];
   for (const a of fallback.matchAll(/rgba\([^)]*,\s*([\d.]+)\)/g)) assert.ok(+a[1] < 0.9, 'fallback surface is opaque: ' + a[0]);
 });
