@@ -83,7 +83,7 @@ if (!app.requestSingleInstanceLock()) {
         const res = await net.fetch(u.toString(), { method: 'POST', headers, body: String(req.body ?? ''), signal: AbortSignal.timeout(timeout) });
         return { status: res.status, text: await res.text() };
       } catch (e) {
-        return { error: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'timeout' : 'network' };
+        return { error: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'timeout' : 'network', detail: String(e?.cause?.code || e?.cause?.message || e?.message || '') };
       }
     });
 

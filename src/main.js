@@ -77,6 +77,7 @@ const BACK = { study: 'library', section: 'study', results: 'more', notes: 'more
 const logo = () => '<img class="brand-mark" src="./icons/icon-192.png" alt="" aria-hidden="true" width="64" height="64" decoding="async">';
 
 // Default AI: Gemini or Groq key. An owner pack can set its own default provider order.
+let PACK_KEYS = new Set();   // owner-pack keys: never persisted
 let DEFAULT_AI = { mode: 'cloud', url: '', model: '' }, DEFAULT_FB_ON = false;   // the owner pack may change these
 const state = {
   update: { busy: '', error: '', release: null, status: '', dialog: false, progress: 0 },
@@ -159,7 +160,7 @@ function onboardingHTML() {
 }
 const saveView = () => writeJSON('ka-view', { zoom: state.zoom, layout: state.layout });
 const persistNotes = () => writeJSON('ka-notes', state.notes);
-const saveKey = () => { if (state.remember && state.key.trim()) writeJSON('ka-key', state.key.trim()); else { try { localStorage.removeItem('ka-key'); } catch { /* ignore */ } } };
+const saveKey = () => { if (PACK_KEYS.has(state.key.trim())) return; if (state.remember && state.key.trim()) writeJSON('ka-key', state.key.trim()); else { try { localStorage.removeItem('ka-key'); } catch { /* ignore */ } } };
 
 /* ---------- AI configuration ---------- */
 const usingServer = () => state.ai.mode !== 'cloud';
@@ -179,7 +180,7 @@ function fallbackChain() {
   return out.filter(x => typeof x === 'string' ? x : x.server.url);
 }
 const aiConfig = () => state.fb?.on ? { chain: fallbackChain() } : primaryConfig();
-const saveFb = () => writeJSON('ka-fallback', state.remember ? state.fb : { ...state.fb, gemini: '', groq: '', key: '' });
+const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('ka-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
 function requireAi(what) {
   if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); return aiConfig(); }
   if (!state.key.trim()) throw Error(`Add an AI key in Settings to ${what}. Free keys from Google Gemini or Groq work.`);
@@ -2671,6 +2672,11 @@ const packCtx = {
   addBackupPrefs: ks => { const add = ks.filter(k => !BACKUP_PREFS.includes(k)); BACKUP_PREFS.push(...add); return () => add.forEach(k => BACKUP_PREFS.splice(BACKUP_PREFS.indexOf(k), 1)); },
   addExams: list => { const ps = list.map(normalizeProfile), ids = new Set(ps.map(p => p.id)); BUILTIN = [...BUILTIN.filter(p => !ids.has(p.id)), ...ps]; return () => { BUILTIN = BUILTIN.filter(p => !ids.has(p.id)); }; },
   addServerPreset: (key, preset, help) => { SERVER_PRESETS[key] = { label: preset.label, url: preset.url, model: preset.model, brand: preset.brand }; SERVER_HELP[key] = help; SELF_HOSTED.push(key); return () => { delete SERVER_PRESETS[key]; delete SERVER_HELP[key]; SELF_HOSTED.splice(SELF_HOSTED.indexOf(key), 1); }; },
+  // Owner pack's own Gemini/Groq keys: used in memory only (never written to storage or synced), only where the owner has none.
+  setAiKeys: k => { const g = String(k?.gemini || ''), q = String(k?.groq || ''); const before = { key: state.key, gemini: state.fb.gemini, groq: state.fb.groq };
+    if (g && !state.key.trim()) state.key = g; if (g && !state.fb.gemini.trim()) state.fb.gemini = g; if (q && !state.fb.groq.trim()) state.fb.groq = q;
+    PACK_KEYS = new Set([g, q].filter(Boolean)); render();
+    return () => { if (state.key === g) state.key = before.key; if (state.fb.gemini === g) state.fb.gemini = before.gemini; if (state.fb.groq === q) state.fb.groq = before.groq; PACK_KEYS = new Set(); }; },
   setAiDefaults: (ai, fbOn) => { const old = [DEFAULT_AI, DEFAULT_FB_ON]; DEFAULT_AI = { ...DEFAULT_AI, ...ai }; DEFAULT_FB_ON = !!fbOn;
     if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; const fb = readJSON('ka-fallback', {}) || {}; if (fb.on === undefined) state.fb.on = DEFAULT_FB_ON;
     return () => { [DEFAULT_AI, DEFAULT_FB_ON] = old; if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; if ((readJSON('ka-fallback', {}) || {}).on === undefined) state.fb.on = DEFAULT_FB_ON; }; },
