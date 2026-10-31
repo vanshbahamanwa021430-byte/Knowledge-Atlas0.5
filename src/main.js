@@ -78,6 +78,7 @@ const logo = () => '<img class="brand-mark" src="./icons/icon-192.png" alt="" ar
 
 // Default AI: Gemini or Groq key. An owner pack can set its own default provider order.
 let PACK_KEYS = new Set();   // owner-pack keys: never persisted
+const packMark = v => v && PACK_KEYS.has(v) ? ' <span class="pill pack-pill">from owner pack</span>' : '';
 let DEFAULT_AI = { mode: 'cloud', url: '', model: '' }, DEFAULT_FB_ON = false;   // the owner pack may change these
 const state = {
   update: { busy: '', error: '', release: null, status: '', dialog: false, progress: 0 },
@@ -180,7 +181,7 @@ function fallbackChain() {
   return out.filter(x => typeof x === 'string' ? x : x.server.url);
 }
 const aiConfig = () => state.fb?.on ? { chain: fallbackChain() } : primaryConfig();
-const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('ka-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
+const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq', 'url', 'key']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('ka-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
 function requireAi(what) {
   if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); return aiConfig(); }
   if (!state.key.trim()) throw Error(`Add an AI key in Settings to ${what}. Free keys from Google Gemini or Groq work.`);
@@ -996,7 +997,7 @@ function viewChat(doc) {
 ${state.docs.length > 1 ? docPicker() : `<p class="muted page-sub">About ${esc(docTitle(doc))}</p>`}
 <section class="card chat-card">${thread.length ? `<div class="thread">${thread.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, doc)}${msgExtras(m, 'chat', i)}</div>`).join('')}${state.busy === 'chat' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
     : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Ask anything about this document</h2><p class="muted">Answers come from your document first, with the section they used. Diagrams and formulas are drawn for you.</p></div>`}
-${!aiAvailable() ? `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>` : `
+${!aiAvailable() ? keyHelpHTML() : `
 ${thread.length ? '' : `<div class="prompts">${prompts.map(([p, ic]) => `<button class="prompt" data-prompt="${esc(p)}" data-scope="chat"${state.busy ? ' disabled' : ''}>${icon(ic, 18)}<span>${p}</span></button>`).join('')}</div>`}
 <div class="composer"><textarea class="input" id="chatq" rows="2" placeholder="Type your question…" aria-label="Your question">${esc(state.chatDraft || '')}</textarea><button class="send" data-action="chatSend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'chat' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>
 ${docsOnlyToggle()}<p class="fine">Uses ${esc(aiName())}. Text from this document is sent.</p>`}</section></div>`;
@@ -1008,9 +1009,9 @@ function fallbackHTML() {
   return `<details class="fb-box"${f.on ? ' open' : ''}><summary><b>Backup services (fallback)</b></summary>
 <label class="toggle-row"><span><b>If a service fails, try the next one</b><span>Used when a service can’t be reached, rejects the key or hits its limit.</span></span><input type="checkbox" id="fb-on"${f.on ? ' checked' : ''}><span class="switch${f.on ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <ol class="fb-order">${f.order.map((id, i) => `<li><span>${i + 1}. ${FB_NAME[id]}</span>${i ? `<button class="icon-btn soft" data-fbup="${i}" aria-label="Move ${FB_NAME[id]} up">↑</button>` : ''}</li>`).join('')}</ol>
-<label class="field"><span>Gemini key (backup)</span><input class="input" id="fb-gemini" type="password" value="${esc(f.gemini)}" placeholder="AIza…" autocomplete="off"></label>
-<label class="field"><span>Groq key (backup)</span><input class="input" id="fb-groq" type="password" value="${esc(f.groq)}" placeholder="gsk_…" autocomplete="off"></label>
-<label class="field"><span>Custom endpoint (OpenAI-compatible)</span><input class="input" id="fb-url" value="${esc(f.url)}" placeholder="http://192.168.1.20:3001/v1" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
+<label class="field"><span>Gemini key (backup)${packMark(f.gemini)}</span><input class="input" id="fb-gemini" type="password" value="${esc(f.gemini)}" placeholder="AIza…" autocomplete="off"></label>
+<label class="field"><span>Groq key (backup)${packMark(f.groq)}</span><input class="input" id="fb-groq" type="password" value="${esc(f.groq)}" placeholder="gsk_…" autocomplete="off"></label>
+<label class="field"><span>Custom endpoint (OpenAI-compatible)${packMark(f.url)}</span><input class="input" id="fb-url" ${PACK_KEYS.has(f.url) ? 'type="password" ' : ''}value="${esc(f.url)}" placeholder="http://192.168.1.20:3001/v1" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
 <div class="row"><label class="field"><span>Endpoint key (optional)</span><input class="input" id="fb-key" type="password" value="${esc(f.key)}" autocomplete="off"></label><label class="field"><span>Model</span><input class="input" id="fb-model" value="${esc(f.model)}" placeholder="auto" autocomplete="off" autocapitalize="off"></label></div>
 <p class="fine">Plain http:// works only for this device and your local network; use https:// for internet addresses.${ED.serverNote}</p></details>`;
 }
@@ -1038,10 +1039,10 @@ ${state.theme === 'glass' ? `<h3 class="h3">Glass background</h3><div class="row
 <h3 class="h3" id="fs-h">Reading text size</h3><div class="size-row"><button class="icon-btn soft" data-font="-1" aria-label="Smaller text"${rd.size <= 0.8 ? ' disabled' : ''}>${icon('type', 16)}</button><input type="range" min="0.8" max="1.6" step="0.1" id="font-size" value="${rd.size}" aria-labelledby="fs-h"><button class="icon-btn soft" data-font="1" aria-label="Larger text"${rd.size >= 1.6 ? ' disabled' : ''}>${icon('type', 22)}</button><b class="size-val">${Math.round(rd.size * 100)}%</b></div>
 <p class="reading size-preview">Sections, flashcards and test questions use this size.</p>
 ${speechSupported() ? `<label class="field"><span>Read-aloud speed</span><select class="input select" id="tts-rate">${[[0.75, 'Slow'], [1, 'Normal'], [1.25, 'Fast'], [1.5, 'Faster']].map(([v, l]) => `<option value="${v}"${rd.rate === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</section>
-<section class="card ai-card" aria-labelledby="ai-h"><div class="ai-card-head"><span class="ai-tile">${icon('settings', 24)}</span><div><h1 id="ai-h">AI Settings</h1><p>${sub}</p></div></div>
+${keyHelpHTML()}<section class="card ai-card" aria-labelledby="ai-h"><div class="ai-card-head"><span class="ai-tile">${icon('settings', 24)}</span><div><h1 id="ai-h">AI Settings</h1><p>${sub}</p></div></div>
 <label class="field"><span>Service</span><select class="input select" id="aimode">${opts.map(([v, l]) => `<option value="${v}"${state.ai.mode === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
 ${server ? `<label class="field"><span>API endpoint</span><input class="input" id="aiurl" value="${esc(state.ai.url)}" placeholder="${esc(p.url || 'https://your-server.com/v1')}" autocomplete="off" autocapitalize="off" inputmode="url" spellcheck="false"></label>` : ''}
-<label class="field"><span>API key${state.ai.mode === 'litertlm' ? ' (leave empty)' : server ? ' (if your server needs one)' : ''}</span><div class="input-wrap"><input class="input" id="apikey" type="${state.showKey ? 'text' : 'password'}" value="${esc(state.key)}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${server ? 'Optional' : 'Paste your key'}"><button class="eye" data-action="toggleKey" aria-label="${state.showKey ? 'Hide key' : 'Show key'}">${icon(state.showKey ? 'eyeOff' : 'eye', 20)}</button></div></label>
+<label class="field"><span>API key${state.ai.mode === 'litertlm' ? ' (leave empty)' : server ? ' (if your server needs one)' : ''}${packMark(state.key)}</span><div class="input-wrap"><input class="input" id="apikey" type="${state.showKey && !PACK_KEYS.has(state.key) ? 'text' : 'password'}" value="${esc(state.key)}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${server ? 'Optional' : 'Paste your key'}"><button class="eye" data-action="toggleKey" aria-label="${state.showKey ? 'Hide key' : 'Show key'}">${icon(state.showKey ? 'eyeOff' : 'eye', 20)}</button></div></label>
 ${!server ? `<p class="detected" id="detected"${state.key.trim() ? '' : ' hidden'}>${state.key.trim() ? `${icon('checkCircle', 16)}Detected: ${esc(providerFor(state.key).name)}` : ''}</p>` : ''}
 ${server ? `<label class="field"><span>Model</span><div class="composer"><input class="input" id="aimodel" list="aimodels" value="${esc(state.ai.model)}" placeholder="${esc(p.model || 'auto')}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn outline sm" data-action="fetchModels"${state.busy ? ' disabled' : ''}>${state.busy === 'models' ? '<span class="spin"></span>' : icon('download', 16)}Fetch models</button></div><datalist id="aimodels"><option value="auto">${(state.models || []).map(m => `<option value="${esc(m)}">`).join('')}</datalist></label>${state.models ? `<p class="fine">${plural(state.models.length, 'model')} found. Pick one or keep “auto”.</p>` : ''}
 <label class="toggle-row"><span><b>Model can see images</b><span>Sends question figures as pictures (vision models only).</span></span><input type="checkbox" id="aivision"${state.ai.vision ? ' checked' : ''}><span class="switch${state.ai.vision ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>` : ''}
@@ -1884,6 +1885,17 @@ async function startPractice() {
 }
 function finishPractice() { const p = state.practice; if (p.done) return; p.done = true; recordTrace(traceFromPractice(p.items, p.answers)).then(render).catch(() => {}); }
 const masteryBar = t => `<li class="sm-topic"><span>${esc(t.name)}</span><span class="sm-bar" aria-label="${Math.round(t.mastery * 100)}% mastery"><i style="width:${Math.round(t.mastery * 100)}%"></i></span><b>${Math.round(t.mastery * 100)}%</b></li>`;
+// No AI yet: recommend the free Gemini key (Groq as a second option). Shown in Smarty and in Settings › AI providers.
+function keyHelpHTML() {
+  if (aiAvailable()) return '';
+  const r = state.khRes;
+  return `<section class="card key-help" aria-labelledby="kh-h"><h2 class="h3" id="kh-h">${icon('sparkles', 20)}Get a free AI key</h2><p class="fine">Smarty needs an AI key. Google Gemini’s is free and takes about a minute.</p>
+<a class="btn primary block" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">${icon('share', 18)}Get free Gemini key</a>
+<ol class="kh-steps"><li>Sign in with your Google account.</li><li>Tap <b>Create API key</b>.</li><li>Copy the key and paste it here.</li></ol>
+<div class="composer"><input class="input" id="kh-key" type="password" placeholder="Paste your key (AIza… or gsk_…)" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn outline" data-action="khTest"${state.busy ? ' disabled' : ''}>${state.busy === 'kh' ? '<span class="spin"></span>' : icon('checkCircle', 18)}Test key</button></div>
+${r ? `<p class="status ${r.ok ? 'ok' : 'warn'}" role="status">${esc(r.text)}</p>` : ''}
+<p class="fine">Or use Groq (also free): <a href="https://console.groq.com/keys" target="_blank" rel="noopener">get a Groq key</a> and paste it the same way.</p></section>`;
+}
 function viewSmarty() {
   if (!state.smConvs) loadConvs();
   const tab = state.smartyTab || 'chat', P = state.learner || emptyProfile(), weak = tutorWeak(P);
@@ -1892,7 +1904,7 @@ function viewSmarty() {
     const th = state.smartyChat || [];
     body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft" data-smact="speak:${i}" aria-label="Read aloud" title="Read aloud">${icon('listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
       : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Hi, I’m Smarty</h2><p class="muted">Ask about anything. I answer from your own notes first, show where each point came from, draw diagrams and explain at your level.</p><div class="prompts">${['Explain my weakest topic simply', 'Make a 5-step revision plan', 'Draw a diagram of the main process', 'Quiz me on one key idea'].map(t => `<button class="prompt" data-smsuggest="${esc(t)}">${icon('sparkles', 16)}<span>${esc(t)}</span></button>`).join('')}</div></div>`}
-${!aiAvailable() ? `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>` : `<div class="composer"><label class="icon-btn soft file-btn" title="Add a document" aria-label="Add a document">${icon('plus', 20)}<input type="file" data-import multiple accept="${ACCEPT}"></label><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
+${!aiAvailable() ? keyHelpHTML() : `<div class="composer"><label class="icon-btn soft file-btn" title="Add a document" aria-label="Add a document">${icon('plus', 20)}<input type="file" data-import multiple accept="${ACCEPT}"></label><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
   } else if (tab === 'practice') {
     const p = state.practice;
     body = !p ? `<section class="card"><h2 class="h2">Practice made for you</h2><p class="muted">${weak.length ? `Focuses on: ${weak.slice(0, 3).map(t => esc(t.name)).join(', ')}.` : 'Take a test or chat with Smarty first so it learns your weak topics. Until then it practises your main ideas.'} Each question is checked by a second AI pass before you see it.</p>${aiAvailable() ? `<button class="btn primary" data-action="smartyPractice"${state.busy || !state.docs.length ? ' disabled' : ''}>${state.busy === 'practice' ? '<span class="spin"></span>Writing and checking…' : icon('sparkles', 18) + 'Start practice'}</button>` : `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>`}</section>`
@@ -1915,7 +1927,14 @@ ${p.done ? `<div class="status ok">${icon('trophy', 20)}<p>${p.items.filter(q =>
 }
 
 /* ---------- Owner mode: Developer panel (convenience only, not security; harmless diagnostics) ---------- */
-async function refreshOwner() { const a = account(); const was = state.owner; state.owner = !!(a?.email && await isOwnerEmail(a.email).catch(() => false)); if (was !== state.owner) render(); await syncOwnerPack(); }
+async function refreshOwner({ afterSignIn = false } = {}) {
+  const a = account(); const was = state.owner; state.owner = !!(a?.email && await isOwnerEmail(a.email).catch(() => false)); if (was !== state.owner) render();
+  let r = await syncOwnerPack();
+  // First time on this device: ask the pack passphrase once; it is then kept in secure storage, so later sign-ins unlock instantly.
+  if (afterSignIn && state.owner && r?.reason === 'locked') { const pass = prompt('Owner pack passphrase (asked once on this device)'); if (pass) { r = await syncOwnerPack({ passphrase: pass, interactive: true }); if (r?.error) toast(r.error, 'error'); } }
+  if (afterSignIn && state.owner && ownerPack.isActive()) toast('Owner mode on, AI ready', 'ok');
+  else if (afterSignIn && state.owner && r?.reason === 'missing') toast('Owner mode on. No owner pack found: import it in the Developer panel.', 'warn');
+}
 const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>` : '';
 const DEV_TABS = [['pack', 'Owner pack'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners']];
 function viewDev() {
@@ -2090,8 +2109,8 @@ const actions = {
   },
   async glassDefault() { state.glassBg = ''; await setSetting('glass-bg', ''); applyGlassBg(); render(); },
   async glassNone() { state.glassBg = 'none'; await setSetting('glass-bg', 'none'); applyGlassBg(); render(); },
-  cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
-  cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner(); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
+  cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner({ afterSignIn: true }); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
+  cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner({ afterSignIn: true }); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
   cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut(); writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
   devClearLogs() { logs.clear(); render(); }, devClearCrashes() { clearCrashes(); render(); },
@@ -2116,7 +2135,7 @@ const actions = {
   codeNext() { const c = codeState(); loadProblem(suggestProblem(tutorWeak(state.learner || emptyProfile()).map(t => t.name), c.done || [])); render(); },
   codeReset() { const c = codeState(); c.src = starter(c.problem, c.lang); saveCode(); render(); },
   codeExercise() { const c = codeState(), x = c.lesson?.exercise; if (!x) return; loadProblem({ id: 'lesson-' + Date.now(), topic: c.concept || 'Recursion', level: 'easy', title: String(x.title || 'Exercise'), text: String(x.text || ''), fn: String(x.fn), params: (x.params || []).map(String), tests: (x.tests || []).filter(t => Array.isArray(t?.args)).map(t => [t.args, t.expected]) }); c.mode = 'solve'; render(); },
-  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('ka-entry', a.entry); writeJSON('ka-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('ka-name', '')) writeJSON('ka-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner(); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
+  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('ka-entry', a.entry); writeJSON('ka-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('ka-name', '')) writeJSON('ka-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
   gateGuest() { writeJSON('ka-entry', afterGuest().entry); render(); },
   obNext() { state.onStep = (state.onStep || 0) + 1; render(); },
   obBack() { state.onStep = Math.max(0, (state.onStep || 0) - 1); render(); },
@@ -2266,6 +2285,12 @@ const actions = {
     }
     u.dialog = false; render();
     openExternal(r.page || RELEASES_PAGE);
+  },
+  async khTest() {
+    const k = (document.getElementById('kh-key')?.value || '').trim(); if (!k) { state.khRes = { ok: false, text: 'Paste your key first.' }; return render(); }
+    state.busy = 'kh'; state.khRes = null; render();
+    try { const r = await testConnection(k); state.key = k; state.ai = { ...state.ai, mode: 'cloud' }; writeJSON('ka-ai', state.ai); saveKey(); state.khRes = null; toast(`Key works: ${providerFor(k).name} connected in ${(r.ms / 1000).toFixed(1)} s. Smarty is ready.`, 'ok'); }
+    catch (e) { state.khRes = { ok: false, text: e?.message || String(e) }; } finally { state.busy = ''; render(); }
   },
   async testConn() {
     if (state.busy) return;
@@ -2674,9 +2699,13 @@ const packCtx = {
   addServerPreset: (key, preset, help) => { SERVER_PRESETS[key] = { label: preset.label, url: preset.url, model: preset.model, brand: preset.brand }; SERVER_HELP[key] = help; SELF_HOSTED.push(key); return () => { delete SERVER_PRESETS[key]; delete SERVER_HELP[key]; SELF_HOSTED.splice(SELF_HOSTED.indexOf(key), 1); }; },
   // Owner pack's own Gemini/Groq keys: used in memory only (never written to storage or synced), only where the owner has none.
   setAiKeys: k => { const g = String(k?.gemini || ''), q = String(k?.groq || ''); const before = { key: state.key, gemini: state.fb.gemini, groq: state.fb.groq };
+    const u = String(k?.url || ''), uk = String(k?.urlKey || ''); before.url = state.fb.url; before.fbKey = state.fb.key; before.on = state.fb.on;
     if (g && !state.key.trim()) state.key = g; if (g && !state.fb.gemini.trim()) state.fb.gemini = g; if (q && !state.fb.groq.trim()) state.fb.groq = q;
-    PACK_KEYS = new Set([g, q].filter(Boolean)); render();
-    return () => { if (state.key === g) state.key = before.key; if (state.fb.gemini === g) state.fb.gemini = before.gemini; if (state.fb.groq === q) state.fb.groq = before.groq; PACK_KEYS = new Set(); }; },
+    if (u && !state.fb.url.trim()) { state.fb.url = u; if (uk) state.fb.key = uk; }
+    if (g || q) state.fb.on = true;
+    PACK_KEYS = new Set([g, q, u, uk].filter(Boolean)); render();
+    return () => { if (state.key === g) state.key = before.key; if (state.fb.gemini === g) state.fb.gemini = before.gemini; if (state.fb.groq === q) state.fb.groq = before.groq;
+      if (u && state.fb.url === u) { state.fb.url = before.url; state.fb.key = before.fbKey; } state.fb.on = before.on; PACK_KEYS = new Set(); }; },
   setAiDefaults: (ai, fbOn) => { const old = [DEFAULT_AI, DEFAULT_FB_ON]; DEFAULT_AI = { ...DEFAULT_AI, ...ai }; DEFAULT_FB_ON = !!fbOn;
     if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; const fb = readJSON('ka-fallback', {}) || {}; if (fb.on === undefined) state.fb.on = DEFAULT_FB_ON;
     return () => { [DEFAULT_AI, DEFAULT_FB_ON] = old; if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; if ((readJSON('ka-fallback', {}) || {}).on === undefined) state.fb.on = DEFAULT_FB_ON; }; },

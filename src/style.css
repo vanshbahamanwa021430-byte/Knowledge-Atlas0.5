@@ -1717,3 +1717,6 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .queue li span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-ctrls { display: flex; gap: 8px; justify-content: center; }
 :root[data-theme="glass"] .queue li, :root[data-theme="glass"] .sp-curated .chip-btn:not(.is-on), :root[data-theme="glass"] .music-tabs .chip-btn:not(.is-on) { background: rgba(255,255,255,.1); color: #fff; }
+.pack-pill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: .72em; font-weight: 600; background: color-mix(in srgb, var(--accent, #6d5efc) 16%, transparent); color: var(--text, inherit); vertical-align: middle; }
+.key-help .kh-steps { margin: 10px 0 12px 1.2em; padding: 0; display: grid; gap: 4px; }
+.key-help .btn.block { margin-top: 8px; }

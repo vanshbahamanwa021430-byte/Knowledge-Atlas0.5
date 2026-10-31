@@ -30,7 +30,7 @@ for (const kind of ['phone', 'desktop']) {
   await p.goto(URL); await p.waitForTimeout(800);
   if (kind === 'phone') {
     await step('onboarding: 3 screens, name + stream, greeting uses the name', async () => {
-      await p.waitForSelector('.onboard'); await p.screenshot({ path: `${OUT}/phone-onboarding-1.png` });
+      await p.waitForSelector('.onboard'); if (await p.$('.welcome-gate')) { await p.screenshot({ path: `${OUT}/phone-welcome.png` }); await p.click('[data-action=gateGuest]'); await p.waitForSelector('#ob-name'); } await p.screenshot({ path: `${OUT}/phone-onboarding-1.png` });
       await p.fill('#ob-name', 'Sam'); await p.dispatchEvent('#ob-name', 'change'); await p.selectOption('#ob-stream', 'cs');
       await p.click('[data-action="obNext"]'); await p.waitForSelector('.ui-size'); await p.screenshot({ path: `${OUT}/phone-onboarding-2.png` });
       await p.click('[data-action="obNext"]'); await p.screenshot({ path: `${OUT}/phone-onboarding-3.png` }); await p.click('[data-action="obDone"]');
