@@ -86,11 +86,19 @@ jobs:
           "$BT/aapt2" dump badging "$OUT" | grep -E "^package|sdkVersion"
           if "$BT/aapt2" dump xmltree --file AndroidManifest.xml "$OUT" | grep -qi testOnly; then echo "ERROR: testOnly set"; exit 1; fi
           echo "APK=$OUT" >> "$GITHUB_ENV"
-      - name: Publish GitHub Release
+      - name: Show signing certificate (SHA-1, SHA-256)
         if: steps.sec.outputs.ok == 'true'
-        uses: softprops/action-gh-release@v2
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --print-certs "$APK" | grep -E "SHA-1|SHA-256"
+      - uses: actions/upload-artifact@v4
+        if: steps.sec.outputs.ok == 'true'
         with:
-          files: ${{ env.APK }}
-          name: Knowledge Atlas ${{ env.VERSION }}
-          body_path: ${{ hashFiles('RELEASE_NOTES.md') != '' && 'RELEASE_NOTES.md' || '' }}
-          generate_release_notes: ${{ hashFiles('RELEASE_NOTES.md') == '' }}
+          name: KnowledgeAtlas-android-release
+          path: ${{ env.APK }}
+      - name: Attach APK to the release (replaces the asset with the same name)
+        if: steps.sec.outputs.ok == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: gh release upload "$TAG" "$APK" --clobber -R "$GITHUB_REPOSITORY"
