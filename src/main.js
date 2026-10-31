@@ -1132,7 +1132,7 @@ const updPrefs = () => ({ auto: true, last: 0, ...(readJSON('prvlar-update', {})
 const updateNote = () => isNative() && platform() === 'android'
   ? 'Updates install over this app and keep your documents, cards and progress (same signing key, newer version).'
   : 'Opens the download page for the newest version.';
-const COMING_NEXT = 'Next update: Smarty becomes an app-wide assistant, like Copilot in Microsoft apps, available on every screen, aware of what you’re viewing, and able to act across the app (make tests, plans, notes, flashcards, settings).';
+const COMING_NEXT = 'Next update: Smarty everywhere. Your AI study assistant on every screen, aware of what you’re viewing, and able to make tests, plans, notes and flashcards for you.';
 const comingNextHTML = () => `<p class="fine coming-next">${icon('sparkles', 14)} <b>Coming next:</b> ${esc(COMING_NEXT.replace(/^Next update: /, ''))}</p>`;
 function updateCardHTML() {
   if (!UPDATE_REPO || platform() !== 'android') return `<section class="card"><h2 class="h2">Updates</h2><p class="muted">Prvlar ${esc(VERSION)}. ${isNative() && platform() === 'android' ? 'Updates arrive through the store where you installed the app.' : isNative() ? 'Updates arrive through the App Store.' : 'The website updates itself: reload to get the newest version.'}</p>${comingNextHTML()}</section>`;
