@@ -44,12 +44,14 @@ setFreeProxy((import.meta.env && import.meta.env.VITE_PRVLAR_PROXY) || '', (impo
 // Apps Script web apps only accept "simple" requests (no custom headers), so the device id and token go in the body.
 // 0.9.9: the app hands over a Google ID token (when signed in) so the proxy can count per verified account.
 let idTokenSource = async () => '';
+let eligibleSource = () => false;   // 0.9.9: set by the app after the 18+ check
+export const setEligibilitySource = f => { eligibleSource = typeof f === 'function' ? f : () => false; };
 export const setIdTokenSource = f => { idTokenSource = typeof f === 'function' ? f : async () => ''; };
 async function gasPost(endpoint, device, payload, timeout) {
   const idToken = await Promise.race([idTokenSource().catch(() => ''), new Promise(r => setTimeout(() => r(''), 5000))]);
   const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
   try {
-    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: FREE.token, device, payload, ...(idToken ? { idToken } : {}) }), signal: ctl.signal, redirect: 'follow' });
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: FREE.token, eligible: !!eligibleSource(), device, payload, ...(idToken ? { idToken } : {}) }), signal: ctl.signal, redirect: 'follow' });
     const j = await r.json().catch(() => ({ status: 502, body: { error: { message: 'The free option returned an unreadable reply.' } } }));
     return new Response(JSON.stringify(j.body ?? {}), { status: Number(j.status) || 502, headers: { 'Content-Type': 'application/json' } });
   } finally { clearTimeout(t); }

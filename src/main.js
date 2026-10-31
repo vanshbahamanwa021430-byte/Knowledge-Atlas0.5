@@ -20,7 +20,7 @@ import { EXTRA_KINDS, normalizeProfile, buildPlan, scoreQuestion, answerText, co
 import { getUrl } from './net.js';
 import { BACKUP_PREFS, db, saveDocument, getDocuments, saveAttempt, getAttempts, getSetting, setSetting, requestPersistence, exportAll, importAll, getCards, saveCards, deleteCard, getSessions, saveSession, getPlans, savePlan, deletePlan, getDays, bumpDay, getProfiles, saveProfile, deleteProfile, getTraces, saveTrace, clearTraces, saveBlob, getBlob, deleteBlob } from './storage.js';
 import { chunkDocs, buildIndex, retrieve, searchTraces, traceFromAttempt, traceFromPractice, makeTrace, updateProfile, emptyProfile, weakTopics as tutorWeak, strongTopics, levelFor as tutorLevel, profileHint, practiceTargets } from './tutor.js';
-import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, explainSelection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice , setIdTokenSource , smartyJson } from './ai.js';
+import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, explainSelection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice , setIdTokenSource , smartyJson , setEligibilitySource } from './ai.js';
 import { matchSections, flatMap } from './aimap.js';
 import { flowchartSVG, defaultCollapsed, childrenMap, chartNodes, levelNames } from './flowchart.js';
 import { gradeMCQ, makeAttempt, isDue, EXAM_MINUTES, QUESTION_COUNT } from './engine.js';
@@ -53,6 +53,8 @@ music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'fo
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
 import { drawerHTML, edgeSwipe } from './drawer.js';
+import { checkAge, ageStatus, isAdult, MINOR_MSG } from './age.js';
+import { CATEGORIES as REP_CATS, STATUSES as REP_STATUS, makeReport, addReport, listReports, setStatus as setRepStatus, exportReports, deleteAllReports } from './aireport.js';
 import { safeBgUrl } from './safeurl.js';
 import { conceptNodes, graphEdges, acceptPrereqs, conceptResults, PREREQ_PROMPT } from './livemap.js';
 import { conceptMastery, recommendNext, missionControl } from './mastery.js';
@@ -211,8 +213,34 @@ function fallbackChain() {
 const aiConfig = () => state.fb?.on ? { chain: fallbackChain() } : primaryConfig();
 const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq', 'url', 'key']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('prvlar-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
 // 0.9.9: Prvlar works offline; the first time anything would go to an online AI service, ask once.
+// 0.9.9 compliance: date-of-birth check (only the result is stored). Under-18s keep the offline features.
+function requireAdult(what) {
+  const st = ageStatus();
+  if (st === 'adult') return true;
+  if (st === 'minor') throw Error(MINOR_MSG);
+  state.ageAsk = { what }; render(); setTimeout(() => document.getElementById('age-dob')?.focus(), 30);
+  throw Error(`Confirm your age to ${what}.`);
+}
+function ageModalHTML() {
+  if (!state.ageAsk) return '';
+  return `<div class="sheet-backdrop" data-action="ageCancel"></div><section class="sheet age-sheet" role="dialog" aria-modal="true" aria-labelledby="age-h"><h2 class="h2" id="age-h">${icon('info', 20)}Confirm your age</h2>
+<p>Online AI, Google sign-in and problem reports are for users aged 18 or over. Enter your date of birth. Prvlar keeps only whether you are 18 or over, not the date.</p>
+<label class="field"><span>Date of birth</span><input class="input" type="date" id="age-dob" max="${today()}"></label>
+<div class="row"><button class="btn primary" data-action="ageConfirm">${icon('check', 18)}Confirm</button><button class="btn outline" data-action="ageCancel">Cancel</button></div>
+<p class="fine">This is a self-declaration. It is not parental consent.</p></section>`;
+}
+const AI_NOTE = '<p class="ai-note fine" role="note">Smarty can make mistakes. Verify important information against your original documents.</p>';
+function reportSheetHTML() {
+  const r = state.aiRep; if (!r) return '';
+  return `<div class="sheet-backdrop" data-action="aiRepCancel"></div><section class="sheet airep-sheet" role="dialog" aria-modal="true" aria-labelledby="airep-h"><h2 class="h2" id="airep-h">${icon('flag', 20)}Report this AI answer</h2>
+<fieldset class="airep-cats"><legend class="sr-only">What is wrong?</legend>${REP_CATS.map(([k, l]) => `<label class="radio-row"><input type="radio" name="airep-cat" value="${k}"> ${l}</label>`).join('')}</fieldset>
+<label class="field"><span>Note (optional)</span><textarea class="input" id="airep-note" rows="3" maxlength="1000" placeholder="What should it have said?"></textarea></label>
+<p class="fine">Saved on this device: the answer text and a short excerpt of the context (never whole documents). Keys, emails and phone numbers are removed.</p>
+<div class="row"><button class="btn primary" data-action="aiRepSend">${icon('send', 17)}Report</button><button class="btn outline" data-action="aiRepCancel">Cancel</button></div></section>`;
+}
 function aiConsentOk() {
   if (usingServer() && /^http:\/\/(localhost|127\.0\.0\.1)/.test(state.ai?.url || '')) return true;   // a model on this device
+  requireAdult('use online AI');
   if (localStorage.getItem('prvlar-ai-consent') === '1') return true;
   if (!confirm('Allow online AI? Parts of your documents and questions are sent to the AI service you chose to answer them. Everything else stays on this device.')) return false;
   localStorage.setItem('prvlar-ai-consent', '1'); return true;
@@ -378,9 +406,17 @@ function render() {
     noticeTimer = setTimeout(() => { if (state.notice === noticeShown) { state.notice = ''; noticeShown = ''; document.querySelector('.toast.ok')?.remove(); } }, 5000);
   }
   updateTimer();
-  if (state.drawer && drawerJustOpened) { drawerJustOpened = false; requestAnimationFrame(() => document.getElementById('drawerq')?.focus()); }
+  if (state.drawer && (drawerJustOpened || !document.activeElement?.closest?.('.drawer'))) { drawerJustOpened = false; document.getElementById('drawerq')?.focus(); }
 }
 let drawerJustOpened = false;
+// Overlays close on Escape wherever focus is (the app's own keydown listener only sees events from inside #app).
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.drawer) { e.preventDefault(); return closeDrawer(); }
+  if (e.key === 'Escape' && state.ageAsk) { state.ageAsk = null; return render(); }
+  if (e.key === 'Escape' && state.aiRep) { state.aiRep = null; return render(); }
+  if (e.key === 'Escape' && state.smEv) { state.smEv = null; return render(); }
+  if (e.key === 'Tab' && state.drawer) { const f = [...document.querySelectorAll('.drawer button, .drawer input')].filter(x => !x.disabled); if (f.length) { const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } } }
+});
 function closeDrawer(rerender = true) {
   if (!state.drawer) return; state.drawer = false; state.drawerQ = '';
   if (rerender) { render(); document.querySelector('.mbar [data-action=drawerOpen]')?.focus(); }
@@ -401,7 +437,7 @@ function shellHTML() {
 ${sidebarHTML()}
 <div class="stage">${topbarHTML()}${mbarHTML()}<main class="main v-${state.view}${examLive() && state.view === 'test' && !shown() ? ' is-exam' : ''}" id="main" tabindex="-1">${body}</main></div>
 ${state.drawer ? drawerHTML({ groups: GROUPS, convs: state.smConvs || [], current: state.view, account: account(), query: state.drawerQ || '', canDev: canDo('dev') }, { icon, esc }) : ''}
-${smFabHTML()}${focusPill()}${toastsHTML()}${selExplainHTML()}
+${smFabHTML()}${ageModalHTML()}${reportSheetHTML()}${focusPill()}${toastsHTML()}${selExplainHTML()}
 ${state.showGrid && state.questions ? gridSheetHTML() : ''}${state.update.dialog && state.update.release ? updateDialogHTML() : ''}
 </div>`;
 }
@@ -429,7 +465,7 @@ function smFabHTML() {
 <div class="sm-ev-acts">${SM_EV_ACTIONS.map(a => `<button class="chip chip-btn" data-smev="${a.id}"${e.busy ? ' disabled' : ''}>${icon(a.icon, 15)}${esc(a.label)}</button>`).join('')}</div>
 <div class="composer"><textarea class="input" id="smevq" rows="2" placeholder="Ask about this screen…" aria-label="Ask Smarty about this screen">${esc(e.draft || '')}</textarea><button class="send" data-smev="ask" aria-label="Send"${e.busy ? ' disabled' : ''}>${e.busy ? '<span class="spin"></span>' : icon('send', 19)}</button></div>
 ${e.busy ? `<p class="fine" role="status"><span class="spin"></span> Smarty is working on “${esc(e.busyLabel || '')}”…</p>` : ''}
-${res ? `<div class="sm-ev-res" role="status">${res.html}</div>` : ''}
+${res ? `<div class="sm-ev-res" role="status">${res.html}</div>${AI_NOTE}` : ''}
 ${!aiAvailable() ? keyHelpHTML() : ''}</section>`;
 }
 function readScreen() {
@@ -1052,7 +1088,7 @@ function viewResult(a) {
     const ans = a.answers[q.id], has = ans !== undefined && String(ans).trim() !== '';
     const yours = answerText(q, ans);
     return `<li class="rq ${cls}"><div class="rq-head"><h3>${i + 1}. ${esc(q.prompt)}</h3><span class="marks">${got < 0 ? '−' + Math.abs(got) : got}/${q.marks}</span></div>${a.timing?.qTimes?.[q.id] ? `<p class="fine q-time">${icon('clock', 13)} ${fmtDuration(a.timing.qTimes[q.id])} on this question</p>` : ''}${figureHTML(q)}
-<dl><dt>Your answer</dt><dd>${esc(yours)}</dd>${q.type !== 'written' ? `<dt>Correct</dt><dd>${esc(correctText(q))}</dd>` : ''}<dt>Marked by</dt><dd>${esc(METHOD[g?.method] || g?.method || '')}</dd>${g?.feedback ? `<dt>Feedback</dt><dd>${esc(g.feedback)}</dd>` : ''}</dl>
+<dl><dt>Your answer</dt><dd>${esc(yours)}</dd>${q.type !== 'written' ? `<dt>Correct</dt><dd>${esc(correctText(q))}</dd>` : ''}<dt>Marked by</dt><dd>${esc(METHOD[g?.method] || g?.method || '')}</dd>${g?.feedback ? `<dt>Feedback</dt><dd>${esc(g.feedback)}</dd>` : ''}</dl>${g?.method === 'AI provisional' ? `${AI_NOTE}<button class="link-btn sm" data-airep="grade:${esc(a.id)}:${esc(q.id)}">${icon('flag', 14)} Report this AI mark</button>` : ''}
 <details><summary>${icon('smarty', 15)} Smarty explains: answer and source</summary><div class="solution"><p>${esc(q.solution)}</p><p><b>From:</b> ${esc(q.source)}${q.sourceVerified === false ? ' (this label wasn’t found in your document, so check it)' : ''}</p>${q.type === 'written' ? `<p><b>Marking points:</b> ${esc(q.rubric)}</p>` : ''}</div></details>
 ${q.type === 'written' ? `<label class="adjust">Your mark out of ${q.marks}<input class="input" type="number" inputmode="numeric" min="0" max="${q.marks}" step="1" data-adjust="${esc(q.id)}" value="${got}"></label>` : ''}</li>`;
   }).join('')}</ol>${a.questions.some(q => q.type === 'written') ? `<button class="btn primary block" data-action="adjust">${icon('check', 18)}Save marks</button>` : ''}` : '';
@@ -1174,6 +1210,7 @@ ${fallbackHTML()}
 <section class="card" aria-labelledby="notif-h"><h2 class="h2" id="notif-h">Notifications</h2><p class="muted">${state.notifPerm === 'granted' ? 'Notifications are on.' : 'Allow notifications to get reminders and focus-timer alerts.'}</p><div class="row"><button class="btn outline" data-view="planner">${icon('bell', 18)}Reminders and goals</button><button class="btn outline" data-view="focus">${icon('timer', 18)}Focus timer alerts</button></div></section>
 <section class="card" aria-labelledby="data-h"><h2 class="h2" id="data-h">Data and backup</h2><p class="muted">Documents, notes, flashcards, planner, study time, progress and results are stored only on this device${state.storage ? ` (${fmtBytes(state.storage.used)} used)` : ''}. Uninstalling the app or clearing its data deletes them, so back up now and then.</p>
 <div class="row"><button class="btn outline" data-action="exportBackup">${icon('download', 18)}Back up</button><button class="btn outline" data-action="exportBackupEnc">${icon('lock', 18)}Encrypted backup</button><label class="btn outline file-btn">${icon('upload', 18)}<span>Restore</span><input type="file" data-restore accept=".json,application/json" aria-label="Restore a backup"></label></div>
+<div class="age-row"><p><b>Age check</b>: ${ageStatus() === 'adult' ? '18 or over (online features available)' : ageStatus() === 'minor' ? 'under 18 (offline features only)' : 'not done yet'}. Only this result is kept, not your date of birth.</p><button class="btn outline sm" data-action="ageRecheck">${icon('info', 16)}${ageStatus() === 'unknown' ? 'Check age' : 'Check again'}</button></div>
 <label class="toggle-row"><span><b>Online AI allowed</b><span>Turn off to keep everything on this device. Prvlar asks again before AI is used.</span></span><input type="checkbox" data-pref099="ai"${localStorage.getItem('prvlar-ai-consent') === '1' ? ' checked' : ''}><span class="switch${localStorage.getItem('prvlar-ai-consent') === '1' ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <label class="toggle-row"><span><b>Save crash reports</b><span>Off by default. Errors are kept only on this device, with keys and emails removed. Nothing is sent.</span></span><input type="checkbox" data-pref099="crash"${crashEnabled() ? ' checked' : ''}><span class="switch${crashEnabled() ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 ${crashEnabled() ? `<div class="row"><button class="btn outline sm" data-action="copyCrash">${icon('copy', 16)}Copy ${plural(crashReports().length, 'crash report')}</button></div>` : ''}</section>
@@ -2210,7 +2247,7 @@ function readSkillForm(ed) { const v = id => document.getElementById(id)?.value 
 const REPORT_URL = String(import.meta.env?.VITE_REPORT_URL || '').trim();
 let REPORT_EMAIL = '', REPORT_CSV = '';   // the owner pack may set them (never in the public bundle)
 const reportRepo = () => UPDATE_REPO || (/github\.io$/.test(location.hostname) && location.pathname.split('/').filter(Boolean)[0] ? `${location.hostname.split('.')[0]}/${location.pathname.split('/').filter(Boolean)[0]}` : '');
-const autoReportsOn = () => readJSON('prvlar-report-auto', true) !== false;
+const autoReportsOn = () => readJSON('prvlar-report-auto', false) === true && isAdult();   // 0.9.9: opt-in, adults only
 const diagNow = () => ({ version: VERSION, platform: platform(), userAgent: navigator.userAgent, screen: `${innerWidth}×${innerHeight}`, theme: state.theme, online: navigator.onLine, log: [...crashes().slice(-5).map(c => 'crash: ' + c.msg), ...logs.all().filter(l => l.lvl === 'error' || l.lvl === 'warn').slice(-10).map(l => `${l.lvl}: ${l.msg}`)] });
 function reportHTML() {
   const r = state.reportForm || (state.reportForm = { text: '', diag: true, shot: '' }), sent = state.reportSent;
@@ -2253,7 +2290,7 @@ function viewSmarty() {
   let body;
   if (tab === 'chat') {
     const th = state.smartyChat || [];
-    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.webNote ? `<p class="fine web-note">${icon('info', 13)} ${esc(m.webNote)}</p>` : ''}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft${state.speaking === 'sm' + i ? ' is-on' : ''}" data-smact="speak:${i}" aria-label="${state.speaking === 'sm' + i ? 'Stop reading' : 'Read aloud'}" aria-pressed="${state.speaking === 'sm' + i}" title="${state.speaking === 'sm' + i ? 'Stop' : 'Read aloud'}">${icon(state.speaking === 'sm' + i ? 'stop' : 'listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
+    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.webNote ? `<p class="fine web-note">${icon('info', 13)} ${esc(m.webNote)}</p>` : ''}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft${state.speaking === 'sm' + i ? ' is-on' : ''}" data-smact="speak:${i}" aria-label="${state.speaking === 'sm' + i ? 'Stop reading' : 'Read aloud'}" aria-pressed="${state.speaking === 'sm' + i}" title="${state.speaking === 'sm' + i ? 'Stop' : 'Read aloud'}">${icon(state.speaking === 'sm' + i ? 'stop' : 'listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button><button class="icon-btn soft" data-airep="sm:${i}" aria-label="Report this answer" title="Report">${icon('flag', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${th.some(m => m.role !== 'user') ? AI_NOTE : ''}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
       : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Hi, I’m Smarty</h2><p class="muted">Ask about anything. I answer from your own notes first, show where each point came from, draw diagrams and explain at your level.</p><div class="prompts">${['Explain my weakest topic simply', 'Make a 5-step revision plan', 'Draw a diagram of the main process', 'Quiz me on one key idea'].map(t => `<button class="prompt" data-smsuggest="${esc(t)}">${icon('sparkles', 16)}<span>${esc(t)}</span></button>`).join('')}</div></div>`}
 ${state.freeLimit && aiAvailable() ? keyHelpHTML() : ''}${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="${state.voice ? 'Listening…' : 'Ask Smarty…'}" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea>${recognitionSupported() || recordingSupported() ? `<button class="icon-btn soft sm-mic${state.voice ? ' is-on' : ''}" data-action="smMic" aria-label="${state.voice ? 'Stop listening' : 'Speak your question'}" aria-pressed="${!!state.voice}" title="${state.voice ? 'Stop' : 'Speak'}">${icon(state.voice ? 'micOff' : 'mic', 19)}</button>` : ''}<button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
   } else if (tab === 'skills') {
@@ -2299,7 +2336,7 @@ const canDo = what => can(state.owner ? 'owner' : state.role, what);
 const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>`
   : state.role === 'codev' ? `<span class="chip owner-badge role-codev" title="Co-developer: Developer panel unlocked">${icon('code', 13)} Co-dev</span>`
   : state.role === 'tester' ? `<span class="chip owner-badge role-tester" title="Beta tester: early features unlocked">${icon('flask', 13)} Tester</span>` : '';
-const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners'], ['access', 'Access']];
+const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['reports', 'AI reports'], ['owners', 'Owners'], ['access', 'Access']];
 function viewBeta() {
   if (!canDo('beta')) return `${backHead('Beta features')}<div class="view narrow"><section class="card"><p>Beta features are for beta testers. Sign in with a tester Google account.</p></section></div>`;
   return `${backHead('Beta features', ownerBadge())}<div class="view narrow beta-view"><section class="card"><h2 class="h2">${icon('flask', 18)} Early features</h2><p class="fine">These may change or break. Turn one on, try it, and tell us how it went.</p>
@@ -2324,6 +2361,7 @@ function viewDev() {
 <h3 class="h3">Reports in your Sheet</h3>${REPORT_CSV ? (e.sheetErr ? `<p class="status warn">${esc(e.sheetErr)}</p>` : e.sheet ? (e.sheet.length ? `<ul class="dev-errs">${e.sheet.slice(-50).reverse().map(r => `<li><details><summary>${esc(r.at || r.Timestamp || '')} · <b>${esc(r.kind || '')}</b> ${esc((r.message || r.text || '').slice(0, 90))}</summary>${pre(JSON.stringify(r, null, 1))}</details></li>`).join('')}</ul>` : '<p class="muted">No reports yet.</p>') : '<p class="muted">Tap Refresh.</p>') : '<p class="fine">Add the Sheet’s published CSV link to the owner pack (reports.csv) to see automatic reports here. See docs/error-reports.md.</p>'}
 <h3 class="h3">GitHub issues (user-report)</h3>${!reportRepo() ? '<p class="fine">No repository configured.</p>' : e.ghErr ? `<p class="status warn">${esc(e.ghErr)}</p>` : e.gh ? (e.gh.length ? `<ul class="dev-errs">${e.gh.map(i => `<li><a href="${esc(i.html_url)}" target="_blank" rel="noopener">#${i.number} ${esc(i.title)}</a> <span class="fine">${esc(i.state)} · ${new Date(i.created_at).toLocaleDateString()}</span></li>`).join('')}</ul>` : '<p class="muted">No issues.</p>') : '<p class="muted">Tap Refresh.</p>'}
 <h3 class="h3">This device</h3>${c.length ? c.slice().reverse().slice(0, 15).map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No errors on this device.</p>'}`; }
+  else if (tab === 'reports') { const l = listReports().slice().reverse(); body = `<div class="row"><button class="btn outline sm" data-action="devRepExport">${icon('download', 16)}Export</button><span class="fine">${plural(l.length, 'report')} on this device</span></div>${l.length ? l.map(r => `<details class="airep"><summary><span class="chip st-${r.status}">${esc(r.status)}</span> ${esc(r.category)} · ${esc(r.kind)} · ${esc(fmtDateTime(r.at))}</summary><p><b>Answer:</b> ${esc(r.answer.slice(0, 600))}</p>${r.context ? `<p class="fine"><b>Context:</b> ${esc(r.context)}</p>` : ''}${r.note ? `<p><b>Note:</b> ${esc(r.note)}</p>` : ''}<div class="row">${REP_STATUS.map(st => `<button class="btn ${st === r.status ? 'primary' : 'outline'} sm" data-devrep="${esc(r.id)}:${st}"${st === r.status ? ' aria-pressed="true"' : ''}>${st}</button>`).join('')}</div><ol class="fine audit">${r.audit.map(x => `<li>${esc(fmtDateTime(x.at))}: ${esc(x.by)} — ${esc(x.action)}</li>`).join('')}</ol></details>`).join('') : '<p class="muted">No AI answers have been reported.</p>'}`; }
   else if (tab === 'crash') { const c = crashes(); body = `<button class="btn outline sm" data-action="devClearCrashes">Clear</button>${c.length ? c.slice().reverse().map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No crashes recorded.</p>'}`; }
   else if (tab === 'pack') body = ownerPackHTML();
   else if (tab === 'access') { const list = roleList();
@@ -2482,6 +2520,15 @@ async function mountCodeEditor() {
 }
 
 const actions = {
+  ageConfirm() { const v = document.getElementById('age-dob')?.value; const r = checkAge(v); state.ageAsk = null; if (r === 'minor') { state.error = MINOR_MSG; } else state.notice = 'Thanks. Online features are available.'; render(); },
+  ageCancel() { state.ageAsk = null; render(); },
+  ageRecheck() { state.ageAsk = { what: 'use online features' }; render(); },
+  aiRepCancel() { state.aiRep = null; render(); },
+  aiRepSend() {
+    const cat = document.querySelector('input[name=airep-cat]:checked')?.value, note = document.getElementById('airep-note')?.value || '';
+    addReport(makeReport({ category: cat, note, ...state.aiRep, version: VERSION })); state.aiRep = null; state.notice = 'Thanks. The answer was reported.'; render();
+  },
+  devRepExport() { return saveTextFile('prvlar-ai-reports-' + today() + '.json', exportReports()); },
   async findPrereqs() {
     const doc = curDoc(); if (!doc) return; const ai = requireAi('find prerequisites'); if (!ai) return;
     const { nodes } = conceptNodes(outline(doc)); if (nodes.length < 2) throw Error('This document has too few topics to link.');
@@ -2538,7 +2585,7 @@ const actions = {
   async glassDefault() { state.glassBg = ''; await setSetting('glass-bg', ''); applyGlassBg(); render(); },
   async glassNone() { state.glassBg = 'none'; await setSetting('glass-bg', 'none'); applyGlassBg(); render(); },
   cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner({ afterSignIn: true }); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
-  cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner({ afterSignIn: true }); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
+  cloudSignIn: () => cloudDo(async () => { requireAdult('sign in with Google'); await signIn(); await refreshOwner({ afterSignIn: true }); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
   cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut();  state.role = null; writeJSON('prvlar-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
   devClearLogs() { logs.clear(); render(); }, devClearCrashes() { clearCrashes(); render(); },
@@ -2548,7 +2595,7 @@ const actions = {
   async devAddRole() { if (!state.owner) return toast('Only the owner can manage roles.', 'warn'); const v = document.getElementById('dev-role-email')?.value || '', r = document.getElementById('dev-role')?.value; try { await addRole(v, r); toast(`${ROLES[r]} added (stored as a hash).`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
   async devCopyRoles() { if (!state.owner) return; const t = JSON.stringify(roleList(), null, 1); try { await navigator.clipboard.writeText(t); toast('roles.json copied.', 'ok'); } catch { prompt('Copy roles.json', t); } },
   async devAddOwner() { if (!state.owner) return toast('Only the owner can manage owners.', 'warn'); const v = document.getElementById('dev-owner')?.value || ''; try { await addOwner(v); toast('Owner added (stored as a hash).', 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
-  cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
+  cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); deleteAllReports(); setCrashEnabled(false); localStorage.removeItem('prvlar-report-log'); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
   cloudPass() { const v = prompt('Sync passphrase (at least 8 characters). Use the same one on every device.'); if (v == null) return; if (v.length < 8) return toast('Use at least 8 characters.', 'warn'); setPassphrase(v); render(); },
   musicPlay() { musicPlay(); }, musicPause() { musicPause(); },
   spLogin() { spotifyLogin(); },
@@ -2565,7 +2612,7 @@ const actions = {
   codeNext() { const c = codeState(); loadProblem(suggestProblem(tutorWeak(state.learner || emptyProfile()).map(t => t.name), c.done || [])); render(); },
   codeReset() { const c = codeState(); c.src = starter(c.problem, c.lang); saveCode(); render(); },
   codeExercise() { const c = codeState(), x = c.lesson?.exercise; if (!x) return; loadProblem({ id: 'lesson-' + Date.now(), topic: c.concept || 'Recursion', level: 'easy', title: String(x.title || 'Exercise'), text: String(x.text || ''), fn: String(x.fn), params: (x.params || []).map(String), tests: (x.tests || []).filter(t => Array.isArray(t?.args)).map(t => [t.args, t.expected]) }); c.mode = 'solve'; render(); },
-  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('prvlar-entry', a.entry); writeJSON('prvlar-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('prvlar-name', '')) writeJSON('prvlar-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
+  gateSignIn: () => cloudDo(async () => { requireAdult('sign in with Google'); await signIn(); const a = afterSignIn(); writeJSON('prvlar-entry', a.entry); writeJSON('prvlar-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('prvlar-name', '')) writeJSON('prvlar-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
   gateGuest() { writeJSON('prvlar-entry', afterGuest().entry); render(); },
   async devErrLoad() { const e = state.devErr = {}; state.busy = 'deverr'; render();
     try { await Promise.all([
@@ -2573,7 +2620,7 @@ const actions = {
       reportRepo() ? fetch(`https://api.github.com/repos/${reportRepo()}/issues?labels=user-report&state=all&per_page=30`, { headers: { Accept: 'application/vnd.github+json' } }).then(r => { if (!r.ok) throw Error(`GitHub answered ${r.status}`); return r.json(); }).then(j => { e.gh = j.filter(i => !i.pull_request); }).catch(x => { e.ghErr = x.message; }) : null]); }
     finally { state.busy = ''; render(); } },
   reportFromToast() { const msg = state.error; state.error = ''; state.reportForm = { text: '', diag: true, shot: '', error: { message: msg } }; state.reportSent = ''; go('report'); },
-  async rpSend() { const rep = reportNow(); if (!allowReport(localStorage, rep)) return toast('You’ve sent a few reports already. Please try again in an hour.', 'warn'); const ok = await postReport(REPORT_URL, { ...rep, screenshot: rep.screenshot ? rep.screenshot.slice(0, 400000) : undefined }); state.reportSent = ok ? 'Thanks! Your report was sent.' : 'Could not send. Use “Copy report” or GitHub instead.'; if (ok) state.reportForm = { text: '', diag: true, shot: '' }; render(); },
+  async rpSend() { requireAdult('send a problem report'); const rep = reportNow(); if (!allowReport(localStorage, rep)) return toast('You’ve sent a few reports already. Please try again in an hour.', 'warn'); const ok = await postReport(REPORT_URL, { ...rep, screenshot: rep.screenshot ? rep.screenshot.slice(0, 400000) : undefined }); state.reportSent = ok ? 'Thanks! Your report was sent.' : 'Could not send. Use “Copy report” or GitHub instead.'; if (ok) state.reportForm = { text: '', diag: true, shot: '' }; render(); },
   rpIssue() { const rep = reportNow(); window.open(issueUrl(reportRepo(), rep), '_blank', 'noopener'); state.reportSent = rep.screenshot ? 'GitHub opened. Drag your screenshot into the issue before submitting.' : 'GitHub opened in a new tab. Submit the issue there.'; render(); },
   rpMail() { location.href = mailtoUrl(REPORT_EMAIL, reportNow()); },
   async rpCopy() { const t = reportText(reportNow()); try { await navigator.clipboard.writeText(t); toast('Report copied. Paste it wherever you like.'); } catch { if (navigator.share) navigator.share({ title: 'Prvlar problem report', text: t }).catch(() => {}); } },
@@ -2896,12 +2943,19 @@ async function deleteDoc(id) {
 /* =================================================================== events */
 const run = fn => { Promise.resolve().then(fn).catch(fail); };
 app.addEventListener('click', e => {
-  const b = e.target.closest('[data-action],[data-drconv],[data-smev],[data-sptask],[data-spsel],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-devrmrole],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
+  const b = e.target.closest('[data-action],[data-airep],[data-devrep],[data-drconv],[data-smev],[data-sptask],[data-spsel],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-devrmrole],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
   if (!b || b.disabled) { if (state.menu && !e.target.closest('.menu-wrap')) { state.menu = false; render(); } return; }
   const d = b.dataset;
   if (state.drawer && !b.closest('.drawer') && !d.action) closeDrawer(false);
   if (d.drconv) { closeDrawer(false); return run(async () => { await loadConvs(); const c = state.smConvs.find(x => x.id === d.drconv); if (c) { saveConvs(); state.smConv = c.id; state.smartyChat = c.msgs; state.smartyTab = 'chat'; } go('smarty'); }); }
   if (d.smev) return run(() => smEvRun(d.smev));
+  if (d.airep) {
+    const [k, x, y] = d.airep.split(':');
+    if (k === 'sm') { const th = state.smartyChat || [], m = th[+x]; if (!m) return; state.aiRep = { kind: 'smarty', answer: m.text, context: th[+x - 1]?.text || '' }; }
+    else { const at = state.review || state.result; const q = at?.questions?.find(z => z.id === y), g = (at?.grades || []).find(z => z.id === y); if (!q) return; state.aiRep = { kind: 'assessment', answer: `Mark ${g?.awarded ?? '?'}/${q.marks}. ${g?.feedback || ''}`, context: q.prompt }; }
+    return render();
+  }
+  if (d.devrep) return run(() => { const [id, st] = d.devrep.split(':'); if (!(state.owner || state.role === 'codev')) throw Error('Only the owner and co-developers can review reports.'); setRepStatus(id, st, account()?.email || (state.owner ? 'owner' : 'codev')); render(); });
   if (d.sptask) return run(async () => { const rec = state.plans.find(p => p.id === d.spplan); if (!rec) return; rec.plan = toggleTask(rec.plan, d.sptask); await savePlan(rec); render(); });
   if (d.spsel) { state.spSel = d.spsel; return render(); }
   if (d.action) return run(() => actions[d.action](b));
@@ -3119,9 +3173,6 @@ let searchTimer;
 app.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey && (e.target.id === 'askq' || e.target.id === 'chatq' || e.target.id === 'smartyq')) { e.preventDefault(); return run(() => actions[e.target.id === 'askq' ? 'askSend' : e.target.id === 'smartyq' ? 'smartySend' : 'chatSend']()); }
   if (e.key === 'Escape' && state.showGrid) { state.showGrid = false; return render(); }
-  if (e.key === 'Escape' && state.drawer) { e.preventDefault(); return closeDrawer(); }
-  if (e.key === 'Escape' && state.smEv) { state.smEv = null; return render(); }
-  if (e.key === 'Tab' && state.drawer) { const f = [...document.querySelectorAll('.drawer button, .drawer input')].filter(x => !x.disabled); if (f.length) { const i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); } } }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('g[data-node], g[data-toggle]')) {
     e.preventDefault();
     const id = e.target.dataset.toggle || e.target.dataset.node, attr = e.target.dataset.toggle ? 'data-toggle' : 'data-node';
@@ -3222,7 +3273,7 @@ const ownerPack = ownerPackController({
 });
 let booted = false;
 async function syncOwnerPack(opts) { const a = account(); const r = await ownerPack.sync(a?.email || '', opts).catch(e => ({ ok: false, error: e.message })); state.packStatus = ownerPack.status(); render(); return r; }
-setIdTokenSource(getIdToken);
+setIdTokenSource(getIdToken); setEligibilitySource(() => isAdult());
 const ownerReady = account() ? (startAutoSync(), refreshOwner().catch(() => {})) : Promise.resolve();
 onSyncStatus(st => { if (st.changed) reloadAll().catch(() => {}); else if (state.view === 'settings' && !state.busy) render(); });
 setInterval(updateTimer, 1000);

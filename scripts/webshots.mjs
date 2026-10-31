@@ -38,8 +38,8 @@ for (const kind of ['phone', 'desktop']) {
       if (!await p.$('.quick[data-view="code"]')) throw Error('no Smarty Code quick action for a CS student');
     }, p);
   } else await p.evaluate(() => { localStorage.setItem('prvlar-onboarded', 'true'); localStorage.setItem('prvlar-entry', '"guest"'); localStorage.setItem('prvlar-name', '"Sam"'); localStorage.setItem('prvlar-stream', '"cs"'); location.reload(); }), await p.waitForTimeout(800);
-  await step(`${kind}: layout (${kind === 'phone' ? 'bottom nav' : 'sidebar'})`, async () => {
-    await hash('home'); const nav = await p.evaluate(() => { const vis = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; }; return { tabs: vis('.tabbar, .bottom-nav, nav.tabs'), side: vis('.sidebar, aside.side, nav.side') }; });
+  await step(`${kind}: layout (${kind === 'phone' ? 'side drawer menu' : 'sidebar'})`, async () => {
+    await hash('home'); const nav = await p.evaluate(() => { const vis = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; }; return { tabs: vis('.mbar'), side: vis('.sidebar, aside.side, nav.side') }; });
     if (kind === 'phone' ? !nav.tabs : !nav.side) throw Error(JSON.stringify(nav));
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1); if (overflow) throw Error('horizontal overflow');
   }, p);

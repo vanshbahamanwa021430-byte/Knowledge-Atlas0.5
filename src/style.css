@@ -1919,3 +1919,8 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .gap-say { font-size: 1.05rem; font-weight: 600; }
 .mc-seq { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
 .mc-seq li { display: flex; justify-content: space-between; gap: 8px; }
+.ai-note { margin: 6px 4px; color: var(--ink-3); }
+.age-sheet, .airep-sheet { max-width: 520px; }
+.airep-cats { border: 0; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.radio-row { display: flex; gap: 8px; align-items: center; min-height: 40px; }
+.airep .audit { margin: 6px 0 0; padding-left: 1.2em; }

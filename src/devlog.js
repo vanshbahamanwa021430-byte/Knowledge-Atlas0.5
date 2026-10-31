@@ -52,7 +52,7 @@ export const can = (role, what) => ({
   codev: ['dev', 'beta', 'report'],
   tester: ['beta', 'report']
 }[role] || []).includes(what);
-export const CODEV_TABS = ['errors', 'info', 'logs', 'flags', 'crash'];
+export const CODEV_TABS = ['errors', 'info', 'logs', 'flags', 'crash', 'reports'];
 
 // Masks anything that looks like a credential before it is shown or exported.
 export function maskSecrets(v) {

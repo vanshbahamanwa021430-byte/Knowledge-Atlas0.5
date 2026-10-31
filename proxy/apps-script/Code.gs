@@ -91,6 +91,10 @@ function doPost(e) {
   var req; try { req = JSON.parse(raw); } catch (x) { return err_(400, 'Bad request.'); }
   if (!req || req.token !== token) return err_(403, 'This proxy only serves the Prvlar app.');
   if (!/^device-[0-9a-f-]{36}$/.test(String(req.device || ''))) return err_(400, 'Missing device id.');
+  // 0.9.9 compliance: server-side enforcement. The app sends eligible:true only after the 18+ date-of-birth check;
+  // a direct request without it is refused. When ALLOWED_AUD is set, a valid Google ID token is required as well.
+  if (req.eligible !== true) return err_(403, 'Online AI is only for users aged 18 or over.', 'PRVLAR_AGE');
+  var audSet = String(p.getProperty('ALLOWED_AUD') || '').split(',').filter(String).length > 0;
   var pl = req.payload || {};
   if (!Array.isArray(pl.messages) || !pl.messages.length || pl.messages.length > MAX_MESSAGES) return err_(400, 'Bad request.');
   var v = validate_(pl.messages);
@@ -100,6 +104,7 @@ function doPost(e) {
   // Limits are keyed on a verified Google account when an ID token checks out, otherwise on the device id.
   // The client-supplied "account" field is ignored (0.9.8 review M1).
   var user = verifiedUser_(req.idToken);
+  if (audSet && !user) return err_(401, 'Sign in with Google to use the free option.', 'PRVLAR_SIGNIN');
   var now = new Date(), t = today_(), gk = 'g:' + t, ak = 'a:' + t;
   var mk = 'm:' + Utilities.formatDate(now, 'Asia/Kolkata', 'yyyy-MM-dd-HH-mm');
   var dk = 'd:' + t + ':' + hash_(user || String(req.device));

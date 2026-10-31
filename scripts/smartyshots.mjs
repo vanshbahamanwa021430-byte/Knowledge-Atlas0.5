@@ -3,7 +3,7 @@ import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 const URL = process.argv[2] || 'http://127.0.0.1:4211/', OUT = '/workspace/out/tutor-0.9.5', FX = '/workspace/ka/tests/fixtures/';
 fs.mkdirSync(OUT, { recursive: true }); for (const d of ['figures', 'visuals', 'ocr']) fs.mkdirSync(OUT + '/' + d, { recursive: true });
-const THEMES = ['light', 'dark', 'aesthetic', 'anime', 'glass', 'oldmoney', 'vintage'];
+const THEMES = ['light', 'dark', 'aesthetic', 'anime', 'glass', 'oldmoney', 'vintage', 'royal'];
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*' };
 async function ai(route) {
   if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: cors });
@@ -80,7 +80,7 @@ await step('Reachability: every hub link opens its screen', async () => {
   const groups = { library: '.study-links button', practice: '.hub-list button', plan: '.hub-list button', more: '.hub-list button' };
   for (const [tab, sel] of Object.entries(groups)) { await hash(tab); const n = await p.$$eval(sel, l => l.length); if (!n) throw Error('no links on ' + tab);
     for (let i = 0; i < n; i++) { await hash(tab); await p.waitForTimeout(150); const before = await p.evaluate(() => location.hash); await p.click(`${sel} >> nth=${i}`); await p.waitForTimeout(250); const after = await p.evaluate(() => location.hash); if (after === before && !/settings/.test(after)) throw Error(`${tab} link ${i} did not navigate`); } }
-  for (const t of ['home', 'library', 'practice', 'plan', 'more']) { await p.click(`.tabbar [data-view="${t}"]`); await p.waitForTimeout(200); if (!(await p.evaluate(() => location.hash)).includes(t)) throw Error('tab ' + t); }
+  for (const t of ['home', 'library', 'practice', 'plan', 'more']) { await p.click('.mbar [data-action=drawerOpen]'); await p.click(`.drawer [data-view="${t}"]`); await p.waitForTimeout(200); if (!(await p.evaluate(() => location.hash)).includes(t)) throw Error('tab ' + t); }
 });
 for (const th of THEMES) await step('screens in ' + th, async () => {
   await p.evaluate(t => localStorage.setItem('prvlar-theme', JSON.stringify(t)), th); await p.reload(); await p.waitForTimeout(500); await hash('smarty');
