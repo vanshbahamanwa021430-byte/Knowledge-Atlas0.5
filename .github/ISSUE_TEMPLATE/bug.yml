@@ -1,0 +1,21 @@
+name: Problem report
+description: Something in Knowledge Atlas isn't working
+title: "[Bug] "
+labels: ["user-report"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What went wrong?
+      description: What did you do, what did you expect, and what happened instead? The app may have filled this in for you.
+    validations:
+      required: true
+  - type: textarea
+    id: diag
+    attributes:
+      label: Diagnostics (optional)
+      description: App version, platform and recent errors. Please remove anything personal.
+      render: text
+  - type: markdown
+    attributes:
+      value: You can drag a screenshot into the box above. Please don't post API keys, passwords or personal documents.

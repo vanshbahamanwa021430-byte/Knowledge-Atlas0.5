@@ -15,7 +15,7 @@ const CSP = [
   "img-src 'self' data: blob: https://upload.wikimedia.org https://*.googleusercontent.com",
   "font-src 'self' data:",
   "worker-src 'self' blob:",
-  "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.groq.com https://www.googleapis.com https://commons.wikimedia.org https://api.github.com",
+  "connect-src 'self' https://api.openai.com https://generativelanguage.googleapis.com https://api.groq.com https://www.googleapis.com https://commons.wikimedia.org https://api.github.com https://script.google.com https://script.googleusercontent.com https://docs.google.com",
   "object-src 'none'", "base-uri 'none'", "form-action 'none'"
 ].join('; ');
 

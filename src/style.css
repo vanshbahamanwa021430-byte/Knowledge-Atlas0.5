@@ -1720,3 +1720,20 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .pack-pill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: .72em; font-weight: 600; background: color-mix(in srgb, var(--accent, #6d5efc) 16%, transparent); color: var(--text, inherit); vertical-align: middle; }
 .key-help .kh-steps { margin: 10px 0 12px 1.2em; padding: 0; display: grid; gap: 4px; }
 .key-help .btn.block { margin-top: 8px; }
+/* 0.9.8: Smarty '+' menu, attachments, skills, report */
+.sm-plus-menu { display: grid; gap: 2px; padding: 6px; margin-bottom: 8px; border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 14px; background: var(--card, #fff); box-shadow: 0 8px 24px rgba(0,0,0,.08); }
+.sm-plus-item { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sm-plus-item:hover, .sm-plus-item:focus-visible { background: color-mix(in srgb, currentColor 8%, transparent); }
+.sm-skill-pick { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; }
+.sm-extras { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; align-items: center; }
+.att-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 6px 4px 8px; border-radius: 999px; border: 1px solid var(--line, rgba(127,127,127,.3)); font-size: .85rem; }
+.att-chip img { width: 22px; height: 22px; object-fit: cover; border-radius: 6px; }
+.att-chip .att-name { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-chip.bad { border-color: #dc2626; }
+.att-chip.skill { background: color-mix(in srgb, var(--accent, #6d5efc) 14%, transparent); }
+.att-x { border: 0; background: transparent; color: inherit; font-size: 1.1rem; line-height: 1; min-width: 28px; min-height: 28px; cursor: pointer; border-radius: 50%; }
+.sm-web { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.sm-web a.chip { text-decoration: none; }
+.skill-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
+.skill-list li { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line, rgba(127,127,127,.2)); }
+.dev-errs { list-style: none; padding: 0; display: grid; gap: 6px; }

@@ -50,6 +50,11 @@ Object.defineProperty(music, 'follow', { get: () => state.focusPrefs?.musicFollo
 music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'focus';
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
+import { readAttachment, attachmentBlock, MAX_FILES } from './attach.js';
+import { SKILLS_KEY, normalizeSkill, upsertSkill, removeSkill, parseSlash, suggestSkill, skillPrompt } from './skills.js';
+import { draftSkill, webSearchAnswer } from './ai.js';
+import JSZip from 'jszip';
+import { buildReport, allowReport, issueUrl, mailtoUrl, postReport, reportText, parseCsv } from './report.js';
 
 // Reaching this line means the device's browser engine could run the app (see public/compat.js).
 window.__atlasBooted = true;
@@ -382,7 +387,7 @@ function topbarHTML() {
 
 function toastsHTML() {
   if (!state.error && !state.notice) return '';
-  return `<div class="toasts">${state.error ? `<div class="toast err" role="alert">${icon('alert', 20)}<p>${esc(state.error)}</p><button class="icon-btn sm" data-action="dismiss" aria-label="Dismiss">${icon('x', 18)}</button></div>` : ''}${state.notice ? `<div class="toast ok" role="status">${icon('checkCircle', 20)}<p>${esc(state.notice)}</p><button class="icon-btn sm" data-action="dismiss" aria-label="Dismiss">${icon('x', 18)}</button></div>` : ''}</div>`;
+  return `<div class="toasts">${state.error ? `<div class="toast err" role="alert">${icon('alert', 20)}<p>${esc(state.error)}</p><button class="btn outline sm" data-action="reportFromToast">Report</button><button class="icon-btn sm" data-action="dismiss" aria-label="Dismiss">${icon('x', 18)}</button></div>` : ''}${state.notice ? `<div class="toast ok" role="status">${icon('checkCircle', 20)}<p>${esc(state.notice)}</p><button class="icon-btn sm" data-action="dismiss" aria-label="Dismiss">${icon('x', 18)}</button></div>` : ''}</div>`;
 }
 // Choose which document a test or chat is about (only shown with two or more documents).
 const docPicker = () => state.docs.length > 1 ? `<label class="doc-pick"><span class="sr-only">Document</span>${icon('file', 18)}<select class="input select" id="docpick">${state.docs.map(d => `<option value="${esc(d.id)}"${d.id === state.doc ? ' selected' : ''}>${esc(docTitle(d))}</option>`).join('')}</select></label>` : '';
@@ -426,6 +431,7 @@ function viewHTML() {
     case 'chat': return doc ? viewChat(doc) : noDoc('chat');
     case 'settings': return viewSettings();
     case 'about': return viewAbout();
+    case 'report': return reportHTML();
     case 'smarty': return viewSmarty();
     case 'code': return viewCode();
     case 'dev': return viewDev();
@@ -1862,11 +1868,22 @@ async function smartySend(q) {
   q = String(q || '').trim(); if (!q || state.busy) return;
   requireAi('ask Smarty'); const ai = smartyAi(); if (!smartyConsent()) return;
   await loadConvs(); const th = state.smartyChat || (state.smartyChat = []);
-  th.push({ role: 'user', text: q }); state.smartyDraft = ''; state.busy = 'smarty'; render();
+  const slash = parseSlash(q, skillsList()); const skill = slash.skill || (state.smSkill && skillsList().find(x => x.id === state.smSkill)) || null; if (slash.skill) q = slash.rest || q;
+  const att = (state.smAtt || []).filter(a => !a.busy && !a.error), images = att.filter(a => a.image).map(a => a.image);
+  th.push({ role: 'user', text: (skill ? `/${skill.name} ` : '') + q, files: att.map(a => a.name) }); state.smartyDraft = ''; state.busy = 'smarty'; state.smPlus = false; state.smSuggest = null; render();
+  const extra = skillPrompt(skill) + attachmentBlock(att);
   try {
     const hits = retrieve(smartyIndex(), q, 6);
-    const r = await smartyAnswer(q, hits, ai, { level: tutorLevel(state.learner, q), hint: profileHint(state.learner), history: th.slice(0, -1), docsOnly: docsOnly() });
-    th.push({ role: 'ai', text: r.text, sources: r.sources, topic: r.topic, general: r.general });
+    let r = null;
+    if (state.smWeb && !docsOnly()) {
+      const gk = state.key.trim().startsWith('AIza') ? state.key.trim() : (state.fb?.gemini || '').trim();
+      try { const w = await webSearchAnswer(gk, q, { system: 'You are Smarty, a friendly tutor. Answer clearly for a student, using the web results. Use Markdown.', extra: extra + (hits.length ? '\nSTUDENT NOTES (untrusted):\n' + hits.map(h => h.text).join('\n').slice(0, 6000) : '') });
+        r = { text: w.text, sources: [], web: w.sources, topic: '', general: true }; }
+      catch (e) { toast(e.code === 'NO_GROUNDING' ? 'Web search needs a free Gemini key, so Smarty answered without searching.' : `${e.message} Answered without web search.`, 'warn'); }
+    }
+    if (!r) r = await smartyAnswer(q, hits, ai, { level: tutorLevel(state.learner, q), hint: profileHint(state.learner), history: th.slice(0, -1), docsOnly: docsOnly(), extra, images });
+    th.push({ role: 'ai', text: r.text, sources: r.sources, topic: r.topic, general: r.general, web: r.web, skill: skill?.title });
+    state.smAtt = [];
     await recordTrace(makeTrace({ kind: 'tutor', topic: r.topic || q.slice(0, 60), summary: q.slice(0, 200), steps: r.sources.map(x => 'Used ' + x.cite) })).catch(() => {});
     saveConvs();
   } catch (e) { th.pop(); state.smartyDraft = q; throw e; } finally { state.busy = ''; }
@@ -1885,6 +1902,81 @@ async function startPractice() {
 }
 function finishPractice() { const p = state.practice; if (p.done) return; p.done = true; recordTrace(traceFromPractice(p.items, p.answers)).then(render).catch(() => {}); }
 const masteryBar = t => `<li class="sm-topic"><span>${esc(t.name)}</span><span class="sm-bar" aria-label="${Math.round(t.mastery * 100)}% mastery"><i style="width:${Math.round(t.mastery * 100)}%"></i></span><b>${Math.round(t.mastery * 100)}%</b></li>`;
+
+/* ---------- Smarty '+' menu: attachments, photo, skills, web search ---------- */
+const skillsList = () => (state.skills ??= (readJSON(SKILLS_KEY, []) || []).filter(x => x && x.id && x.title));
+const saveSkills = l => { state.skills = l; writeJSON(SKILLS_KEY, l); };
+const KIND_ICON = { pdf: 'file', image: 'image', docx: 'file', pptx: 'file', xlsx: 'outline', csv: 'outline', text: 'file', audio: 'listen' };
+function smComposerExtras() {
+  state.smWeb ??= !!readJSON('ka-smweb', false);
+  const att = state.smAtt || [], sk = state.smSkill && skillsList().find(x => x.id === state.smSkill), sug = !sk && state.smSuggest && skillsList().find(x => x.id === state.smSuggest);
+  const menu = state.smPlus ? `<div class="sm-plus-menu" role="menu">
+<label class="sm-plus-item" role="menuitem">${icon('upload', 18)}<span>Upload file</span><input type="file" data-smattach multiple hidden></label>
+<label class="sm-plus-item" role="menuitem">${icon('camera', 18)}<span>Take photo</span><input type="file" data-smattach accept="image/*" capture="environment" hidden></label>
+<button class="sm-plus-item" role="menuitem" data-action="smUseSkill">${icon('sparkles', 18)}<span>Use a skill</span></button>
+<button class="sm-plus-item" role="menuitem" data-action="skillNew">${icon('plus', 18)}<span>Create skill</span></button>
+${state.smPickSkill ? `<div class="sm-skill-pick">${skillsList().length ? skillsList().map(x => `<button class="chip-btn" data-smskill="${esc(x.id)}">/${esc(x.name)}</button>`).join('') : '<p class="fine">No skills yet. Create one first.</p>'}</div>` : ''}</div>` : '';
+  const chips = att.map(a => `<span class="att-chip${a.error ? ' bad' : ''}" title="${esc(a.error || a.note || '')}">${a.image ? `<img src="${a.image}" alt="">` : icon(KIND_ICON[a.kind] || 'file', 15)}<span class="att-name">${esc(a.name)}</span><span class="fine">${a.busy ? 'reading…' : a.error ? 'error' : (a.size / 1024 < 1024 ? Math.max(1, Math.round(a.size / 1024)) + ' KB' : (a.size / 1048576).toFixed(1) + ' MB')}</span><button class="att-x" data-smattrm="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">×</button></span>`).join('');
+  const notes = att.filter(a => a.note || a.error).map(a => `<p class="fine ${a.error ? 'bad' : ''}">${esc(a.name)}: ${esc(a.error || a.note)}</p>`).join('');
+  return `${menu}<div class="sm-extras">${chips}${sk ? `<span class="att-chip skill">${icon('sparkles', 15)}<span class="att-name">/${esc(sk.name)}</span><button class="att-x" data-action="smSkillClear" aria-label="Stop using this skill">×</button></span>` : ''}${sug ? `<button class="chip-btn sm-suggest" data-smskill="${esc(sug.id)}">${icon('sparkles', 14)} Use skill “${esc(sug.title)}”?</button>` : ''}
+<button class="chip-btn${state.smWeb ? ' is-on' : ''}" data-action="smWeb" aria-pressed="${!!state.smWeb}">${icon('search', 14)} Search the web</button></div>${notes}`;
+}
+async function addAttachments(files) {
+  const list = state.smAtt || (state.smAtt = []);
+  for (const f of [...files]) {
+    if (list.length >= MAX_FILES) { toast(`Up to ${MAX_FILES} files per message.`, 'warn'); break; }
+    const tmp = { id: Math.random().toString(36).slice(2), name: f.name, size: f.size, kind: 'file', busy: true }; list.push(tmp); render();
+    try { Object.assign(tmp, await readAttachment(f, { parseFile, JSZip, toDataURL: x => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(Error('Could not read the picture.')); r.readAsDataURL(x); }) }), { busy: false }); }
+    catch (e) { tmp.busy = false; tmp.error = e.message || 'Could not read this file.'; }
+    render();
+  }
+}
+function skillsHTML() {
+  const l = skillsList(), ed = state.skillEdit;
+  const editor = ed ? `<section class="card skill-edit"><h2 class="h3">${ed.id ? 'Edit skill' : 'New skill'}</h2>
+<label class="field"><span>Ask Smarty to write it (optional)</span><div class="composer"><input class="input" id="sk-ask" placeholder="e.g. make a skill that turns a chapter into 10 flashcards" autocomplete="off"><button class="btn outline" data-action="skillDraft"${state.busy ? ' disabled' : ''}>${state.busy === 'skill' ? '<span class="spin"></span>' : icon('sparkles', 16)}Draft</button></div></label>
+<label class="field"><span>Name</span><input class="input" id="sk-title" value="${esc(ed.title || '')}" maxlength="60" placeholder="Flashcard maker"></label>
+<label class="field"><span>When to use</span><input class="input" id="sk-when" value="${esc(ed.when || '')}" maxlength="200" placeholder="When I want to revise a chapter quickly"></label>
+<label class="field"><span>Steps (one per line)</span><textarea class="input" id="sk-steps" rows="6" placeholder="Find the 10 most important facts&#10;Write each as a question and answer">${esc((ed.steps || []).join('\n'))}</textarea></label>
+<label class="field"><span>Output format (optional)</span><input class="input" id="sk-format" value="${esc(ed.format || '')}" maxlength="400" placeholder="A numbered list of Q: … A: …"></label>
+<div class="code-acts"><button class="btn primary" data-action="skillSave">${icon('check', 17)}Save skill</button><button class="btn outline" data-action="skillCancel">Cancel</button></div></section>` : '';
+  return `${editor}<section class="card"><div class="row between"><h2 class="h3">Your skills</h2>${ed ? '' : `<button class="btn primary sm" data-action="skillNew">${icon('plus', 16)}New skill</button>`}</div>
+<p class="fine">A skill is a set of steps Smarty follows. Pick one from <b>+</b>, or type <code>/name</code> before your question. Saved on this device and synced if you sign in.</p>
+${l.length ? `<ul class="skill-list">${l.map(x => `<li><div><b>${esc(x.title)}</b> <code>/${esc(x.name)}</code>${x.when ? `<p class="fine">${esc(x.when)}</p>` : ''}</div><div class="code-acts"><button class="btn outline sm" data-skilledit="${esc(x.id)}">Edit</button><button class="btn ghost danger sm" data-skilldel="${esc(x.id)}">Delete</button></div></li>`).join('')}</ul>` : '<p class="muted">No skills yet.</p>'}</section>`;
+}
+function readSkillForm(ed) { const v = id => document.getElementById(id)?.value || ''; return { ...ed, title: v('sk-title'), when: v('sk-when'), steps: v('sk-steps'), format: v('sk-format') }; }
+
+/* ---------- Report a problem + automatic error reports ---------- */
+// REPORT_URL: the owner's Google Apps Script web app (responses land in the owner's Sheet). Public build config.
+const REPORT_URL = String(import.meta.env?.VITE_REPORT_URL || '').trim();
+let REPORT_EMAIL = '', REPORT_CSV = '';   // the owner pack may set them (never in the public bundle)
+const reportRepo = () => UPDATE_REPO || (/github\.io$/.test(location.hostname) && location.pathname.split('/').filter(Boolean)[0] ? `${location.hostname.split('.')[0]}/${location.pathname.split('/').filter(Boolean)[0]}` : '');
+const autoReportsOn = () => readJSON('ka-report-auto', true) !== false;
+const diagNow = () => ({ version: VERSION, platform: platform(), userAgent: navigator.userAgent, screen: `${innerWidth}×${innerHeight}`, theme: state.theme, online: navigator.onLine, log: [...crashes().slice(-5).map(c => 'crash: ' + c.msg), ...logs.all().filter(l => l.lvl === 'error' || l.lvl === 'warn').slice(-10).map(l => `${l.lvl}: ${l.msg}`)] });
+function reportHTML() {
+  const r = state.reportForm || (state.reportForm = { text: '', diag: true, shot: '' }), sent = state.reportSent;
+  return `${backHead('Report a problem')}<div class="view narrow"><section class="card report-card"><h1 class="h2">${icon('bug', 22)}Report a problem</h1>
+<p class="fine">Tell us what happened. Reports go to the app’s developer${REPORT_URL ? '' : ' through GitHub or email'}; we can’t reply unless you leave a contact.</p>
+<label class="field"><span>What went wrong?</span><textarea class="input" id="rp-text" rows="6" maxlength="4000" placeholder="What did you do, what did you expect, what happened instead?">${esc(r.text)}</textarea></label>
+<label class="btn outline file-btn">${icon('camera', 17)}<span>${r.shot ? 'Screenshot added' : 'Add a screenshot (optional)'}</span><input type="file" accept="image/*" data-rpshot hidden></label>${r.shot ? ` <button class="btn ghost sm" data-action="rpShotRm">Remove</button>` : ''}
+<label class="toggle-row compact"><span><b>Include diagnostics</b><span>App version, platform, screen size, theme and recent app errors. No documents, names, emails or keys.</span></span><input type="checkbox" class="switch" id="rp-diag"${r.diag ? ' checked' : ''}></label>
+<label class="field"><span>Contact (optional)</span><input class="input" id="rp-contact" maxlength="120" placeholder="Email or handle, only if you want a reply" value="${esc(r.contact || '')}" autocomplete="off"></label>
+<div class="code-acts">${REPORT_URL ? `<button class="btn primary" data-action="rpSend">${icon('send', 17)}Send report</button>` : ''}${reportRepo() ? `<button class="btn ${REPORT_URL ? 'outline' : 'primary'}" data-action="rpIssue">${icon('share', 17)}Open as GitHub issue</button>` : ''}${REPORT_EMAIL ? `<button class="btn outline" data-action="rpMail">Email it</button>` : ''}<button class="btn outline" data-action="rpCopy">Copy report</button></div>
+${sent ? `<p class="status ok" role="status">${esc(sent)}</p>` : ''}
+<label class="toggle-row compact"><span><b>Send crash reports automatically</b><span>When the app hits an error, send the error message, app version and platform (never your documents or personal data). A few per day at most.</span></span><input type="checkbox" class="switch" id="rp-auto"${autoReportsOn() ? ' checked' : ''}></label></section></div>`;
+}
+function reportNow() { const r = state.reportForm || {}; const text = document.getElementById('rp-text')?.value ?? r.text ?? ''; const contact = document.getElementById('rp-contact')?.value ?? r.contact ?? ''; const diag = document.getElementById('rp-diag')?.checked ?? r.diag;
+  Object.assign(state.reportForm, { text, contact, diag }); if (!text.trim()) throw Error('Describe the problem first.');
+  const rep = buildReport({ text, kind: 'user', diag: diag ? diagNow() : null, contact, error: r.error || null }); if (r.shot) rep.screenshot = r.shot; return rep; }
+// Automatic, silent: errors are posted to the owner's Apps Script (rate-limited per device; no personal data).
+async function autoReport(err) {
+  if (!REPORT_URL || !autoReportsOn() || !navigator.onLine) return;
+  const rep = buildReport({ kind: 'auto', error: err instanceof Error ? err : Error(String(err?.message || err)), diag: { ...diagNow(), log: [] } });
+  if (/ResizeObserver|Script error\.?$|AbortError|NetworkError|Failed to fetch|Load failed/i.test(rep.error.message)) return;
+  if (allowReport(localStorage, rep)) postReport(REPORT_URL, rep).catch(() => {});
+}
+window.addEventListener('error', e => autoReport(e.error || e.message));
+window.addEventListener('unhandledrejection', e => autoReport(e.reason));
 // No AI yet: recommend the free Gemini key (Groq as a second option). Shown in Smarty and in Settings › AI providers.
 function keyHelpHTML() {
   if (aiAvailable()) return '';
@@ -1902,9 +1994,11 @@ function viewSmarty() {
   let body;
   if (tab === 'chat') {
     const th = state.smartyChat || [];
-    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft" data-smact="speak:${i}" aria-label="Read aloud" title="Read aloud">${icon('listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
+    body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft" data-smact="speak:${i}" aria-label="Read aloud" title="Read aloud">${icon('listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
       : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Hi, I’m Smarty</h2><p class="muted">Ask about anything. I answer from your own notes first, show where each point came from, draw diagrams and explain at your level.</p><div class="prompts">${['Explain my weakest topic simply', 'Make a 5-step revision plan', 'Draw a diagram of the main process', 'Quiz me on one key idea'].map(t => `<button class="prompt" data-smsuggest="${esc(t)}">${icon('sparkles', 16)}<span>${esc(t)}</span></button>`).join('')}</div></div>`}
-${!aiAvailable() ? keyHelpHTML() : `<div class="composer"><label class="icon-btn soft file-btn" title="Add a document" aria-label="Add a document">${icon('plus', 20)}<input type="file" data-import multiple accept="${ACCEPT}"></label><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
+${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
+  } else if (tab === 'skills') {
+    body = skillsHTML();
   } else if (tab === 'practice') {
     const p = state.practice;
     body = !p ? `<section class="card"><h2 class="h2">Practice made for you</h2><p class="muted">${weak.length ? `Focuses on: ${weak.slice(0, 3).map(t => esc(t.name)).join(', ')}.` : 'Take a test or chat with Smarty first so it learns your weak topics. Until then it practises your main ideas.'} Each question is checked by a second AI pass before you see it.</p>${aiAvailable() ? `<button class="btn primary" data-action="smartyPractice"${state.busy || !state.docs.length ? ' disabled' : ''}>${state.busy === 'practice' ? '<span class="spin"></span>Writing and checking…' : icon('sparkles', 18) + 'Start practice'}</button>` : `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>`}</section>`
@@ -1923,7 +2017,7 @@ ${p.done ? `<div class="status ok">${icon('trophy', 20)}<p>${p.items.filter(q =>
   const drawer = state.smDrawer ? `<aside class="card sm-drawer" aria-label="Conversations"><div class="card-head"><h2 class="h2">Chats</h2><button class="btn primary sm" data-action="smNew">${icon('plus', 16)}New chat</button></div><input class="input" id="smconvq" type="search" placeholder="Search chats" value="${esc(state.smConvQ || '')}"><ul class="sm-convs">${convs.filter(c => !q || c.title.toLowerCase().includes(q) || c.msgs.some(m => String(m.text).toLowerCase().includes(q))).map(c => `<li class="${c.id === state.smConv ? 'is-on' : ''}"><button class="sm-conv" data-smconv="${esc(c.id)}"><b>${esc(c.title)}</b><span class="fine">${esc(fmtDay(c.at))}</span></button><button class="icon-btn soft" data-smren="${esc(c.id)}" aria-label="Rename" title="Rename">${icon('pencil', 16)}</button><button class="icon-btn soft" data-smdel="${esc(c.id)}" aria-label="Delete" title="Delete">${icon('trash', 16)}</button></li>`).join('') || '<li class="fine">No chats yet.</li>'}</ul></aside>` : '';
   const head = `<button class="icon-btn" data-action="smDrawer" aria-label="Chat history" title="Chat history">${icon('outline', 20)}</button><button class="icon-btn" data-action="smNew" aria-label="New chat" title="New chat">${icon('plus', 20)}</button>`;
   const picker = aiAvailable() ? `<label class="sm-model"><span class="sr-only">AI service</span><select class="input select" id="smmodel">${SM_SERVICES().map(([v, l]) => `<option value="${v}"${(state.smModel || 'auto') === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></label>` : '';
-  return `${backHead('Smarty', head)}${drawer}<div class="view narrow smarty">${tab === 'chat' ? picker : ''}<p class="muted page-sub">Your personal tutor · level: ${tutorLevel(P)}</p>${seg('smtab', tab, [['chat', 'Ask', 'chat'], ['practice', 'Practice', 'target'], ['profile', 'Profile', 'trend'], ['memory', 'History', 'outline']])}${body}</div>`;
+  return `${backHead('Smarty', head)}${drawer}<div class="view narrow smarty">${tab === 'chat' ? picker : ''}<p class="muted page-sub">Your personal tutor · level: ${tutorLevel(P)}</p>${seg('smtab', tab, [['chat', 'Ask', 'chat'], ['practice', 'Practice', 'target'], ['profile', 'Profile', 'trend'], ['memory', 'History', 'outline'], ['skills', 'Skills', 'sparkles']])}${body}</div>`;
 }
 
 /* ---------- Owner mode: Developer panel (convenience only, not security; harmless diagnostics) ---------- */
@@ -1936,7 +2030,7 @@ async function refreshOwner({ afterSignIn = false } = {}) {
   else if (afterSignIn && state.owner && r?.reason === 'missing') toast('Owner mode on. No owner pack found: import it in the Developer panel.', 'warn');
 }
 const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>` : '';
-const DEV_TABS = [['pack', 'Owner pack'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners']];
+const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners']];
 function viewDev() {
   if (!state.owner) return `${backHead('Developer panel')}<div class="view narrow"><section class="card"><p>Developer tools are available in owner mode only (sign in with an owner Google account).</p></section></div>`;
   const tab = state.devTab || 'info', pre = x => `<pre class="code-out dev-pre">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 2))}</pre>`;
@@ -1949,6 +2043,11 @@ function viewDev() {
   else if (tab === 'db') body = `<div class="code-acts">${(state.devCounts || []).map(([t, n]) => `<button class="chip-btn${state.devTable === t ? ' is-on' : ''}" data-devtable="${t}">${t} (${n})</button>`).join('') || '<button class="btn outline sm" data-action="devCount">Load tables</button>'}</div>${state.devTable ? `<div class="code-acts"><button class="btn outline sm" data-action="devExport">${icon('download', 16)}Export ${esc(state.devTable)} as JSON</button></div>${pre(maskSecrets(state.devRows || []))}` : ''}`;
   else if (tab === 'flags') body = FLAGS.map(([k, l]) => `<label class="toggle-row compact"><span><b>${esc(k)}</b><span>${esc(l)}</span></span><input type="checkbox" class="switch" data-devflag="${k}"${flags()[k] ? ' checked' : ''}></label>`).join('');
   else if (tab === 'data') body = `<p>Adds a sample document, a Smarty profile with weak topics and a few study traces, all tagged “seed”. Reset removes only seeded items.</p><div class="code-acts"><button class="btn primary" data-action="devSeed">Seed test data</button><button class="btn outline danger" data-action="devUnseed">Remove test data</button></div>`;
+  else if (tab === 'errors') { const e = state.devErr || {}; const c = crashes();
+    body = `<div class="code-acts"><button class="btn outline sm" data-action="devErrLoad"${state.busy ? ' disabled' : ''}>${icon('refresh', 16)}Refresh</button></div>
+<h3 class="h3">Reports in your Sheet</h3>${REPORT_CSV ? (e.sheetErr ? `<p class="status warn">${esc(e.sheetErr)}</p>` : e.sheet ? (e.sheet.length ? `<ul class="dev-errs">${e.sheet.slice(-50).reverse().map(r => `<li><details><summary>${esc(r.at || r.Timestamp || '')} · <b>${esc(r.kind || '')}</b> ${esc((r.message || r.text || '').slice(0, 90))}</summary>${pre(JSON.stringify(r, null, 1))}</details></li>`).join('')}</ul>` : '<p class="muted">No reports yet.</p>') : '<p class="muted">Tap Refresh.</p>') : '<p class="fine">Add the Sheet’s published CSV link to the owner pack (reports.csv) to see automatic reports here. See docs/error-reports.md.</p>'}
+<h3 class="h3">GitHub issues (user-report)</h3>${!reportRepo() ? '<p class="fine">No repository configured.</p>' : e.ghErr ? `<p class="status warn">${esc(e.ghErr)}</p>` : e.gh ? (e.gh.length ? `<ul class="dev-errs">${e.gh.map(i => `<li><a href="${esc(i.html_url)}" target="_blank" rel="noopener">#${i.number} ${esc(i.title)}</a> <span class="fine">${esc(i.state)} · ${new Date(i.created_at).toLocaleDateString()}</span></li>`).join('')}</ul>` : '<p class="muted">No issues.</p>') : '<p class="muted">Tap Refresh.</p>'}
+<h3 class="h3">This device</h3>${c.length ? c.slice().reverse().slice(0, 15).map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No errors on this device.</p>'}`; }
   else if (tab === 'crash') { const c = crashes(); body = `<button class="btn outline sm" data-action="devClearCrashes">Clear</button>${c.length ? c.slice().reverse().map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No crashes recorded.</p>'}`; }
   else if (tab === 'pack') body = ownerPackHTML();
   else { const added = addedOwners(); body = `<p class="fine">Owners are recognised by a SHA-256 hash of their Google email; addresses are not stored. Added owners sync through your own Drive. Built-in owners are set in the code (docs/owner-mode.md). Co-developers must also be test users on the Google consent screen while it is in Testing.</p><ul class="sm-list">${OWNER_HASHES.map(h => `<li><code>${h.slice(0, 12)}…</code> <span class="chip">built-in</span></li>`).join('')}${added.map(h => `<li><code>${h.slice(0, 12)}…</code> <button class="link-btn danger" data-devrmowner="${h}">Remove</button></li>`).join('')}</ul><div class="code-acts"><input class="input" id="dev-owner" type="email" placeholder="Co-developer’s Gmail address" autocomplete="off"><button class="btn primary" data-action="devAddOwner">Add owner</button></div>`; }
@@ -2137,6 +2236,26 @@ const actions = {
   codeExercise() { const c = codeState(), x = c.lesson?.exercise; if (!x) return; loadProblem({ id: 'lesson-' + Date.now(), topic: c.concept || 'Recursion', level: 'easy', title: String(x.title || 'Exercise'), text: String(x.text || ''), fn: String(x.fn), params: (x.params || []).map(String), tests: (x.tests || []).filter(t => Array.isArray(t?.args)).map(t => [t.args, t.expected]) }); c.mode = 'solve'; render(); },
   gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('ka-entry', a.entry); writeJSON('ka-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('ka-name', '')) writeJSON('ka-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
   gateGuest() { writeJSON('ka-entry', afterGuest().entry); render(); },
+  async devErrLoad() { const e = state.devErr = {}; state.busy = 'deverr'; render();
+    try { await Promise.all([
+      REPORT_CSV ? fetch(REPORT_CSV).then(r => { if (!r.ok) throw Error(`Sheet answered ${r.status}`); return r.text(); }).then(t => { e.sheet = parseCsv(t); }).catch(x => { e.sheetErr = x.message || 'Could not read the Sheet.'; }) : null,
+      reportRepo() ? fetch(`https://api.github.com/repos/${reportRepo()}/issues?labels=user-report&state=all&per_page=30`, { headers: { Accept: 'application/vnd.github+json' } }).then(r => { if (!r.ok) throw Error(`GitHub answered ${r.status}`); return r.json(); }).then(j => { e.gh = j.filter(i => !i.pull_request); }).catch(x => { e.ghErr = x.message; }) : null]); }
+    finally { state.busy = ''; render(); } },
+  reportFromToast() { const msg = state.error; state.error = ''; state.reportForm = { text: '', diag: true, shot: '', error: { message: msg } }; state.reportSent = ''; go('report'); },
+  async rpSend() { const rep = reportNow(); if (!allowReport(localStorage, rep)) return toast('You’ve sent a few reports already. Please try again in an hour.', 'warn'); const ok = await postReport(REPORT_URL, { ...rep, screenshot: rep.screenshot ? rep.screenshot.slice(0, 400000) : undefined }); state.reportSent = ok ? 'Thanks! Your report was sent.' : 'Could not send. Use “Copy report” or GitHub instead.'; if (ok) state.reportForm = { text: '', diag: true, shot: '' }; render(); },
+  rpIssue() { const rep = reportNow(); window.open(issueUrl(reportRepo(), rep), '_blank', 'noopener'); state.reportSent = rep.screenshot ? 'GitHub opened. Drag your screenshot into the issue before submitting.' : 'GitHub opened in a new tab. Submit the issue there.'; render(); },
+  rpMail() { location.href = mailtoUrl(REPORT_EMAIL, reportNow()); },
+  async rpCopy() { const t = reportText(reportNow()); try { await navigator.clipboard.writeText(t); toast('Report copied. Paste it wherever you like.'); } catch { if (navigator.share) navigator.share({ title: 'Knowledge Atlas problem report', text: t }).catch(() => {}); } },
+  rpShotRm() { state.reportForm.shot = ''; render(); },
+  smPlus() { state.smPlus = !state.smPlus; state.smPickSkill = false; render(); },
+  smUseSkill() { state.smPickSkill = !state.smPickSkill; render(); },
+  smSkillClear() { state.smSkill = null; render(); },
+  smWeb() { state.smWeb = !state.smWeb; writeJSON('ka-smweb', state.smWeb); render(); },
+  skillNew() { state.skillEdit = {}; state.smartyTab = 'skills'; state.smPlus = false; go('smarty'); },
+  skillCancel() { state.skillEdit = null; render(); },
+  skillSave() { try { const sk = normalizeSkill(readSkillForm(state.skillEdit || {})); saveSkills(upsertSkill(skillsList(), sk)); state.skillEdit = null; toast(`Skill saved. Use it with /${skillsList().find(x => x.id === sk.id)?.name || sk.name}.`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
+  async skillDraft() { const req = document.getElementById('sk-ask')?.value.trim(); if (!req) return toast('Describe the skill first.', 'warn'); const ai = requireAi('draft a skill'); if (!ai) return;
+    state.busy = 'skill'; render(); try { const o = await draftSkill(req, ai); state.skillEdit = { ...(state.skillEdit || {}), title: o.title || '', when: o.when || '', steps: Array.isArray(o.steps) ? o.steps : [], format: o.format || '' }; } finally { state.busy = ''; render(); } },
   obNext() { state.onStep = (state.onStep || 0) + 1; render(); },
   obBack() { state.onStep = Math.max(0, (state.onStep || 0) - 1); render(); },
   obDone() { writeJSON('ka-onboarded', true); render(); },
@@ -2458,7 +2577,7 @@ app.addEventListener('click', e => {
   if (d.delprof) return run(async () => { const p = state.profiles.find(x => x.id === d.delprof); if (!p || !confirm(`Delete the exam profile “${p.name}”?`)) return; await deleteProfile(p.id); state.profiles = await getProfiles(); if (pick().id === p.id) writeJSON('ka-exam-pick', { ...pick(), id: 'standard' }); render(); });
   if (d.delpaper !== undefined) { state.lab.papers.splice(Number(d.delpaper), 1); return render(); }
   if (d.go) { const [v, sub] = d.go.split(':'); if (v === 'smarty') state.smartyTab = sub; go(v); if (v === 'settings' && sub) setTimeout(() => document.getElementById(sub)?.scrollIntoView({ block: 'start' }), 60); return; }
-  if (d.devtab) { state.devTab = d.devtab; if (d.devtab === 'db' && !state.devCounts) return actions.devCount(); return render(); }
+  if (d.devtab) { state.devTab = d.devtab; if (d.devtab === 'db' && !state.devCounts) return actions.devCount(); if (d.devtab === 'errors' && !state.devErr) return actions.devErrLoad(); return render(); }
   if (d.devtable) { state.devTable = d.devtable; db.table(d.devtable).toArray().then(rows => { state.devRowsAll = rows; state.devRows = rows.slice(0, 20).map(r => JSON.parse(JSON.stringify(r, (k, v) => typeof v === 'string' && v.length > 200 ? v.slice(0, 200) + '…' : v instanceof Uint8Array || v instanceof ArrayBuffer ? `[${v.byteLength} bytes]` : v))); render(); }); return; }
   if (d.devrmowner) { try { removeOwner(d.devrmowner); } catch (e) { toast(e.message, 'warn'); } return render(); }
   if (d.tmode) { state.timing.mode = d.tmode; if (d.tmode === 'preset') state.timing.minutes = Number(d.tmin); saveTiming(); return render(); }
@@ -2484,6 +2603,10 @@ app.addEventListener('click', e => {
   if (d.zoom) return zoomImage(d.zoom);
   if (d.figpage) return run(() => showFigure(d.figpage));
   if (d.smtab) { state.smartyTab = d.smtab; return render(); }
+  if (d.smattrm) { state.smAtt = (state.smAtt || []).filter(a => a.id !== d.smattrm); return render(); }
+  if (d.smskill) { state.smSkill = d.smskill; state.smPlus = false; state.smPickSkill = false; state.smSuggest = null; return render(); }
+  if (d.skilledit) { state.skillEdit = { ...skillsList().find(x => x.id === d.skilledit) }; state.smartyTab = 'skills'; return render(); }
+  if (d.skilldel) { const x = skillsList().find(y => y.id === d.skilldel); if (x && confirm(`Delete the skill “${x.title}”?`)) { saveSkills(removeSkill(skillsList(), x.id)); if (state.smSkill === x.id) state.smSkill = null; } return render(); }
   if (d.smpick) { const q = state.practice?.items.find(x => x.id === d.smpick.split(':')[0]); if (q && !(q.id in state.practice.answers)) { state.practice.answers[q.id] = +d.smpick.split(':')[1]; render(); } return; }
   if (ED.onClick(d, e)) return;
   if (d.view) return go(d.view);
@@ -2547,6 +2670,9 @@ app.addEventListener('change', e => {
   if (t.id === 'fb-on') { state.fb.on = t.checked; saveFb(); return render(); }
   if (t.id === 'docsonly') { writeJSON('ka-docs-only', t.checked); return render(); }
   if (t.matches('[data-glassbg]')) { const f = t.files[0]; t.value = ''; return run(() => pickGlassBg(f)); }
+  if (t.matches('[data-rpshot]')) { const f = t.files[0]; t.value = ''; if (!f) return; if (f.size > 6 * 1048576) return toast('Screenshot too big (6 MB max).', 'warn'); const fr = new FileReader(); fr.onload = () => { state.reportForm.text = document.getElementById('rp-text')?.value || state.reportForm.text; state.reportForm.shot = fr.result; render(); }; fr.readAsDataURL(f); return; }
+  if (t.id === 'rp-auto') { writeJSON('ka-report-auto', t.checked); return; }
+  if (t.matches('[data-smattach]')) { const fs = [...t.files]; t.value = ''; state.smPlus = false; return run(() => addAttachments(fs)); }
   if (t.matches('[data-packfile]')) { const f = t.files[0], pass = packPass(); t.value = ''; if (!f) return; return run(async () => {
     if (!state.owner) throw Error('Sign in with an owner Google account first.');
     if (!pass) throw Error('Type the owner-pack passphrase first, then pick the file.');
@@ -2591,7 +2717,7 @@ app.addEventListener('input', e => {
   const t = e.target;
   if (/^fb-(gemini|groq|url|key|model)$/.test(t.id)) { state.fb[t.id.slice(3)] = t.value; saveFb(); return; }
   if (t.id === 'smconvq') { state.smConvQ = t.value; render(); const el = document.getElementById('smconvq'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } return; }
-  if (t.id === 'smartyq') { state.smartyDraft = t.value; return; }
+  if (t.id === 'smartyq') { state.smartyDraft = t.value; if (!state.smSkill && !t.value.startsWith('/')) { const sg = suggestSkill(t.value, skillsList())?.id || null; if (sg !== state.smSuggest) { state.smSuggest = sg; const w = document.getElementById('sm-extras-wrap'); if (w) w.innerHTML = smComposerExtras(); } } return; }
   if (t.id === 'smartysearch') { state.smartyQuery = t.value; render(); const el = document.getElementById('smartysearch'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } return; }
   if (t.id === 'cx-name') { state.lab.name = t.value; return; }
   if (t.id === 'pp-subject') { state.lab.ppSubject = t.value; return; }
@@ -2698,6 +2824,7 @@ const packCtx = {
   addExams: list => { const ps = list.map(normalizeProfile), ids = new Set(ps.map(p => p.id)); BUILTIN = [...BUILTIN.filter(p => !ids.has(p.id)), ...ps]; return () => { BUILTIN = BUILTIN.filter(p => !ids.has(p.id)); }; },
   addServerPreset: (key, preset, help) => { SERVER_PRESETS[key] = { label: preset.label, url: preset.url, model: preset.model, brand: preset.brand }; SERVER_HELP[key] = help; SELF_HOSTED.push(key); return () => { delete SERVER_PRESETS[key]; delete SERVER_HELP[key]; SELF_HOSTED.splice(SELF_HOSTED.indexOf(key), 1); }; },
   // Owner pack's own Gemini/Groq keys: used in memory only (never written to storage or synced), only where the owner has none.
+  setReportConfig: c => { const old = [REPORT_EMAIL, REPORT_CSV]; REPORT_EMAIL = String(c?.email || ''); REPORT_CSV = /^https:\/\//.test(c?.csv || '') ? c.csv : ''; return () => { [REPORT_EMAIL, REPORT_CSV] = old; }; },
   setAiKeys: k => { const g = String(k?.gemini || ''), q = String(k?.groq || ''); const before = { key: state.key, gemini: state.fb.gemini, groq: state.fb.groq };
     const u = String(k?.url || ''), uk = String(k?.urlKey || ''); before.url = state.fb.url; before.fbKey = state.fb.key; before.on = state.fb.on;
     if (g && !state.key.trim()) state.key = g; if (g && !state.fb.gemini.trim()) state.fb.gemini = g; if (q && !state.fb.groq.trim()) state.fb.groq = q;

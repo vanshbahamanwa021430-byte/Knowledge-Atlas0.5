@@ -1,6 +1,6 @@
 // Line icons from Lucide (ISC licence, https://lucide.dev), rendered as inline SVG strings so they work offline.
 import {
-  House, Library, BookOpen, BookOpenText, ClipboardCheck, LayoutGrid, BrainCircuit, Sparkles, Lightbulb, MessageCircle,
+  House, Camera, Image, Library, BookOpen, BookOpenText, ClipboardCheck, LayoutGrid, BrainCircuit, Sparkles, Lightbulb, MessageCircle,
   Send, Share, Upload, Download, Moon, Sun, Monitor, Search, Plus, Ellipsis, EllipsisVertical, Crosshair, Network, X, Eye,
   EyeOff, CircleCheck, Circle, Bookmark, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, ChevronDown, Settings, FileText,
   NotebookPen, StickyNote, ZoomIn, ZoomOut, Maximize, ListTree, ChartColumn, Trophy, Timer, Trash2, Info, TriangleAlert,
@@ -15,7 +15,7 @@ const NODES = {
   moon: Moon, sun: Sun, monitor: Monitor, search: Search, plus: Plus, dots: Ellipsis, dotsV: EllipsisVertical, focus: Crosshair,
   network: Network, x: X, eye: Eye, eyeOff: EyeOff, checkCircle: CircleCheck, circle: Circle, bookmark: Bookmark,
   back: ArrowLeft, next: ArrowRight, chevL: ChevronLeft, chevR: ChevronRight, chevD: ChevronDown, settings: Settings,
-  file: FileText, note: NotebookPen, sticky: StickyNote, zoomIn: ZoomIn, zoomOut: ZoomOut, fit: Maximize, outline: ListTree,
+  file: FileText, camera: Camera, image: Image, note: NotebookPen, sticky: StickyNote, zoomIn: ZoomIn, zoomOut: ZoomOut, fit: Maximize, outline: ListTree,
   chart: ChartColumn, trophy: Trophy, timer: Timer, trash: Trash2, info: Info, alert: TriangleAlert, restore: RotateCcw,
   plug: Plug, server: Server, key: Key, target: Target, flow: Workflow, devices: MonitorSmartphone, storage: HardDrive,
   clock: Clock, check: Check, map: MapIcon, lock: Lock, pencil: Pencil, grad: GraduationCap, flame: Flame, phone: Phone, heart: Heart,
