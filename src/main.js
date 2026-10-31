@@ -53,6 +53,8 @@ music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'fo
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
 import { drawerHTML, edgeSwipe } from './drawer.js';
+import { record as crashRecord, crashEnabled, setCrashEnabled, reports as crashReports, reportText as crashText } from './crashlog.js';
+import { encryptJSON, decryptJSON } from './sync.js';
 import { ACTIONS as SM_EV_ACTIONS, screenContext, actionPrompt, parseCards, parseTasks, parseNotes } from './everywhere.js';
 import { buildStudyPlan, adjustPlan, toggleTask, planProgress, addDay as planAddDay } from './countdown.js';
 import { weeklyReport, nextWeeklyAt } from './weekly.js';
@@ -203,10 +205,18 @@ function fallbackChain() {
 }
 const aiConfig = () => state.fb?.on ? { chain: fallbackChain() } : primaryConfig();
 const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq', 'url', 'key']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('prvlar-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
+// 0.9.9: Prvlar works offline; the first time anything would go to an online AI service, ask once.
+function aiConsentOk() {
+  if (usingServer() && /^http:\/\/(localhost|127\.0\.0\.1)/.test(state.ai?.url || '')) return true;   // a model on this device
+  if (localStorage.getItem('prvlar-ai-consent') === '1') return true;
+  if (!confirm('Allow online AI? Parts of your documents and questions are sent to the AI service you chose to answer them. Everything else stays on this device.')) return false;
+  localStorage.setItem('prvlar-ai-consent', '1'); return true;
+}
 function requireAi(what) {
   if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); return aiConfig(); }
   if (!state.key.trim()) throw Error(`Add an AI key in Settings to ${what}. Free keys from Google Gemini or Groq work.`);
   if (!navigator.onLine) throw Error('You are offline. This needs an internet connection.');
+  if (!aiConsentOk()) throw Error('Online AI was not allowed. You can allow it in Settings › Data and backup.');
   return aiConfig();
 }
 const aiName = () => aiAvailable() ? describeAI(aiConfig()) : '';
@@ -1155,7 +1165,10 @@ ${fallbackHTML()}
 <label class="toggle-row"><span><b>Make flashcards from wrong answers</b><span>After each test, questions you got wrong become flashcards.</span></span><input type="checkbox" id="autocards"${autoCards() ? ' checked' : ''}><span class="switch${autoCards() ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label></section>
 <section class="card" aria-labelledby="notif-h"><h2 class="h2" id="notif-h">Notifications</h2><p class="muted">${state.notifPerm === 'granted' ? 'Notifications are on.' : 'Allow notifications to get reminders and focus-timer alerts.'}</p><div class="row"><button class="btn outline" data-view="planner">${icon('bell', 18)}Reminders and goals</button><button class="btn outline" data-view="focus">${icon('timer', 18)}Focus timer alerts</button></div></section>
 <section class="card" aria-labelledby="data-h"><h2 class="h2" id="data-h">Data and backup</h2><p class="muted">Documents, notes, flashcards, planner, study time, progress and results are stored only on this device${state.storage ? ` (${fmtBytes(state.storage.used)} used)` : ''}. Uninstalling the app or clearing its data deletes them, so back up now and then.</p>
-<div class="row"><button class="btn outline" data-action="exportBackup">${icon('download', 18)}Back up</button><label class="btn outline file-btn">${icon('upload', 18)}<span>Restore</span><input type="file" data-restore accept=".json,application/json" aria-label="Restore a backup"></label></div></section>
+<div class="row"><button class="btn outline" data-action="exportBackup">${icon('download', 18)}Back up</button><button class="btn outline" data-action="exportBackupEnc">${icon('lock', 18)}Encrypted backup</button><label class="btn outline file-btn">${icon('upload', 18)}<span>Restore</span><input type="file" data-restore accept=".json,application/json" aria-label="Restore a backup"></label></div>
+<label class="toggle-row"><span><b>Online AI allowed</b><span>Turn off to keep everything on this device. Prvlar asks again before AI is used.</span></span><input type="checkbox" data-pref099="ai"${localStorage.getItem('prvlar-ai-consent') === '1' ? ' checked' : ''}><span class="switch${localStorage.getItem('prvlar-ai-consent') === '1' ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
+<label class="toggle-row"><span><b>Save crash reports</b><span>Off by default. Errors are kept only on this device, with keys and emails removed. Nothing is sent.</span></span><input type="checkbox" data-pref099="crash"${crashEnabled() ? ' checked' : ''}><span class="switch${crashEnabled() ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
+${crashEnabled() ? `<div class="row"><button class="btn outline sm" data-action="copyCrash">${icon('copy', 16)}Copy ${plural(crashReports().length, 'crash report')}</button></div>` : ''}</section>
 <section class="card about"><span class="about-logo">${logo()}</span><div><b>Prvlar ${esc(VERSION)}</b><p class="fine">Running on this ${where}. Works on Android 6 or later, iPhone and iPad with iOS 14 or later, Windows, and current browsers.</p><button class="link-btn" data-view="about">${icon('info', 16)}About us and suggestions</button></div></section>
 <section class="card" aria-labelledby="legal-h"><h2 class="h2" id="legal-h">About and legal</h2><div class="row"><button class="btn outline sm" data-view="about">About us</button><button class="btn outline sm" data-view="privacy">Privacy policy</button><button class="btn outline sm" data-view="terms">Terms</button><button class="btn outline sm" data-view="licenses">Licences</button></div></section>
 </div>`;
@@ -2729,6 +2742,14 @@ const actions = {
     const how = await saveTextFile(name, mapMarkdown(doc), 'text/markdown');
     state.notice = how === 'cancelled' ? '' : `Mind map exported as ${name}. Open it in a mind-map app that imports Markdown (Markmap, XMind, Obsidian).`; render();
   },
+  async exportBackupEnc() {
+    const pass = prompt('Choose a passphrase for this backup (at least 8 characters). You need it to restore; it cannot be recovered.');
+    if (pass === null) return; if (pass.length < 8) throw Error('Use a passphrase of at least 8 characters.');
+    const name = 'prvlar-backup-' + new Date().toISOString().slice(0, 10) + '-encrypted.json';
+    const how = await saveTextFile(name, JSON.stringify({ prvlarBackup: 1, ...(await encryptJSON(await exportAll(), pass)) }));
+    if (how !== 'cancelled') { state.notice = `Encrypted backup saved: ${name}`; render(); }
+  },
+  async copyCrash() { await navigator.clipboard.writeText(crashText(crashReports())); state.notice = 'Crash reports copied. Paste them into a message if you want to share them.'; render(); },
   async exportBackup() {
     const name = 'prvlar-backup-' + new Date().toISOString().slice(0, 10) + '.json';
     const how = await saveTextFile(name, JSON.stringify(await exportAll()));
@@ -2765,6 +2786,10 @@ async function reloadAll() {
 async function restoreBackup(file) {
   if (!file) return;
   let data; try { data = JSON.parse(await file.text()); } catch { throw Error('That file is not a Prvlar backup.'); }
+  if (data && data.encrypted === 'AES-GCM') {
+    const pass = prompt('This backup is encrypted. Enter its passphrase:'); if (!pass) return;
+    try { data = await decryptJSON(data, pass); } catch { throw Error('Wrong passphrase, or the backup is damaged.'); }
+  }
   await importAll(data);
   state.notes = readJSON('prvlar-notes', {}); state.visited = readJSON('prvlar-visited', {});
   loadPrefs(); applyTheme(); applyReading();
@@ -2888,6 +2913,7 @@ app.addEventListener('click', e => {
 app.addEventListener('change', e => {
   const t = e.target;
   if (t.matches('[data-import]')) { const files = [...t.files]; t.value = ''; return run(() => importFiles(files)); }
+  if (t.dataset.pref099) { if (t.dataset.pref099 === 'ai') localStorage.setItem('prvlar-ai-consent', t.checked ? '1' : '0'); else setCrashEnabled(t.checked); return render(); }
   if (t.matches('[data-restore]')) { const f = t.files[0]; t.value = ''; return run(() => restoreBackup(f)); }
   if (t.id === 'docpick') { selectDoc(t.value); return render(); }
   if (t.id === 'exam-pick') { writeJSON('prvlar-exam-pick', { ...pick(), id: t.value, level: 0 }); return render(); }
@@ -3145,3 +3171,7 @@ refresh().then(async () => {
   (globalThis.requestIdleCallback || (f => setTimeout(f, 1500)))(() => { import('./editor.js').catch(() => {}); import('pdfjs-dist/legacy/build/pdf.mjs').catch(() => {}); });
 }).catch(e => { appReady(); fail(e); });
 function appReady() { try { performance.mark('prvlar-ready'); } catch { /* old browsers */ } globalThis.__prvlarReady?.(); }
+
+// 0.9.9 crash reports, only when the user allowed them (see crashlog.js).
+window.addEventListener('error', e => { try { crashRecord(e.error || e.message, { view: state.view, version: VERSION }); } catch { /* never crash the crash log */ } });
+window.addEventListener('unhandledrejection', e => { try { crashRecord(e.reason, { view: state.view, version: VERSION }); } catch { /* ignore */ } });
