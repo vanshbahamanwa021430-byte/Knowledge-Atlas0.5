@@ -352,13 +352,18 @@ export async function draftSkill(request, ai) {
 }
 // Web search with Gemini's Google Search grounding (native API; the OpenAI-compatible endpoint has no grounding).
 // Returns { text, sources: [{ title, url }] }. Throws when the key is not a Gemini key.
-export async function webSearchAnswer(key, question, { system = '', extra = '', model = 'gemini-2.5-flash', fetchImpl = globalThis.fetch } = {}) {
+export async function webSearchAnswer(key, question, opts = {}) {
   if (!/^AIza/.test(key || '')) throw Object.assign(Error('Web search needs a Google Gemini key.'), { code: 'NO_GROUNDING' });
+  // "-latest" aliases follow Google's current models; the lite model is the fallback if the main one is unavailable.
+  const models = opts.model ? [opts.model] : ['gemini-flash-latest', 'gemini-flash-lite-latest'];
+  for (let i = 0; ; i++) { try { return await webSearchOnce(key, question, { ...opts, model: models[i] }); } catch (e) { if (e.code !== 'MODEL' || i >= models.length - 1) throw e; } }
+}
+async function webSearchOnce(key, question, { system = '', extra = '', model, fetchImpl = globalThis.fetch } = {}) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const body = { contents: [{ role: 'user', parts: [{ text: `${extra}\nQUESTION: ${question}` }] }], tools: [{ google_search: {} }], ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}) };
   let r; try { r = await fetchImpl(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch { throw Error('Could not reach Google for web search. Check your connection.'); }
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw Object.assign(Error(`Web search failed (${r.status}). ${j?.error?.message || ''}`.trim()), { code: r.status === 429 ? 'RATE' : 'HTTP' });
+  if (!r.ok) throw Object.assign(Error(`Web search failed (${r.status}). ${j?.error?.message || ''}`.trim()), { code: r.status === 429 ? 'RATE' : r.status === 404 ? 'MODEL' : 'HTTP' });
   const c = j.candidates?.[0] || {}, text = (c.content?.parts || []).map(p => p.text || '').join('').trim();
   const seen = new Set(), sources = [];
   for (const g of c.groundingMetadata?.groundingChunks || []) { const u = g.web?.uri; if (u && !seen.has(u)) { seen.add(u); sources.push({ title: g.web.title || new URL(u).hostname, url: u }); } }
