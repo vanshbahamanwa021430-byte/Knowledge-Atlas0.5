@@ -10,9 +10,11 @@ const h = t => createHash('sha256').update(t).digest('hex').slice(0, 16);
 const dir = process.argv[2] || 'dist', bad = [/[a-z0-9._%+-]+@gmail\.com/i, /AIza[0-9A-Za-z_-]{30,}/, /gsk_[0-9A-Za-z]{30,}/];
 const bannedIn = text => { const seen = new Set(); for (const tok of text.toLowerCase().match(/[a-z0-9]{4,64}/g) || []) { if (seen.has(tok)) continue; seen.add(tok);
   for (const n of LENS) for (let i = 0; i + n <= tok.length; i++) { const sub = tok.slice(i, i + n); if (SET.has(n + ':' + h(sub))) return sub; } } return null; };
+// The one address the owner chose to publish as the privacy/grievance contact (31 Oct 2026). Any other email still fails.
+const PUBLIC_CONTACT = 'vanshbahamanwa021430@gmail.com';
 const hits = [];
 const SKIP = /^(node_modules|build|\.gradle|Pods)$/;   // generated folders (rebuilt from the clean source)
-const walk = d => readdirSync(d).forEach(f => { const p = join(d, f); if (statSync(p).isDirectory()) return SKIP.test(f) ? null : walk(p); if (/\.(js|mjs|cjs|css|html|json|webmanifest|txt|svg|md|xml)$/.test(f)) { const t = readFileSync(p, 'utf8'); for (const r of (/third-party-licenses\.txt$/.test(p) ? bad.slice(1) : bad)) {   // third-party copyright lines keep their authors’ emails
+const walk = d => readdirSync(d).forEach(f => { const p = join(d, f); if (statSync(p).isDirectory()) return SKIP.test(f) ? null : walk(p); if (/\.(js|mjs|cjs|css|html|json|webmanifest|txt|svg|md|xml)$/.test(f)) { const t = readFileSync(p, 'utf8').split(PUBLIC_CONTACT).join('[public-contact]'); for (const r of (/third-party-licenses\.txt$/.test(p) ? bad.slice(1) : bad)) {   // third-party copyright lines keep their authors’ emails
   const m = t.match(r); if (m) hits.push(`${p}: ${r} → …${t.slice(Math.max(0, m.index - 40), m.index + 40)}…`); } const w = bannedIn(t); if (w) hits.push(`${p}: banned word (length ${w.length})`); } });
 walk(dir);
 const files = []; const list = d => readdirSync(d).forEach(f => { const p = join(d, f); statSync(p).isDirectory() ? (SKIP.test(f) ? null : list(p)) : files.push(p); }); list(dir);

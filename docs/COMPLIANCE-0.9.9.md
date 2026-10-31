@@ -3,7 +3,7 @@
 - **Server enforcement** (proxy/apps-script/Code.gs): requests without `eligible:true` get 403 PRVLAR_AGE; when `ALLOWED_AUD` is set, requests without a valid Google ID token get 401. The flag is client-asserted; with ALLOWED_AUD it is tied to a verified Google account. Android has no ID token yet, so with ALLOWED_AUD set the free option needs a web/desktop sign-in or the user's own key.
 - **Report AI answer** (src/aireport.js): on every Smarty reply and every AI-provisional mark; categories inaccurate/harmful/inappropriate/privacy + note; stores the answer (≤4000 chars) and a ≤300-char context excerpt, scrubbed of keys, tokens, emails and phone numbers. Kept on the device; Developer panel › AI reports (owner and co-developer only) has status new/reviewing/resolved, an audit trail and export.
 - **Accuracy notice** under Smarty answers, Smarty-everywhere results and AI marks.
-- **Privacy page** corrected: 0.9.9 sends no automatic crash/error reports (the public build has no report URL; automatic reports are now opt-in and adults-only even when one is configured). Data locations, retention, and a grievance contact placeholder (`privacy@[TODO]`, the owner must fill in a real address).
+- **Privacy page** corrected: 0.9.9 sends no automatic crash/error reports (the public build has no report URL; automatic reports are now opt-in and adults-only even when one is configured). Data locations, retention, and the grievance contact vanshbahamanwa021430@gmail.com.
 - **Deletion**: Delete cloud data also deletes AI reports, crash logs and the report send-history on the device.
 
 ## Evidence register (code at efc6b6a; screenshots in /workspace/out/test-0.9.9/)
@@ -22,3 +22,9 @@
 | Privacy page matches code | src/legal.js:11, 13, 26 | fulltest "Privacy page" | 78-privacy.png |
 | Automatic reports opt-in, adults only | src/main.js:2250 | – (no report URL in public build) | – |
 | Deletion also clears reports and crash logs | src/main.js:2598 | fulltest "Deletion" | – |
+
+## Install tests
+| Test | Status |
+|---|---|
+| Real-device Android install (update over 0.9.8) | **NOT YET RUN**: owner will verify after release. Only static checks were done: signature certificate matches 0.9.8, versionName 0.9.9, versionCode 100909. |
+| Windows install (setup exe + portable zip) | **NOT YET RUN**: owner will verify after release. |
