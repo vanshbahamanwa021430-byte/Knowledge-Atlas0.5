@@ -12,12 +12,12 @@ export function buildReport({ text = '', kind = 'user', error = null, diag = nul
 }
 // Per-device limits: user reports 5/hour; automatic reports 3/hour and 10/day, one per distinct error per day.
 export function allowReport(store, report, now = Date.now()) {
-  let log = []; try { log = JSON.parse(store.getItem('ka-report-log') || '[]'); } catch { /* reset */ }
+  let log = []; try { log = JSON.parse(store.getItem('prvlar-report-log') || '[]'); } catch { /* reset */ }
   log = log.filter(x => now - x.t < 86400000);
   const hour = log.filter(x => now - x.t < 3600000 && x.k === report.kind).length, day = log.filter(x => x.k === report.kind).length;
   const sig = report.error ? report.error.message.slice(0, 80) : '';
   const ok = report.kind === 'auto' ? hour < 3 && day < 10 && !log.some(x => x.k === 'auto' && x.s === sig) : hour < 5;
-  if (ok) { log.push({ t: now, k: report.kind, s: sig }); store.setItem('ka-report-log', JSON.stringify(log)); }
+  if (ok) { log.push({ t: now, k: report.kind, s: sig }); store.setItem('prvlar-report-log', JSON.stringify(log)); }
   return ok;
 }
 export const reportText = r => `${r.text || ''}${r.error ? `\n\nError: ${r.error.message}\n${r.error.stack}` : ''}${r.diag ? `\n\nApp ${r.diag.version} · ${r.diag.platform} · ${r.diag.screen} · theme ${r.diag.theme}\n${r.diag.log.join('\n')}` : ''}`.trim();

@@ -34,7 +34,7 @@ const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome'
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 await ctx.route(/commons\.wikimedia\.org/, r => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ query: { pages: { 1: { title: 'File:Heart diagram.svg.png', index: 1, imageinfo: [{ thumburl: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#fde"/><circle cx="160" cy="100" r="60" fill="#c33"/></svg>'), descriptionurl: 'https://commons.wikimedia.org/wiki/File:Heart', extmetadata: { LicenseShortName: { value: 'CC BY-SA 4.0' }, Artist: { value: 'Example Author' }, LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/4.0/' } } }] } } } }) }));
 await ctx.route(/api\.openai\.com|generativelanguage\.googleapis\.com|api\.groq\.com|api\.github\.com/, ai);
-await ctx.addInitScript(() => { localStorage.setItem('ka-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); });
+await ctx.addInitScript(() => { localStorage.setItem('prvlar-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('prvlar-onboarded', 'true'); localStorage.setItem('prvlar-entry', '"guest"'); });
 const p = await ctx.newPage(); p.setDefaultTimeout(5000); const errors = [], results = [];
 p.on('pageerror', e => errors.push(e.message)); p.on('dialog', d => d.accept());
 const hash = h => p.evaluate(x => { location.hash = x; }, h).then(() => p.waitForTimeout(250));
@@ -68,7 +68,7 @@ await step('AI Chat: out-of-document answer badge, Mermaid diagram, KaTeX, Commo
   await p.click('[data-findimg]'); await p.waitForSelector('.cm-img figcaption'); const cap = await p.textContent('.cm-img figcaption'); if (!/Example Author/.test(cap) || !/CC BY-SA/.test(cap)) throw Error('attribution missing: ' + cap);
   await p.evaluate(() => document.querySelector('.thread .msg.ai')?.scrollIntoView()); await p.screenshot({ path: OUT + '/visuals/chat-diagram-math-image.png', fullPage: true });
 });
-await step('"Only use my documents" toggle defaults off and persists', async () => { if (await p.isChecked('#docsonly')) throw Error('default on'); await p.check('#docsonly'); if ((await p.evaluate(() => localStorage.getItem('ka-docs-only'))) !== 'true') throw Error('not saved'); await p.uncheck('#docsonly'); });
+await step('"Only use my documents" toggle defaults off and persists', async () => { if (await p.isChecked('#docsonly')) throw Error('default on'); await p.check('#docsonly'); if ((await p.evaluate(() => localStorage.getItem('prvlar-docs-only'))) !== 'true') throw Error('not saved'); await p.uncheck('#docsonly'); });
 await step('Smarty is in Study', async () => { await hash('library'); await p.click('.study-links [data-view="smarty"]'); await p.waitForSelector('.smarty'); });
 await step('Ask: answer with citations', async () => { await p.fill('#smartyq', 'What are dead loads?'); await p.click('[data-action="smartySend"]'); await p.waitForSelector('.sm-src .chip'); const t = await p.textContent('.sm-src'); if (!/›/.test(t)) throw Error('no doc›section citation: ' + t); });
 await step('Practice: verified questions, answer all', async () => { await p.click('[data-smtab="practice"]'); await p.click('[data-action="smartyPractice"]'); await p.waitForSelector('[data-smpick]'); if (!/Question 1 of 4/.test(await p.textContent('.sm-step'))) throw Error('not one-per-screen');
@@ -83,7 +83,7 @@ await step('Reachability: every hub link opens its screen', async () => {
   for (const t of ['home', 'library', 'practice', 'plan', 'more']) { await p.click(`.tabbar [data-view="${t}"]`); await p.waitForTimeout(200); if (!(await p.evaluate(() => location.hash)).includes(t)) throw Error('tab ' + t); }
 });
 for (const th of THEMES) await step('screens in ' + th, async () => {
-  await p.evaluate(t => localStorage.setItem('ka-theme', JSON.stringify(t)), th); await p.reload(); await p.waitForTimeout(500); await hash('smarty');
+  await p.evaluate(t => localStorage.setItem('prvlar-theme', JSON.stringify(t)), th); await p.reload(); await p.waitForTimeout(500); await hash('smarty');
   for (const tab of ['chat', 'practice', 'profile', 'memory']) { await p.click(`[data-smtab="${tab}"]`); await p.waitForTimeout(250); await p.screenshot({ path: `${OUT}/${th}-${tab}.png`, fullPage: false }); }
 });
 await step('Reset profile', async () => { await p.click('[data-smtab="profile"]'); await p.click('[data-action="smartyReset"]'); await p.waitForSelector('text=No weak topics yet'); });

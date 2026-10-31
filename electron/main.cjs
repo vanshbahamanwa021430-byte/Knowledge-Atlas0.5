@@ -3,6 +3,18 @@
 const { app, BrowserWindow, session, protocol, net, ipcMain, shell } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
+const fs = require('fs');
+
+// 0.9.8 rename: the app's data folder moved from %APPDATA%\Knowledge Atlas to %APPDATA%\Prvlar. Copy the old
+// profile once (documents, settings, sign-in) before Chromium opens it; the old folder is left untouched.
+try {
+  const NEW = app.getPath('userData'), OLD = path.join(app.getPath('appData'), 'Knowledge Atlas');
+  if (NEW !== OLD && fs.existsSync(OLD) && !fs.existsSync(path.join(NEW, '.migrated-from-knowledge-atlas')) && !fs.existsSync(path.join(NEW, 'IndexedDB'))) {
+    fs.mkdirSync(NEW, { recursive: true });
+    fs.cpSync(OLD, NEW, { recursive: true, force: false, errorOnExist: false, filter: src => !/(Singleton|lockfile|\.lock$)/i.test(path.basename(src)) });
+    fs.writeFileSync(path.join(NEW, '.migrated-from-knowledge-atlas'), new Date().toISOString());
+  }
+} catch (e) { console.warn('profile migration skipped:', e.message); }
 
 const DIST = path.join(__dirname, '..', 'dist');   // the public installer maps dist-web here
 const ORIGIN = 'app://atlas/';

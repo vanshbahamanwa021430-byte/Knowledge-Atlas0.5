@@ -1,7 +1,8 @@
 // Cloud sync to the user's OWN Google Drive (appDataFolder, scope drive.appdata). No server of ours is involved.
 // Pure, unit-tested parts: record merging (last writer wins, tombstones for deletes), snapshot encryption
 // (AES-GCM, key from a passphrase with PBKDF2) and a small Drive v3 REST client.
-export const SYNC_FORMAT = 'knowledge-atlas-sync', SYNC_VERSION = 1, SNAPSHOT_NAME = 'knowledge-atlas-sync.json';
+// 0.9.8 rename: new files are Prvlar-named; the old Knowledge Atlas snapshot is still read (and its format accepted).
+export const SYNC_FORMAT = 'prvlar-sync', LEGACY_SYNC_FORMAT = 'knowledge-atlas-sync', SYNC_VERSION = 1, SNAPSHOT_NAME = 'prvlar-sync.json', LEGACY_SNAPSHOT_NAME = 'knowledge-atlas-sync.json';
 export const SYNC_TABLES = ['documents', 'attempts', 'settings', 'cards', 'sessions', 'plans', 'days', 'profiles', 'traces'];
 export const TABLE_KEY = { settings: 'key', days: 'day' };
 // Settings rows that never leave the device (AI keys, big re-downloadable caches, sync's own state).
@@ -108,8 +109,10 @@ export function drive(token, fetchImpl = globalThis.fetch, { retries = 3, sleep 
 // One sync round: read the cloud copy, merge with local, write the result back. Returns the merged snapshot.
 export async function syncRound(d, local, { pass = '' } = {}) {
   const [file] = await d.list();
+  const [legacy] = file ? [] : await d.list(LEGACY_SNAPSHOT_NAME).catch(() => []);
   let remote = null;
-  if (file) { const raw = await d.read(file.id); remote = isEncrypted(raw) ? (pass ? await decryptJSON(raw, pass) : (() => { throw Error('Your cloud copy is encrypted. Enter your sync passphrase.'); })()) : raw; }
+  const src = file || legacy;
+  if (src) { const raw = await d.read(src.id); remote = isEncrypted(raw) ? (pass ? await decryptJSON(raw, pass) : (() => { throw Error('Your cloud copy is encrypted. Enter your sync passphrase.'); })()) : raw; }
   const merged = mergeSnapshots(local, remote);
   merged.at = Date.now();
   const out = pass ? await encryptJSON(merged, pass) : merged;

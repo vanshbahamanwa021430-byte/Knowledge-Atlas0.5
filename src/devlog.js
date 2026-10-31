@@ -7,37 +7,37 @@ export async function sha256Hex(text) {
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 export const normEmail = e => String(e || '').trim().toLowerCase();
-// Extra owners added in the Developer panel: stored as hashes in 'ka-owners' (synced with the owner's own Drive).
-export function addedOwners(store = globalThis.localStorage) { try { const a = JSON.parse(store.getItem('ka-owners') || '[]'); return Array.isArray(a) ? a.filter(h => /^[0-9a-f]{64}$/.test(h)) : []; } catch { return []; } }
+// Extra owners added in the Developer panel: stored as hashes in 'prvlar-owners' (synced with the owner's own Drive).
+export function addedOwners(store = globalThis.localStorage) { try { const a = JSON.parse(store.getItem('prvlar-owners') || '[]'); return Array.isArray(a) ? a.filter(h => /^[0-9a-f]{64}$/.test(h)) : []; } catch { return []; } }
 export const ownerHashes = store => [...new Set([...OWNER_HASHES, ...addedOwners(store)])];
 export async function isOwnerEmail(email, store = globalThis.localStorage) { const e = normEmail(email); return !!e && ownerHashes(store).includes(await sha256Hex(e)); }
 export const isGmail = e => /^[a-z0-9.+_-]+@(gmail|googlemail)\.com$/.test(normEmail(e));
 export async function addOwner(email, store = globalThis.localStorage) {
   if (!isGmail(email)) throw Error('Enter a Gmail address.');
   const h = await sha256Hex(normEmail(email)), list = addedOwners(store);
-  if (!OWNER_HASHES.includes(h) && !list.includes(h)) store.setItem('ka-owners', JSON.stringify([...list, h]));
+  if (!OWNER_HASHES.includes(h) && !list.includes(h)) store.setItem('prvlar-owners', JSON.stringify([...list, h]));
   return h;
 }
 export function removeOwner(hash, store = globalThis.localStorage) {
   if (OWNER_HASHES.includes(hash)) throw Error('Built-in owners can only be removed in the code (see docs/owner-mode.md).');
-  store.setItem('ka-owners', JSON.stringify(addedOwners(store).filter(h => h !== hash)));
+  store.setItem('prvlar-owners', JSON.stringify(addedOwners(store).filter(h => h !== hash)));
 }
 
 // Roles beyond Owner (0.9.8). Client-side convenience only, not security: anyone can read the app's code.
-// Stored as SHA-256 hashes of the Gmail in 'ka-roles' ([{h, role}]); the owner's settings sync through the owner's Drive,
+// Stored as SHA-256 hashes of the Gmail in 'prvlar-roles' ([{h, role}]); the owner's settings sync through the owner's Drive,
 // and a published hashes-only roles.json (next to the app) lets other people's devices recognise them.
 export const ROLES = { codev: 'Co-developer', tester: 'Beta tester' };
 const cleanRoles = a => Array.isArray(a) ? a.filter(r => r && /^[0-9a-f]{64}$/.test(r.h) && ROLES[r.role]) : [];
-export function roleList(store = globalThis.localStorage) { try { return cleanRoles(JSON.parse(store.getItem('ka-roles') || '[]')); } catch { return []; } }
+export function roleList(store = globalThis.localStorage) { try { return cleanRoles(JSON.parse(store.getItem('prvlar-roles') || '[]')); } catch { return []; } }
 export async function addRole(email, role, store = globalThis.localStorage) {
   if (!ROLES[role]) throw Error('Unknown role.');
   if (!isGmail(email)) throw Error('Enter a Gmail address.');
   const h = await sha256Hex(normEmail(email));
   if (ownerHashes(store).includes(h)) throw Error('That Gmail is already an owner.');
-  store.setItem('ka-roles', JSON.stringify([...roleList(store).filter(r => r.h !== h), { h, role }]));
+  store.setItem('prvlar-roles', JSON.stringify([...roleList(store).filter(r => r.h !== h), { h, role }]));
   return h;
 }
-export function removeRole(hash, store = globalThis.localStorage) { store.setItem('ka-roles', JSON.stringify(roleList(store).filter(r => r.h !== hash))); }
+export function removeRole(hash, store = globalThis.localStorage) { store.setItem('prvlar-roles', JSON.stringify(roleList(store).filter(r => r.h !== hash))); }
 // published: roles from roles.json (hashes only). Owner always wins; local entries override published ones.
 export async function roleOf(email, store = globalThis.localStorage, published = []) {
   const e = normEmail(email); if (!e) return null;
@@ -75,7 +75,7 @@ export function recordRequest({ url, headers, body, status, ms, error, chars }) 
   let model = ''; try { model = JSON.parse(body || '{}').model || ''; } catch { /* not JSON */ }
   return requests.push({ at: Date.now(), url: maskSecrets(String(url || '')), headers: maskSecrets(headers || {}), model, status: status ?? null, ms: Math.round(ms || 0), error: error ? maskSecrets(String(error)).slice(0, 300) : '', bytes: (body || '').length, chars: chars || 0, preview: maskSecrets(String(body || '').slice(0, 600)) });
 }
-const CRASH_KEY = 'ka-crashlog';
+const CRASH_KEY = 'prvlar-crashlog';
 export function crashes(store = globalThis.localStorage) { try { return JSON.parse(store.getItem(CRASH_KEY) || '[]'); } catch { return []; } }
 export function recordCrash(err, store = globalThis.localStorage) {
   const list = [...crashes(store), { at: Date.now(), msg: maskSecrets(String(err?.message || err)).slice(0, 500), stack: maskSecrets(String(err?.stack || '')).slice(0, 1500) }].slice(-30);
@@ -84,8 +84,8 @@ export function recordCrash(err, store = globalThis.localStorage) {
 export const clearCrashes = (store = globalThis.localStorage) => store.removeItem(CRASH_KEY);
 // Preview feature flags (owner-only toggles for unfinished UI). Unknown names are ignored.
 export const FLAGS = [['verbose-ai', 'Log full AI prompts in the request inspector'], ['show-render-time', 'Show render time in the corner'], ['preview-compact-home', 'Preview: compact Home dashboard']];
-export function flags(store = globalThis.localStorage) { try { const f = JSON.parse(store.getItem('ka-flags') || '{}'); return Object.fromEntries(FLAGS.map(([k]) => [k, f[k] === true])); } catch { return {}; } }
-export function setFlag(name, on, store = globalThis.localStorage) { if (!FLAGS.some(f => f[0] === name)) return flags(store); const f = { ...flags(store), [name]: !!on }; store.setItem('ka-flags', JSON.stringify(f)); return f; }
+export function flags(store = globalThis.localStorage) { try { const f = JSON.parse(store.getItem('prvlar-flags') || '{}'); return Object.fromEntries(FLAGS.map(([k]) => [k, f[k] === true])); } catch { return {}; } }
+export function setFlag(name, on, store = globalThis.localStorage) { if (!FLAGS.some(f => f[0] === name)) return flags(store); const f = { ...flags(store), [name]: !!on }; store.setItem('prvlar-flags', JSON.stringify(f)); return f; }
 export function installLogCapture(target = globalThis) {
   if (target.__kaLog) return; target.__kaLog = true;
   for (const lvl of ['log', 'info', 'warn', 'error']) { const orig = console[lvl].bind(console); console[lvl] = (...a) => { logs.push({ at: Date.now(), lvl, msg: maskSecrets(a.map(x => typeof x === 'string' ? x : (() => { try { return JSON.stringify(x); } catch { return String(x); } })()).join(' ')).slice(0, 800) }); orig(...a); }; }

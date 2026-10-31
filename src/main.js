@@ -1,3 +1,4 @@
+import './migrate.js';   // must run first: moves old Knowledge Atlas settings to Prvlar keys
 import NOTICES from '../THIRD_PARTY_NOTICES.md?raw';
 import { GROUPS, TAB_OF as NAV_TAB, ALL_VIEWS } from './nav.js';
 import './fonts.css';
@@ -41,7 +42,7 @@ import { needsWelcome, afterSignIn, afterGuest, afterSignOut } from './gate.js';
 import { cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, grantDrive, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
 import { registerPlugin } from '@capacitor/core';
 import { checkForUpdate, AUTO_INTERVAL, RELEASES_PAGE, UPDATE_REPO, setUpdateRepo } from './update.js';
-import { ownerPackController, webSecureStore, nativeSecureStore, memoryStore, isPackEnvelope, OWNER_PACK_NAME } from './ownerpack.js';
+import { ownerPackController, webSecureStore, nativeSecureStore, memoryStore, isPackEnvelope, OWNER_PACK_NAME, LEGACY_OWNER_PACK_NAME } from './ownerpack.js';
 import { newCard, review, preview, whenLabel, isNew, dueQueue, deckStats, cardFromQuestion } from './srs.js';
 import { dayKey, dayStart, addDays, lastDays, streaks, xpTotal, levelFor, BADGES, earnedBadges, errorEntries, weakTopics, daysUntil, recommend, nextPhase } from './progress.js';
 import { permission, askPermission, exactAlarm, askExactAlarm, scheduleReminders, scheduleFocusEnd, cancelFocusEnd, notifyNow } from './notify.js';
@@ -113,61 +114,61 @@ const THEME_BAR = { light: ['#F4F4F6', false], dark: ['#0B0B10', true], aestheti
 const readJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') ?? d; } catch { return d; } };
 const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* storage full or blocked */ } };
 {
-  const v = readJSON('ka-ai', {});
+  const v = readJSON('prvlar-ai', {});
   if (SERVER_PRESETS[v.mode] || v.mode === 'cloud') state.ai = { mode: v.mode, url: String(v.url || ''), model: String(v.model || ''), vision: !!v.vision };
-  const fb = readJSON('ka-fallback', {}) || {};
+  const fb = readJSON('prvlar-fallback', {}) || {};
   state.fb = { on: fb.on === undefined ? DEFAULT_FB_ON : fb.on === true, order: Array.isArray(fb.order) && fb.order.length === 3 ? fb.order : ['gemini', 'groq', 'custom'], gemini: String(fb.gemini || ''), groq: String(fb.groq || ''), url: String(fb.url || ''), key: String(fb.key || ''), model: String(fb.model || '') || 'auto' };
-  const w = readJSON('ka-view', {});
+  const w = readJSON('prvlar-view', {});
   if (Number(w.zoom) >= 0.3 && Number(w.zoom) <= 2) state.zoom = Number(w.zoom);
   if (w.layout === 'vertical' || w.layout === 'horizontal') state.layout = w.layout;
   loadPrefs();
-  state.remember = readJSON('ka-remember', true) !== false;
-  if (state.remember) state.key = String(readJSON('ka-key', '') || '');
-  state.notes = readJSON('ka-notes', {});
-  state.visited = readJSON('ka-visited', {});
-  state.lastStudied = readJSON('ka-last', {});
-  state.nudgeHidden = readJSON('ka-nudge', {});
+  state.remember = readJSON('prvlar-remember', true) !== false;
+  if (state.remember) state.key = String(readJSON('prvlar-key', '') || '');
+  state.notes = readJSON('prvlar-notes', {});
+  state.visited = readJSON('prvlar-visited', {});
+  state.lastStudied = readJSON('prvlar-last', {});
+  state.nudgeHidden = readJSON('prvlar-nudge', {});
 }
 // Preferences that a backup can restore (see BACKUP_PREFS in storage.js); numbers are kept within sensible ranges.
 function loadPrefs() {
-  const t = readJSON('ka-theme', 'system');
+  const t = readJSON('prvlar-theme', 'system');
   state.theme = THEMES.includes(t) ? t : 'system';
   const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
-  const g = readJSON('ka-goals', {}) || {};
+  const g = readJSON('prvlar-goals', {}) || {};
   state.goals = { dailyMinutes: num(g.dailyMinutes, 30, 5, 720), weeklyMinutes: num(g.weeklyMinutes, 180, 10, 5000), dailyCards: num(g.dailyCards, 20, 1, 500) };
-  const r = readJSON('ka-remind', {}) || {};
+  const r = readJSON('prvlar-remind', {}) || {};
   state.remind = { daily: !!r.daily, time: /^\d\d:\d\d$/.test(r.time || '') ? r.time : '19:00', exams: r.exams !== false, todos: r.todos !== false };
-  const f = readJSON('ka-focus', {}) || {};
+  const f = readJSON('prvlar-focus', {}) || {};
   state.focusPrefs = { focus: num(f.focus, 25, 1, 180), short: num(f.short, 5, 1, 60), long: num(f.long, 15, 1, 90), longEvery: num(f.longEvery, 4, 2, 12), sound: SOUNDS.some(x => x[0] === f.sound) ? f.sound : 'off', volume: num(f.volume, 0.5, 0, 1), autoNext: f.autoNext !== false, stopAtEnd: f.stopAtEnd !== false, sleep: num(f.sleep, 0, 0, 240), musicFollow: f.musicFollow !== false };
-  const rd = readJSON('ka-reading', {}) || {};
+  const rd = readJSON('prvlar-reading', {}) || {};
   state.reading = { size: num(rd.size, 1, 0.8, 1.6), rate: num(rd.rate, 1, 0.5, 2) };
-  const run = readJSON('ka-focus-run', null);
+  const run = readJSON('prvlar-focus-run', null);
   if (run && ['idle', 'focus', 'short', 'long'].includes(run.phase)) state.focusRun = { ...state.focusRun, ...run };
 }
-const saveAi = () => writeJSON('ka-ai', state.ai);
+const saveAi = () => writeJSON('prvlar-ai', state.ai);
 const SELF_HOSTED = ['omniroute'];
 // Profile: display name (greeting) and app text size for every age group. The public edition never ships a name.
 const UI_SIZES = [['s', 'Small', 0.9], ['m', 'Default', 1], ['l', 'Large', 1.15], ['xl', 'Extra large', 1.3]];
-const userName = () => String(readJSON('ka-name', ED.defaultName) || '').trim().slice(0, 40);
-function applyUiSize() { const z = (UI_SIZES.find(x => x[0] === readJSON('ka-uisize', 'm')) || UI_SIZES[1])[2]; document.documentElement.style.setProperty('--ui-zoom', String(z)); }
-const uiSizeSeg = () => `<div class="seg ui-size" role="radiogroup" aria-label="Text size">${UI_SIZES.map(([v, l]) => `<button role="radio" class="seg-btn${readJSON('ka-uisize', 'm') === v ? ' is-on' : ''}" data-uisize="${v}" aria-checked="${readJSON('ka-uisize', 'm') === v}">${l}</button>`).join('')}</div>`;
+const userName = () => String(readJSON('prvlar-name', ED.defaultName) || '').trim().slice(0, 40);
+function applyUiSize() { const z = (UI_SIZES.find(x => x[0] === readJSON('prvlar-uisize', 'm')) || UI_SIZES[1])[2]; document.documentElement.style.setProperty('--ui-zoom', String(z)); }
+const uiSizeSeg = () => `<div class="seg ui-size" role="radiogroup" aria-label="Text size">${UI_SIZES.map(([v, l]) => `<button role="radio" class="seg-btn${readJSON('prvlar-uisize', 'm') === v ? ' is-on' : ''}" data-uisize="${v}" aria-checked="${readJSON('prvlar-uisize', 'm') === v}">${l}</button>`).join('')}</div>`;
 // First run: three short screens (name, comfort, AI). Shown once; everything is changeable in Settings.
 function welcomeHTML() {
   const busy = state.busy === 'sync';
   return `<div class="onboard welcome-gate" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card"><span class="ob-art">${logo()}</span><h1>Welcome to Prvlar</h1><p>Sign in to back up and sync your study across devices, in your own Google Drive. Or keep everything on this device.</p>${cloudAvailable() ? `<button class="btn primary big block g-btn" data-action="gateSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button>` : `<button class="btn primary big block g-btn" disabled aria-disabled="true">${icon('login', 20)}Sign in with Google</button><p class="fine gate-soon">Google sign-in is coming soon on iPhone and iPad. For now, continue without an account; everything works on this device.</p>`}<button class="btn ghost block" data-action="gateGuest">Continue without account</button><p class="fine">Works fully offline. You can sign in later in Settings.</p></div></div>`;
 }
 function onboardingHTML() {
-  if (needsWelcome({ available: cloudAvailable(), soon: gatePlatform() === 'ios', signedIn: !!account(), entry: readJSON('ka-entry', '') })) return welcomeHTML();
-  if (readJSON('ka-onboarded', false)) return '';
+  if (needsWelcome({ available: cloudAvailable(), soon: gatePlatform() === 'ios', signedIn: !!account(), entry: readJSON('prvlar-entry', '') })) return welcomeHTML();
+  if (readJSON('prvlar-onboarded', false)) return '';
   const step = state.onStep || 0;
   const body = step === 0 ? `<span class="ob-art">${logo()}</span><h1>Welcome to Prvlar</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck.</p><label class="field"><span>What should we call you?</span><input class="input" id="ob-name" value="${esc(userName())}" placeholder="Your name (optional)" autocomplete="nickname" maxlength="40"></label><label class="field"><span>What do you study?</span><select class="input select" id="ob-stream"><option value="">Choose (optional)</option>${STREAMS.map(([v, l]) => `<option value="${v}"${userStream() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`
     : step === 1 ? `<span class="ob-art">${icon('type', 44)}</span><h1>Make it comfortable</h1><p>Choose a text size. You can change this and the theme any time in Settings.</p>${uiSizeSeg()}`
     : `<span class="ob-art">${icon('lock', 44)}</span><h1>Your study stays with you</h1><p>Documents and progress are saved only on this device. AI features use your own free Gemini or Groq key (or your own server); you can add it now or later.</p>${ED.obAi()}`;
   return `<div class="onboard" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card">${body}<div class="ob-dots" aria-hidden="true">${[0, 1, 2].map(i => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div><div class="ob-acts">${step ? '<button class="btn outline" data-action="obBack">Back</button>' : '<button class="btn outline" data-action="obDone">Skip</button>'}${step < 2 ? '<button class="btn primary" data-action="obNext">Next</button>' : '<button class="btn outline" data-action="obKey">Add AI key</button><button class="btn primary" data-action="obDone">Start</button>'}</div></div></div>`;
 }
-const saveView = () => writeJSON('ka-view', { zoom: state.zoom, layout: state.layout });
-const persistNotes = () => writeJSON('ka-notes', state.notes);
-const saveKey = () => { if (PACK_KEYS.has(state.key.trim())) return; if (state.remember && state.key.trim()) writeJSON('ka-key', state.key.trim()); else { try { localStorage.removeItem('ka-key'); } catch { /* ignore */ } } };
+const saveView = () => writeJSON('prvlar-view', { zoom: state.zoom, layout: state.layout });
+const persistNotes = () => writeJSON('prvlar-notes', state.notes);
+const saveKey = () => { if (PACK_KEYS.has(state.key.trim())) return; if (state.remember && state.key.trim()) writeJSON('prvlar-key', state.key.trim()); else { try { localStorage.removeItem('prvlar-key'); } catch { /* ignore */ } } };
 
 /* ---------- AI configuration ---------- */
 const usingServer = () => state.ai.mode !== 'cloud';
@@ -187,7 +188,7 @@ function fallbackChain() {
   return out.filter(x => typeof x === 'string' ? x : x.server.url);
 }
 const aiConfig = () => state.fb?.on ? { chain: fallbackChain() } : primaryConfig();
-const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq', 'url', 'key']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('ka-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
+const saveFb = () => { const f = { ...state.fb }; for (const k of ['gemini', 'groq', 'url', 'key']) if (PACK_KEYS.has(f[k])) f[k] = ''; writeJSON('prvlar-fallback', state.remember ? f : { ...f, gemini: '', groq: '', key: '' }); };
 function requireAi(what) {
   if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); return aiConfig(); }
   if (!state.key.trim()) throw Error(`Add an AI key in Settings to ${what}. Free keys from Google Gemini or Groq work.`);
@@ -211,7 +212,7 @@ const askKey = (docId, nodeId) => `ask::${docId}::${nodeId}`;
 const shown = () => state.review || state.result;
 const examLive = () => !!(state.questions && !state.result);
 const timeLeft = () => examMinutes() ? leftMs(state.startedAt, examMinutes(), Date.now(), state.pauses || []) : activeMs(state.startedAt, Date.now(), state.pauses || []);
-state.timing = normalizeTiming(readJSON('ka-timing', null));
+state.timing = normalizeTiming(readJSON('prvlar-timing', null));
 const isPaused = () => (state.pauses || []).some(p => p.to == null);
 const fmtTime = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const fmtDate = ts => new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
@@ -242,9 +243,9 @@ const studied = d => { const seen = new Set(state.visited[d.id] || []); return s
 const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
 function markVisited(docId, id) {
   const list = state.visited[docId] || (state.visited[docId] = []);
-  if (!list.includes(id)) { list.push(id); writeJSON('ka-visited', state.visited); bumpDay(dayKey(), { sections: 1 }).then(async () => { state.days = await getDays(); }).catch(() => {}); }
+  if (!list.includes(id)) { list.push(id); writeJSON('prvlar-visited', state.visited); bumpDay(dayKey(), { sections: 1 }).then(async () => { state.days = await getDays(); }).catch(() => {}); }
   const now = Date.now();
-  if (now - (state.lastStudied[docId] || 0) > 60000) { state.lastStudied[docId] = now; writeJSON('ka-last', state.lastStudied); }
+  if (now - (state.lastStudied[docId] || 0) > 60000) { state.lastStudied[docId] = now; writeJSON('prvlar-last', state.lastStudied); }
 }
 const fmtDay = ts => {
   const day = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
@@ -305,7 +306,7 @@ function applyTheme() {
 }
 
 /* ---------- exam draft (survives a reload within the session) ---------- */
-const draftKey = id => 'ka-exam-' + id;
+const draftKey = id => 'prvlar-exam-' + id;
 function saveDraft() {
   if (!state.doc || !state.questions) return;
   try { sessionStorage.setItem(draftKey(state.doc), JSON.stringify({ pauses: state.pauses || [], qTimes: state.qTimes || {}, warned: state.warned || [], questions: state.questions, answers: state.answers, startedAt: state.startedAt, flags: [...state.flags], qIndex: state.qIndex, examMeta: state.examMeta })); } catch { /* ignore */ }
@@ -672,7 +673,7 @@ const EXAM_GROUPS = ['Engineering', 'Medical', 'University entrance', 'School bo
 let BUILTIN = [...Object.values(import.meta.glob('./exams/*.json', { eager: true, import: 'default' })), ...EXTRA_EXAMS].map(normalizeProfile)
   .sort((a, b) => EXAM_ORDER.indexOf(a.id) - EXAM_ORDER.indexOf(b.id));
 const allProfiles = () => [...BUILTIN, ...(state.profiles || [])];
-const pick = () => ({ id: 'standard', level: 0, size: 20, ...(readJSON('ka-exam-pick', {}) || {}) });
+const pick = () => ({ id: 'standard', level: 0, size: 20, ...(readJSON('prvlar-exam-pick', {}) || {}) });
 const pickedProfile = () => { const id = pick().id; return id === 'standard' ? null : allProfiles().find(p => p.id === id) || null; };
 const examMinutes = () => state.examMeta && 'minutes' in state.examMeta ? Number(state.examMeta.minutes) || 0 : EXAM_MINUTES;
 const SIZES = [10, 15, 20, 30];
@@ -768,7 +769,7 @@ ${errs.length ? `<div class="status warn" role="status">${icon('alert', 18)}<p>$
 }
 async function saveProfileAndUse(p) {
   await saveProfile(p); state.profiles = await getProfiles();
-  writeJSON('ka-exam-pick', { ...pick(), id: p.id, level: 0 });
+  writeJSON('prvlar-exam-pick', { ...pick(), id: p.id, level: 0 });
 }
 function labPapersForAI() {
   const list = state.lab.papers.filter(x => x.text && !x.scanned).map(x => ({ title: x.title, text: x.text }));
@@ -776,7 +777,7 @@ function labPapersForAI() {
   return list;
 }
 /* ---------- Past papers (both editions): the student's own university, their own papers ---------- */
-const myUni = () => readJSON('ka-uni-me', {}) || {};
+const myUni = () => readJSON('prvlar-uni-me', {}) || {};
 function viewPastPapers() {
   const me = myUni(), lab = state.lab;
   const working = state.busy === 'analyse' ? `<div class="working" role="status"><span class="spin"></span><div><b>${esc(state.labStatus || 'Working…')}</b></div></div>` : '';
@@ -885,7 +886,7 @@ ${t.mode === 'custom' ? `<div class="field-row"><label class="field"><span>Hours
 <label class="toggle-row compact"><span><b>Practice mode</b><span>Lets you pause a timed test.</span></span><input type="checkbox" class="switch" id="tm-practice"${t.practice ? ' checked' : ''}></label></section>`;
 }
 const toast = (msg, kind = 'ok') => { if (kind === 'error') state.error = msg; else state.notice = msg; render(); };
-const saveTiming = () => { state.timing = normalizeTiming(state.timing); writeJSON('ka-timing', state.timing); };
+const saveTiming = () => { state.timing = normalizeTiming(state.timing); writeJSON('prvlar-timing', state.timing); };
 function timerRing() {
   const left = Math.max(0, timeLeft()), frac = examMinutes() ? Math.max(0, Math.min(1, left / (examMinutes() * 60000))) : 1;
   const r = 54, c = 2 * Math.PI * r;
@@ -1127,12 +1128,14 @@ ${state.notices ? `<pre class="notices">${esc(NOTICES)}</pre>` : ''}</section>
 
 
 /* ---------- in-app updates (GitHub Releases) ---------- */
-const updPrefs = () => ({ auto: true, last: 0, ...(readJSON('ka-update', {}) || {}) });
+const updPrefs = () => ({ auto: true, last: 0, ...(readJSON('prvlar-update', {}) || {}) });
 const updateNote = () => isNative() && platform() === 'android'
   ? 'Updates install over this app and keep your documents, cards and progress (same signing key, newer version).'
   : 'Opens the download page for the newest version.';
+const COMING_NEXT = 'Next update: Smarty becomes an app-wide assistant, like Copilot in Microsoft apps, available on every screen, aware of what you’re viewing, and able to act across the app (make tests, plans, notes, flashcards, settings).';
+const comingNextHTML = () => `<p class="fine coming-next">${icon('sparkles', 14)} <b>Coming next:</b> ${esc(COMING_NEXT.replace(/^Next update: /, ''))}</p>`;
 function updateCardHTML() {
-  if (!UPDATE_REPO || platform() !== 'android') return `<section class="card"><h2 class="h2">Updates</h2><p class="muted">Prvlar ${esc(VERSION)}. ${isNative() && platform() === 'android' ? 'Updates arrive through the store where you installed the app.' : isNative() ? 'Updates arrive through the App Store.' : 'The website updates itself: reload to get the newest version.'}</p></section>`;
+  if (!UPDATE_REPO || platform() !== 'android') return `<section class="card"><h2 class="h2">Updates</h2><p class="muted">Prvlar ${esc(VERSION)}. ${isNative() && platform() === 'android' ? 'Updates arrive through the store where you installed the app.' : isNative() ? 'Updates arrive through the App Store.' : 'The website updates itself: reload to get the newest version.'}</p>${comingNextHTML()}</section>`;
   const u = state.update, p = updPrefs(), r = u.release;
   const status = u.busy === 'check' ? '<span class="spin"></span>Checking…' : u.busy === 'download' ? `<span class="spin"></span>Downloading ${u.progress ? u.progress + '%' : '…'}`
     : u.error ? `${icon('alert', 16)}${esc(u.error)}` : u.status === 'current' ? `${icon('checkCircle', 16)}You have the latest version${r ? ` (${esc(r.version)})` : ''}.`
@@ -1141,7 +1144,7 @@ function updateCardHTML() {
 <p class="fine">You have Prvlar <b>${esc(VERSION)}</b>. ${updateNote()}</p>
 <div class="row"><button class="btn primary" data-action="checkUpdate"${u.busy ? ' disabled' : ''}>${icon('refresh', 18)}Check for updates</button>${u.status === 'newer' ? `<button class="btn outline" data-action="showUpdate">See what's new</button>` : ''}</div>
 <p class="upd-status${u.error ? ' is-err' : ''}" role="status">${status}</p>
-<label class="toggle-row"><span><b>Check automatically</b><span>At most once a day, when the app opens.</span></span><input type="checkbox" id="autoupdate"${p.auto ? ' checked' : ''}><span class="switch${p.auto ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label></section>`;
+<label class="toggle-row"><span><b>Check automatically</b><span>At most once a day, when the app opens.</span></span><input type="checkbox" id="autoupdate"${p.auto ? ' checked' : ''}><span class="switch${p.auto ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>${comingNextHTML()}</section>`;
 }
 // Release notes (Markdown) as plain, safe text: headings bold, list items as bullets.
 const notesHTML = md => md.split(/\r?\n/).map(l => { const h = l.match(/^#{1,6}\s+(.*)/); if (h) return `<b>${esc(h[1])}</b>`; return esc(l.replace(/^\s*[-*]\s+/, '• ').replace(/\*\*(.+?)\*\*/g, '$1')); }).join('<br>');
@@ -1160,7 +1163,7 @@ async function runUpdateCheck(manual) {
   u.busy = 'check'; u.error = ''; if (manual) render();
   try {
     const { status, release } = await checkForUpdate(VERSION);
-    u.status = status; u.release = release; writeJSON('ka-update', { ...updPrefs(), last: Date.now() });
+    u.status = status; u.release = release; writeJSON('prvlar-update', { ...updPrefs(), last: Date.now() });
     if (status === 'newer') u.dialog = true;
   } catch (e) { if (manual) u.error = e.message || 'Could not check for updates.'; }
   finally { u.busy = ''; }
@@ -1251,7 +1254,7 @@ async function addMinutes(documentId, minutes, kind) {
 }
 
 /* ---------- flashcards ---------- */
-const autoCards = () => readJSON('ka-autocards', true) !== false;
+const autoCards = () => readJSON('prvlar-autocards', true) !== false;
 async function addCards(list) {
   const have = new Set(state.cards.map(c => c.id)), fresh = list.filter(c => !have.has(c.id));
   if (!fresh.length) return 0;
@@ -1459,7 +1462,7 @@ function todoRow(x, t) {
 const PHASES = { focus: 'Focus', short: 'Short break', long: 'Long break' };
 const phaseMs = ph => (ph === 'focus' ? state.focusPrefs.focus : ph === 'short' ? state.focusPrefs.short : state.focusPrefs.long) * 60000;
 const focusLeft = () => { const r = state.focusRun; return r.running ? Math.max(0, r.endsAt - Date.now()) : r.left ?? phaseMs(r.phase === 'idle' ? 'focus' : r.phase); };
-const saveRun = () => writeJSON('ka-focus-run', state.focusRun);
+const saveRun = () => writeJSON('prvlar-focus-run', state.focusRun);
 function focusStart(phase = state.focusRun.phase === 'idle' ? 'focus' : state.focusRun.phase) {
   const r = state.focusRun, len = r.phase === phase && r.left ? r.left : phaseMs(phase);
   Object.assign(r, { phase, running: true, endsAt: Date.now() + len, left: null, docId: r.docId === undefined ? state.doc : r.docId });
@@ -1702,7 +1705,7 @@ async function setStructure(doc, sections, extra = {}) {
   for (const [to, note] of Object.entries(moved)) { const key = `${id}::${to}`; state.notes[key] = state.notes[key] ? state.notes[key] + '\n\n' + note : note; }
   persistNotes();
   state.visited[id] = [...new Set((state.visited[id] || []).map(v => map.get(Number(String(v).slice(1)))).filter(j => j !== undefined).map(j => 's' + j))];
-  writeJSON('ka-visited', state.visited);
+  writeJSON('prvlar-visited', state.visited);
   await db.settings.where('key').startsWith('explain::' + id).delete();
   await db.settings.where('key').startsWith('ask::' + id).delete();
   for (const k of Object.keys(state.explain)) if (k.startsWith('explain::' + id)) delete state.explain[k];
@@ -1822,7 +1825,7 @@ async function showFigure(key) {
 }
 
 // Shared by AI Chat and Smarty: "Only use my documents" switch, general-knowledge badge, pictures.
-const docsOnly = () => readJSON('ka-docs-only', false) === true;
+const docsOnly = () => readJSON('prvlar-docs-only', false) === true;
 const docsOnlyToggle = () => `<label class="toggle-row compact"><span><b>Only use my documents</b><span>Off: answers from your documents first, then general knowledge (marked).</span></span><input type="checkbox" id="docsonly"${docsOnly() ? ' checked' : ''}><span class="switch${docsOnly() ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>`;
 function msgExtras(m, scope, i) {
   if (m.role === 'user') return '';
@@ -1912,7 +1915,7 @@ const skillsList = () => (state.skills ??= (readJSON(SKILLS_KEY, []) || []).filt
 const saveSkills = l => { state.skills = l; writeJSON(SKILLS_KEY, l); };
 const KIND_ICON = { pdf: 'file', image: 'image', docx: 'file', pptx: 'file', xlsx: 'outline', csv: 'outline', text: 'file', audio: 'listen' };
 function smComposerExtras() {
-  state.smWeb ??= !!readJSON('ka-smweb', false);
+  state.smWeb ??= !!readJSON('prvlar-smweb', false);
   const att = state.smAtt || [], sk = state.smSkill && skillsList().find(x => x.id === state.smSkill), sug = !sk && state.smSuggest && skillsList().find(x => x.id === state.smSuggest);
   const menu = state.smPlus ? `<div class="sm-plus-menu" role="menu">
 <label class="sm-plus-item" role="menuitem">${icon('upload', 18)}<span>Upload file</span><input type="file" data-smattach multiple hidden></label>
@@ -1955,7 +1958,7 @@ function readSkillForm(ed) { const v = id => document.getElementById(id)?.value 
 const REPORT_URL = String(import.meta.env?.VITE_REPORT_URL || '').trim();
 let REPORT_EMAIL = '', REPORT_CSV = '';   // the owner pack may set them (never in the public bundle)
 const reportRepo = () => UPDATE_REPO || (/github\.io$/.test(location.hostname) && location.pathname.split('/').filter(Boolean)[0] ? `${location.hostname.split('.')[0]}/${location.pathname.split('/').filter(Boolean)[0]}` : '');
-const autoReportsOn = () => readJSON('ka-report-auto', true) !== false;
+const autoReportsOn = () => readJSON('prvlar-report-auto', true) !== false;
 const diagNow = () => ({ version: VERSION, platform: platform(), userAgent: navigator.userAgent, screen: `${innerWidth}×${innerHeight}`, theme: state.theme, online: navigator.onLine, log: [...crashes().slice(-5).map(c => 'crash: ' + c.msg), ...logs.all().filter(l => l.lvl === 'error' || l.lvl === 'warn').slice(-10).map(l => `${l.lvl}: ${l.msg}`)] });
 function reportHTML() {
   const r = state.reportForm || (state.reportForm = { text: '', diag: true, shot: '' }), sent = state.reportSent;
@@ -2036,6 +2039,8 @@ async function refreshOwner({ afterSignIn = false } = {}) {
   if (afterSignIn && state.owner && ownerPack.isActive()) toast('Owner mode on, AI ready', 'ok');
   else if (afterSignIn && state.owner && r?.reason === 'missing') toast('Owner mode on. No owner pack found: import it in the Developer panel.', 'warn');
 }
+// Secure store after the rename: read the new store, fall back to the old Knowledge Atlas one (and copy the value over).
+function legacyAware(store, legacy = store) { const oldKey = k => k.replace(/^prvlar-/, 'ka-'); return { ...store, async get(k) { const v = await store.get(k); if (v != null) return v; for (const [st, key] of [[store, oldKey(k)], [legacy, k], [legacy, oldKey(k)]]) { if (st === store && key === k) continue; const o = await st.get(key).catch(() => null); if (o != null) { await store.set(k, o).catch(() => {}); return o; } } return null; } }; }
 let PUBLISHED_ROLES = null;
 async function publishedRoles() { if (PUBLISHED_ROLES) return PUBLISHED_ROLES; try { const r = await fetch('./roles.json', { cache: 'no-cache' }); PUBLISHED_ROLES = r.ok ? await r.json() : []; } catch { PUBLISHED_ROLES = []; } return PUBLISHED_ROLES; }
 const canDo = what => can(state.owner ? 'owner' : state.role, what);
@@ -2117,16 +2122,16 @@ ${p.encrypt ? `<div class="code-acts"><button class="btn outline sm" data-action
 async function cloudDo(fn) { state.busy = 'sync'; render(); try { await fn(); } catch (e) { toast(e.message || 'Something went wrong.', 'error'); } finally { state.busy = ''; render(); } }
 /* ---------- Smarty Code: guided coding practice (Plan → Test → Implement → Review → Verify → Remember) ---------- */
 const STREAMS = [['cs', 'Computer science / IT'], ['eng', 'Engineering (other)'], ['sci', 'Science'], ['com', 'Commerce / business'], ['arts', 'Arts / humanities'], ['school', 'School'], ['other', 'Other']];
-const userStream = () => readJSON('ka-stream', ED.defaultStream || '');
-const runnerCfg = () => readJSON('ka-runner', { url: '', key: '' });
+const userStream = () => readJSON('prvlar-stream', ED.defaultStream || '');
+const runnerCfg = () => readJSON('prvlar-runner', { url: '', key: '' });
 function codeState() {
   if (!state.code) {
-    const saved = readJSON('ka-code', {}), p = PROBLEMS.find(x => x.id === saved.pid) || PROBLEMS[0], lang = saved.lang || (userStream() === 'cs' ? 'python' : 'javascript');
+    const saved = readJSON('prvlar-code', {}), p = PROBLEMS.find(x => x.id === saved.pid) || PROBLEMS[0], lang = saved.lang || (userStream() === 'cs' ? 'python' : 'javascript');
     state.code = { mode: saved.mode || 'solve', lang, pid: p.id, problem: p, step: 'plan', src: saved.src || starter(p, lang), tests: formatTests(problemTests(p)), hint: '', hintsUsed: 0, topic: '', level: '' };
   }
   return state.code;
 }
-const saveCode = () => { const c = state.code; writeJSON('ka-code', { mode: c.mode, lang: c.lang, pid: c.pid, src: c.src }); };
+const saveCode = () => { const c = state.code; writeJSON('prvlar-code', { mode: c.mode, lang: c.lang, pid: c.pid, src: c.src }); };
 function loadProblem(p) { const c = codeState(); Object.assign(c, { pid: p.id, problem: p, src: starter(p, c.lang), tests: formatTests(problemTests(p)), step: 'plan', plan: null, review: null, run: null, hint: '', hintsUsed: 0, saved: false, startedAt: Date.now() }); saveCode(); }
 const codeAi = () => smartyAi();
 function runRows(run) {
@@ -2236,10 +2241,10 @@ const actions = {
   cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner({ afterSignIn: true }); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
   cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner({ afterSignIn: true }); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
-  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut();  state.role = null; writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
+  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut();  state.role = null; writeJSON('prvlar-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
   devClearLogs() { logs.clear(); render(); }, devClearCrashes() { clearCrashes(); render(); },
   async devCount() { state.devCounts = await Promise.all(db.tables.map(async t => [t.name, await t.count()])); render(); },
-  devExport() { const b = new Blob([JSON.stringify(maskSecrets(state.devRowsAll || []), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `ka-${state.devTable}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
+  devExport() { const b = new Blob([JSON.stringify(maskSecrets(state.devRowsAll || []), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `prvlar-${state.devTable}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
   devSeed: () => devSeed(), devUnseed: () => devUnseed(),
   async devAddRole() { if (!state.owner) return toast('Only the owner can manage roles.', 'warn'); const v = document.getElementById('dev-role-email')?.value || '', r = document.getElementById('dev-role')?.value; try { await addRole(v, r); toast(`${ROLES[r]} added (stored as a hash).`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
   async devCopyRoles() { if (!state.owner) return; const t = JSON.stringify(roleList(), null, 1); try { await navigator.clipboard.writeText(t); toast('roles.json copied.', 'ok'); } catch { prompt('Copy roles.json', t); } },
@@ -2261,8 +2266,8 @@ const actions = {
   codeNext() { const c = codeState(); loadProblem(suggestProblem(tutorWeak(state.learner || emptyProfile()).map(t => t.name), c.done || [])); render(); },
   codeReset() { const c = codeState(); c.src = starter(c.problem, c.lang); saveCode(); render(); },
   codeExercise() { const c = codeState(), x = c.lesson?.exercise; if (!x) return; loadProblem({ id: 'lesson-' + Date.now(), topic: c.concept || 'Recursion', level: 'easy', title: String(x.title || 'Exercise'), text: String(x.text || ''), fn: String(x.fn), params: (x.params || []).map(String), tests: (x.tests || []).filter(t => Array.isArray(t?.args)).map(t => [t.args, t.expected]) }); c.mode = 'solve'; render(); },
-  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('ka-entry', a.entry); writeJSON('ka-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('ka-name', '')) writeJSON('ka-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
-  gateGuest() { writeJSON('ka-entry', afterGuest().entry); render(); },
+  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('prvlar-entry', a.entry); writeJSON('prvlar-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('prvlar-name', '')) writeJSON('prvlar-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner({ afterSignIn: true }); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
+  gateGuest() { writeJSON('prvlar-entry', afterGuest().entry); render(); },
   async devErrLoad() { const e = state.devErr = {}; state.busy = 'deverr'; render();
     try { await Promise.all([
       REPORT_CSV ? fetch(REPORT_CSV).then(r => { if (!r.ok) throw Error(`Sheet answered ${r.status}`); return r.text(); }).then(t => { e.sheet = parseCsv(t); }).catch(x => { e.sheetErr = x.message || 'Could not read the Sheet.'; }) : null,
@@ -2277,7 +2282,7 @@ const actions = {
   smPlus() { state.smPlus = !state.smPlus; state.smPickSkill = false; render(); },
   smUseSkill() { state.smPickSkill = !state.smPickSkill; render(); },
   smSkillClear() { state.smSkill = null; render(); },
-  smWeb() { state.smWeb = !state.smWeb; writeJSON('ka-smweb', state.smWeb); render(); },
+  smWeb() { state.smWeb = !state.smWeb; writeJSON('prvlar-smweb', state.smWeb); render(); },
   skillNew() { state.skillEdit = {}; state.smartyTab = 'skills'; state.smPlus = false; go('smarty'); },
   skillCancel() { state.skillEdit = null; render(); },
   skillSave() { try { const sk = normalizeSkill(readSkillForm(state.skillEdit || {})); saveSkills(upsertSkill(skillsList(), sk)); state.skillEdit = null; toast(`Skill saved. Use it with /${skillsList().find(x => x.id === sk.id)?.name || sk.name}.`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
@@ -2285,8 +2290,8 @@ const actions = {
     state.busy = 'skill'; render(); try { const o = await draftSkill(req, ai); state.skillEdit = { ...(state.skillEdit || {}), title: o.title || '', when: o.when || '', steps: Array.isArray(o.steps) ? o.steps : [], format: o.format || '' }; } finally { state.busy = ''; render(); } },
   obNext() { state.onStep = (state.onStep || 0) + 1; render(); },
   obBack() { state.onStep = Math.max(0, (state.onStep || 0) - 1); render(); },
-  obDone() { writeJSON('ka-onboarded', true); render(); },
-  obKey() { writeJSON('ka-onboarded', true); go('settings'); setTimeout(() => document.getElementById('apikey')?.focus(), 80); },
+  obDone() { writeJSON('prvlar-onboarded', true); render(); },
+  obKey() { writeJSON('prvlar-onboarded', true); go('settings'); setTimeout(() => document.getElementById('apikey')?.focus(), 80); },
   smNext() { const p = state.practice; if (!p) return; if ((p.at || 0) + 1 < p.items.length) p.at = (p.at || 0) + 1; else finishPractice(); render(); window.scrollTo(0, 0); },
   smDrawer() { state.smDrawer = !state.smDrawer; render(); },
   smNew() { saveConvs(); state.smConv = null; state.smartyChat = []; state.smDrawer = false; state.smartyTab = 'chat'; render(); },
@@ -2297,7 +2302,7 @@ const actions = {
   dismiss() { state.error = ''; state.notice = ''; render(); },
   back() { goBack(); },
   toggleMenu() { state.menu = !state.menu; render(); },
-  toggleTheme() { state.theme = isDark() ? 'light' : 'dark'; writeJSON('ka-theme', state.theme); applyTheme(); render(); },
+  toggleTheme() { state.theme = isDark() ? 'light' : 'dark'; writeJSON('prvlar-theme', state.theme); applyTheme(); render(); },
   toggleKey() { state.showKey = !state.showKey; render(); document.getElementById('apikey')?.focus(); },
   toggleReview() { state.showReview = !state.showReview; render(); if (state.showReview) document.getElementById('review')?.scrollIntoView({ block: 'start' }); },
   openExplain() {
@@ -2306,7 +2311,7 @@ const actions = {
     if (sel || first) openSection((sel || first).id, 'explain'); else go('study');
   },
   showOnMap() { state.studyTab = 'map'; go('study'); },
-  hideNudge() { state.nudgeHidden[state.doc] = true; writeJSON('ka-nudge', state.nudgeHidden); render(); },
+  hideNudge() { state.nudgeHidden[state.doc] = true; writeJSON('prvlar-nudge', state.nudgeHidden); render(); },
   async remapAI() {
     const doc = current(); if (!doc || state.busy) return;
     state.menu = false;
@@ -2435,7 +2440,7 @@ const actions = {
   async khTest() {
     const k = (document.getElementById('kh-key')?.value || '').trim(); if (!k) { state.khRes = { ok: false, text: 'Paste your key first.' }; return render(); }
     state.busy = 'kh'; state.khRes = null; render();
-    try { const r = await testConnection(k); state.key = k; state.ai = { ...state.ai, mode: 'cloud' }; writeJSON('ka-ai', state.ai); saveKey(); state.khRes = null; toast(`Key works: ${providerFor(k).name} connected in ${(r.ms / 1000).toFixed(1)} s. Smarty is ready.`, 'ok'); }
+    try { const r = await testConnection(k); state.key = k; state.ai = { ...state.ai, mode: 'cloud' }; writeJSON('prvlar-ai', state.ai); saveKey(); state.khRes = null; toast(`Key works: ${providerFor(k).name} connected in ${(r.ms / 1000).toFixed(1)} s. Smarty is ready.`, 'ok'); }
     catch (e) { state.khRes = { ok: false, text: e?.message || String(e) }; } finally { state.busy = ''; render(); }
   },
   async testConn() {
@@ -2511,7 +2516,7 @@ const actions = {
     state.notice = how === 'cancelled' ? '' : `Mind map exported as ${name}. Open it in a mind-map app that imports Markdown (Markmap, XMind, Obsidian).`; render();
   },
   async exportBackup() {
-    const name = 'knowledge-atlas-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    const name = 'prvlar-backup-' + new Date().toISOString().slice(0, 10) + '.json';
     const how = await saveTextFile(name, JSON.stringify(await exportAll()));
     if (how !== 'cancelled') { state.notice = how === 'shared' ? `Backup ready: ${name}. Choose where to save it.` : `Backup saved: ${name}`; render(); }
   }
@@ -2539,7 +2544,7 @@ async function importFiles(files) {
   updateStorage();
 }
 async function reloadAll() {
-  state.notes = readJSON('ka-notes', {}); state.visited = readJSON('ka-visited', {});
+  state.notes = readJSON('prvlar-notes', {}); state.visited = readJSON('prvlar-visited', {});
   loadPrefs(); applyTheme(); applyReading(); applyUiSize(); await refresh();
   state.learner = (await getSetting('learner-profile').catch(() => null)) || state.learner; state.traces = await getTraces().catch(() => state.traces);
 }
@@ -2547,7 +2552,7 @@ async function restoreBackup(file) {
   if (!file) return;
   let data; try { data = JSON.parse(await file.text()); } catch { throw Error('That file is not a Prvlar backup.'); }
   await importAll(data);
-  state.notes = readJSON('ka-notes', {}); state.visited = readJSON('ka-visited', {});
+  state.notes = readJSON('prvlar-notes', {}); state.visited = readJSON('prvlar-visited', {});
   loadPrefs(); applyTheme(); applyReading();
   state.notice = 'Backup restored.'; await refresh();
   rescheduleReminders().catch(() => {});
@@ -2563,8 +2568,8 @@ async function deleteDoc(id) {
   await db.settings.where('key').startsWith('ask::' + id).delete();
   await db.settings.delete('chat::' + id);
   for (const k of Object.keys(state.notes)) if (k.startsWith(id + '::')) delete state.notes[k];
-  delete state.visited[id]; writeJSON('ka-visited', state.visited);
-  delete state.lastStudied[id]; writeJSON('ka-last', state.lastStudied);
+  delete state.visited[id]; writeJSON('prvlar-visited', state.visited);
+  delete state.lastStudied[id]; writeJSON('prvlar-last', state.lastStudied);
   persistNotes(); sessionStorage.removeItem(draftKey(id));
   if (state.doc === id) Object.assign(state, { doc: null, questions: null, result: null, review: null });
   state.notice = `Deleted ${docTitle(d)}.`;
@@ -2592,16 +2597,16 @@ app.addEventListener('click', e => {
   if (d.delplan) return run(async () => { const p = state.plans.find(x => x.id === d.delplan); if (!p || !confirm(`Delete “${p.title}”?`)) return; await deletePlan(p.id); state.plans = state.plans.filter(x => x.id !== p.id); await rescheduleReminders().catch(() => {}); render(); });
   if (d.ptab) { state.planTab = d.ptab; if (d.ptab === 'goals') Promise.all([permission(), exactAlarm()]).then(([v, x]) => { state.notifPerm = v; state.exactPerm = x; if (state.view === 'planner') render(); }); return render(); }
   if (d.phase) { const r = state.focusRun; if (r.running) return; Object.assign(r, { phase: d.phase, left: null }); saveRun(); return render(); }
-  if (d.sound) { state.focusPrefs.sound = d.sound; writeJSON('ka-focus', state.focusPrefs); if (d.sound === 'off') stopAmbient(); else if (state.focusRun.running && state.focusRun.phase === 'focus') playAmbient(d.sound, state.focusPrefs.volume); else { playAmbient(d.sound, state.focusPrefs.volume); setTimeout(() => { if (!(state.focusRun.running && state.focusRun.phase === 'focus')) stopAmbient(); }, 2500); } return render(); }
+  if (d.sound) { state.focusPrefs.sound = d.sound; writeJSON('prvlar-focus', state.focusPrefs); if (d.sound === 'off') stopAmbient(); else if (state.focusRun.running && state.focusRun.phase === 'focus') playAmbient(d.sound, state.focusPrefs.volume); else { playAmbient(d.sound, state.focusPrefs.volume); setTimeout(() => { if (!(state.focusRun.running && state.focusRun.phase === 'focus')) stopAmbient(); }, 2500); } return render(); }
   if (d.recTest) { selectDoc(d.recTest); actions.reset(); return go('test'); }
   if (d.recTopic) { const [docId, topic] = d.recTopic.split('::'); const doc = docById(docId); if (!doc) return; selectDoc(docId); const n = nodeForTopic(doc, topic); if (n) return openSection(n.id); state.studyTab = 'map'; return go('study'); }
   if (d.speak) { const node = outline(current()).find(n => n.id === d.speak); if (node) return run(() => toggleSpeak(node.title + '. ' + withoutTitle(node.text, node.title), node.id)); return; }
   if (d.speakCard) { const c = state.cards.find(x => x.id === state.fc?.queue[state.fc.i]); if (c) return run(() => toggleSpeak(d.speakCard === 'back' ? c.back : c.front, 'card:' + c.id + d.speakCard)); return; }
-  if (d.font) { state.reading.size = Math.round(Math.min(1.6, Math.max(0.8, state.reading.size + Number(d.font) * 0.1)) * 10) / 10; writeJSON('ka-reading', state.reading); applyReading(); return render(); }
-  if (d.level !== undefined) { writeJSON('ka-exam-pick', { ...pick(), level: Number(d.level) }); return render(); }
+  if (d.font) { state.reading.size = Math.round(Math.min(1.6, Math.max(0.8, state.reading.size + Number(d.font) * 0.1)) * 10) / 10; writeJSON('prvlar-reading', state.reading); applyReading(); return render(); }
+  if (d.level !== undefined) { writeJSON('prvlar-exam-pick', { ...pick(), level: Number(d.level) }); return render(); }
   if (d.lab) { state.labTab = d.lab; if (state.view !== 'examlab') return go('examlab'); return render(); }
-  if (d.useprof) { writeJSON('ka-exam-pick', { ...pick(), id: d.useprof, level: 0 }); return go('test'); }
-  if (d.delprof) return run(async () => { const p = state.profiles.find(x => x.id === d.delprof); if (!p || !confirm(`Delete the exam profile “${p.name}”?`)) return; await deleteProfile(p.id); state.profiles = await getProfiles(); if (pick().id === p.id) writeJSON('ka-exam-pick', { ...pick(), id: 'standard' }); render(); });
+  if (d.useprof) { writeJSON('prvlar-exam-pick', { ...pick(), id: d.useprof, level: 0 }); return go('test'); }
+  if (d.delprof) return run(async () => { const p = state.profiles.find(x => x.id === d.delprof); if (!p || !confirm(`Delete the exam profile “${p.name}”?`)) return; await deleteProfile(p.id); state.profiles = await getProfiles(); if (pick().id === p.id) writeJSON('prvlar-exam-pick', { ...pick(), id: 'standard' }); render(); });
   if (d.delpaper !== undefined) { state.lab.papers.splice(Number(d.delpaper), 1); return render(); }
   if (d.go) { const [v, sub] = d.go.split(':'); if (v === 'smarty') state.smartyTab = sub; go(v); if (v === 'settings' && sub) setTimeout(() => document.getElementById(sub)?.scrollIntoView({ block: 'start' }), 60); return; }
   if (d.devtab) { state.devTab = d.devtab; if (d.devtab === 'db' && !state.devCounts) return actions.devCount(); if (d.devtab === 'errors' && !state.devErr) return actions.devErrLoad(); return render(); }
@@ -2618,7 +2623,7 @@ app.addEventListener('click', e => {
   if (d.cmode) { const c = codeState(); c.mode = d.cmode; if (d.cmode === 'debug') c.step = 'review'; saveCode(); return render(); }
   if (d.cstep) { codeState().step = d.cstep; return render(); }
   if (d.cprob) { const p = PROBLEMS.find(x => x.id === d.cprob); if (p) loadProblem(p); return render(); }
-  if (d.uisize) { writeJSON('ka-uisize', d.uisize); applyUiSize(); return render(); }
+  if (d.uisize) { writeJSON('prvlar-uisize', d.uisize); applyUiSize(); return render(); }
   if (d.smsuggest) return run(() => smartySend(d.smsuggest));
   if (d.smconv) { const c = state.smConvs.find(x => x.id === d.smconv); if (c) { saveConvs(); state.smConv = c.id; state.smartyChat = c.msgs; state.smDrawer = false; state.smartyTab = 'chat'; } return render(); }
   if (d.smren) { const c = state.smConvs.find(x => x.id === d.smren); const t = c && prompt('Rename chat', c.title); if (t && t.trim()) { c.title = t.trim().slice(0, 60); saveConvs(); setSetting('smarty-convs', state.smConvs).catch(() => {}); } return render(); }
@@ -2656,7 +2661,7 @@ app.addEventListener('click', e => {
     b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on));
     return saveDraft();
   }
-  if (d.themeSet) { state.theme = d.themeSet; writeJSON('ka-theme', state.theme); applyTheme(); return render(); }
+  if (d.themeSet) { state.theme = d.themeSet; writeJSON('prvlar-theme', state.theme); applyTheme(); return render(); }
   if (d.stab) { if (state.view === 'study' && ['map', 'outline', 'notes'].includes(d.stab)) { state.studyTab = d.stab; return render(); } state.sectionTab = d.stab; if (state.view !== 'section') return go('section'); return render(); }
   if (d.stab2) { state.sectionTab = d.stab2; return render(); }
   if (d.prompt) return run(() => d.scope === 'chat' ? sendChat(d.prompt) : sendAsk(d.prompt));
@@ -2666,8 +2671,8 @@ app.addEventListener('change', e => {
   if (t.matches('[data-import]')) { const files = [...t.files]; t.value = ''; return run(() => importFiles(files)); }
   if (t.matches('[data-restore]')) { const f = t.files[0]; t.value = ''; return run(() => restoreBackup(f)); }
   if (t.id === 'docpick') { selectDoc(t.value); return render(); }
-  if (t.id === 'exam-pick') { writeJSON('ka-exam-pick', { ...pick(), id: t.value, level: 0 }); return render(); }
-  if (t.id === 'exam-size') { writeJSON('ka-exam-pick', { ...pick(), size: Number(t.value) || 20 }); return render(); }
+  if (t.id === 'exam-pick') { writeJSON('prvlar-exam-pick', { ...pick(), id: t.value, level: 0 }); return render(); }
+  if (t.id === 'exam-size') { writeJSON('prvlar-exam-pick', { ...pick(), size: Number(t.value) || 20 }); return render(); }
   if (t.id === 'tm-h-in' || t.id === 'tm-m-in') { const h = Number(document.getElementById('tm-h-in')?.value) || 0, m = Number(document.getElementById('tm-m-in')?.value) || 0; state.timing.minutes = Math.max(1, h * 60 + m); saveTiming(); return; }   // no re-render on blur
   if (t.id === 'pb-name' || t.id === 'pb-dur' || t.id === 'pb-topics' || t.dataset.pbf) {
     const b = state.pb; if (!b) return;
@@ -2678,29 +2683,29 @@ app.addEventListener('change', e => {
   }
   if (t.id === 'tm-perq') { state.timing.perQ = Number(t.value); saveTiming(); return; }
   if (t.id === 'tm-practice') { state.timing.practice = t.checked; saveTiming(); return; }
-  if (t.id === 'focus-stopend') { state.focusPrefs.stopAtEnd = t.checked; writeJSON('ka-focus', state.focusPrefs); return; }
-  if (t.id === 'focus-sleep') { state.focusPrefs.sleep = Number(t.value); writeJSON('ka-focus', state.focusPrefs); return; }
-  if (t.id === 'music-follow') { state.focusPrefs.musicFollow = music.follow = t.checked; writeJSON('ka-focus', state.focusPrefs); return; }
+  if (t.id === 'focus-stopend') { state.focusPrefs.stopAtEnd = t.checked; writeJSON('prvlar-focus', state.focusPrefs); return; }
+  if (t.id === 'focus-sleep') { state.focusPrefs.sleep = Number(t.value); writeJSON('prvlar-focus', state.focusPrefs); return; }
+  if (t.id === 'music-follow') { state.focusPrefs.musicFollow = music.follow = t.checked; writeJSON('prvlar-focus', state.focusPrefs); return; }
   if (t.matches?.('[data-musicfiles]')) { const n = addLocalFiles(t.files || []); if (!n) toast('No audio files found.', 'warn'); else if (music.q.at >= 0 && !music.playing) playLocal(music.q.at); t.value = ''; return; }
   if (t.dataset?.devflag) { if (!canDo('beta') && !canDo('dev')) return; setFlag(t.dataset.devflag, t.checked); return render(); }
   if (t.id === 'sync-auto' || t.id === 'sync-encrypt' || t.id === 'sync-keys') { setSyncPrefs({ [t.id.slice(5)]: t.checked }); if (t.id === 'sync-encrypt' && t.checked && !hasPassphrase()) actions.cloudPass(); return render(); }
   if (t.id === 'clang') { const c = codeState(); const fresh = c.src.trim() === starter(c.problem, c.lang).trim(); c.lang = t.value; if (fresh) c.src = starter(c.problem, c.lang); c.run = null; saveCode(); return render(); }
   if (t.id === 'ctopic' || t.id === 'clevel') { codeState()[t.id === 'ctopic' ? 'topic' : 'level'] = t.value; return render(); }
   if (t.id === 'cconcept') { codeState().concept = t.value; return; }
-  if (t.id === 'ob-stream' || t.id === 'set-stream') { writeJSON('ka-stream', t.value); if (t.id === 'set-stream') render(); return; }
-  if (t.id === 'runner-url' || t.id === 'runner-key') { const r = runnerCfg(); r[t.id === 'runner-url' ? 'url' : 'key'] = t.value.trim(); writeJSON('ka-runner', r); return; }
+  if (t.id === 'ob-stream' || t.id === 'set-stream') { writeJSON('prvlar-stream', t.value); if (t.id === 'set-stream') render(); return; }
+  if (t.id === 'runner-url' || t.id === 'runner-key') { const r = runnerCfg(); r[t.id === 'runner-url' ? 'url' : 'key'] = t.value.trim(); writeJSON('prvlar-runner', r); return; }
   if (t.id === 'csrc') { codeState().src = t.value; saveCode(); return; }
   if (t.id === 'ctests') { codeState().tests = t.value; return; }
   if (t.id === 'cplan') { codeState().myPlan = t.value; return; }
   if (t.id === 'cbug') { codeState().bug = t.value; return; }
-  if (t.id === 'ob-name' || t.id === 'set-name') { writeJSON('ka-name', t.value.trim().slice(0, 40)); return; }
+  if (t.id === 'ob-name' || t.id === 'set-name') { writeJSON('prvlar-name', t.value.trim().slice(0, 40)); return; }
   if (t.id === 'smmodel') { state.smModel = t.value; return render(); }
   if (t.id === 'aivision') { state.ai.vision = t.checked; saveAi(); return render(); }
   if (t.id === 'fb-on') { state.fb.on = t.checked; saveFb(); return render(); }
-  if (t.id === 'docsonly') { writeJSON('ka-docs-only', t.checked); return render(); }
+  if (t.id === 'docsonly') { writeJSON('prvlar-docs-only', t.checked); return render(); }
   if (t.matches('[data-glassbg]')) { const f = t.files[0]; t.value = ''; return run(() => pickGlassBg(f)); }
   if (t.matches('[data-rpshot]')) { const f = t.files[0]; t.value = ''; if (!f) return; if (f.size > 6 * 1048576) return toast('Screenshot too big (6 MB max).', 'warn'); const fr = new FileReader(); fr.onload = () => { state.reportForm.text = document.getElementById('rp-text')?.value || state.reportForm.text; state.reportForm.shot = fr.result; render(); }; fr.readAsDataURL(f); return; }
-  if (t.id === 'rp-auto') { writeJSON('ka-report-auto', t.checked); return; }
+  if (t.id === 'rp-auto') { writeJSON('prvlar-report-auto', t.checked); return; }
   if (t.matches('[data-smattach]')) { const fs = [...t.files]; t.value = ''; state.smPlus = false; return run(() => addAttachments(fs)); }
   if (t.matches('[data-packfile]')) { const f = t.files[0], pass = packPass(); t.value = ''; if (!f) return; return run(async () => {
     if (!state.owner) throw Error('Sign in with an owner Google account first.');
@@ -2720,17 +2725,17 @@ app.addEventListener('change', e => {
   }
   if (t.id === 'aimode') { state.ai = { mode: t.value, url: '', model: '' }; state.conn = null; saveAi(); return render(); }
   if (t.dataset.todo) return run(async () => { const p = state.plans.find(x => x.id === t.dataset.todo); if (!p) return; p.done = t.checked; await savePlan(p); await rescheduleReminders().catch(() => {}); render(); });
-  if (t.dataset.remind) { state.remind[t.dataset.remind] = t.checked; writeJSON('ka-remind', state.remind); return run(async () => { if (t.checked && state.notifPerm !== 'granted') state.notifPerm = await askPermission(); await rescheduleReminders(); render(); }); }
-  if (t.id === 'remind-time') { if (/^\d\d:\d\d$/.test(t.value)) { state.remind.time = t.value; writeJSON('ka-remind', state.remind); rescheduleReminders().catch(() => {}); } return; }
-  if (t.dataset.goal) { const n = Math.round(Number(t.value)); if (n > 0) { state.goals[t.dataset.goal] = n; writeJSON('ka-goals', state.goals); loadPrefs(); } return render(); }
-  if (t.dataset.focus) { const n = Math.round(Number(t.value)); if (n > 0) { state.focusPrefs[t.dataset.focus] = n; writeJSON('ka-focus', state.focusPrefs); loadPrefs(); if (state.focusRun.phase === 'idle') state.focusRun.left = null; } return render(); }
+  if (t.dataset.remind) { state.remind[t.dataset.remind] = t.checked; writeJSON('prvlar-remind', state.remind); return run(async () => { if (t.checked && state.notifPerm !== 'granted') state.notifPerm = await askPermission(); await rescheduleReminders(); render(); }); }
+  if (t.id === 'remind-time') { if (/^\d\d:\d\d$/.test(t.value)) { state.remind.time = t.value; writeJSON('prvlar-remind', state.remind); rescheduleReminders().catch(() => {}); } return; }
+  if (t.dataset.goal) { const n = Math.round(Number(t.value)); if (n > 0) { state.goals[t.dataset.goal] = n; writeJSON('prvlar-goals', state.goals); loadPrefs(); } return render(); }
+  if (t.dataset.focus) { const n = Math.round(Number(t.value)); if (n > 0) { state.focusPrefs[t.dataset.focus] = n; writeJSON('prvlar-focus', state.focusPrefs); loadPrefs(); if (state.focusRun.phase === 'idle') state.focusRun.left = null; } return render(); }
   if (t.id === 'focus-doc') { state.focusRun.docId = t.value || null; saveRun(); return; }
-  if (t.id === 'focus-auto') { state.focusPrefs.autoNext = t.checked; writeJSON('ka-focus', state.focusPrefs); return render(); }
-  if (t.id === 'autoupdate') { writeJSON('ka-update', { ...updPrefs(), auto: t.checked }); return render(); }
-  if (t.id === 'autocards') { writeJSON('ka-autocards', t.checked); return render(); }
-  if (t.id === 'tts-rate') { state.reading.rate = Number(t.value) || 1; writeJSON('ka-reading', state.reading); return; }
-  if (t.id === 'font-size') { state.reading.size = Number(t.value) || 1; writeJSON('ka-reading', state.reading); applyReading(); return render(); }
-  if (t.id === 'remember') { state.remember = t.checked; writeJSON('ka-remember', state.remember); saveKey(); return render(); }
+  if (t.id === 'focus-auto') { state.focusPrefs.autoNext = t.checked; writeJSON('prvlar-focus', state.focusPrefs); return render(); }
+  if (t.id === 'autoupdate') { writeJSON('prvlar-update', { ...updPrefs(), auto: t.checked }); return render(); }
+  if (t.id === 'autocards') { writeJSON('prvlar-autocards', t.checked); return render(); }
+  if (t.id === 'tts-rate') { state.reading.rate = Number(t.value) || 1; writeJSON('prvlar-reading', state.reading); return; }
+  if (t.id === 'font-size') { state.reading.size = Number(t.value) || 1; writeJSON('prvlar-reading', state.reading); applyReading(); return render(); }
+  if (t.id === 'remember') { state.remember = t.checked; writeJSON('prvlar-remember', state.remember); saveKey(); return render(); }
   if (t.type === 'radio' && t.dataset.answer !== undefined) {
     state.answers[t.dataset.answer] = t.value; saveDraft();
     t.closest('.options')?.querySelectorAll('.option').forEach(l => l.classList.toggle('is-on', l.contains(t)));
@@ -2751,7 +2756,7 @@ app.addEventListener('input', e => {
   if (t.id === 'cx-name') { state.lab.name = t.value; return; }
   if (t.id === 'pp-subject') { state.lab.ppSubject = t.value; return; }
   if (t.id === 'pp-url') { state.ppUrl = t.value; return; }
-  if (t.id === 'uni-name' || t.id === 'uni-prog' || t.id === 'uni-sem') { writeJSON('ka-uni-me', { ...myUni(), [t.id.slice(4) === 'prog' ? 'program' : t.id.slice(4) === 'sem' ? 'semester' : 'name']: t.value }); return; }
+  if (t.id === 'uni-name' || t.id === 'uni-prog' || t.id === 'uni-sem') { writeJSON('prvlar-uni-me', { ...myUni(), [t.id.slice(4) === 'prog' ? 'program' : t.id.slice(4) === 'sem' ? 'semester' : 'name']: t.value }); return; }
   if (t.id === 'cx-text') { state.lab.pasted = t.value; return; }
   if (t.tagName === 'INPUT' && t.type === 'text' && t.dataset.answer !== undefined) { state.answers[t.dataset.answer] = t.value.replace(',', '.').trim(); saveDraft(); refreshProgress(); return; }
   if (t.tagName === 'TEXTAREA' && t.dataset.answer !== undefined) {
@@ -2763,7 +2768,7 @@ app.addEventListener('input', e => {
     const det = document.getElementById('detected');
     if (det) { const k = t.value.trim(); det.hidden = !k; if (k) det.innerHTML = `${icon('checkCircle', 16)}Detected: ${esc(providerFor(k).name)}`; }
   } else if (t.id === 'aiurl') { state.ai.url = t.value; state.conn = null; saveAi(); }
-  else if (t.id === 'focus-vol') { state.focusPrefs.volume = Number(t.value); setAmbientVolume(state.focusPrefs.volume); writeJSON('ka-focus', state.focusPrefs); }
+  else if (t.id === 'focus-vol') { state.focusPrefs.volume = Number(t.value); setAmbientVolume(state.focusPrefs.volume); writeJSON('prvlar-focus', state.focusPrefs); }
   else if (t.id === 'font-size') { document.documentElement.style.setProperty('--fs', t.value); const v = document.querySelector('.size-val'); if (v) v.textContent = Math.round(t.value * 100) + '%'; }
   else if (t.id === 'aimodel') { state.ai.model = t.value; state.conn = null; saveAi(); }
   else if (t.dataset.note !== undefined) {
@@ -2863,8 +2868,8 @@ const packCtx = {
     return () => { if (state.key === g) state.key = before.key; if (state.fb.gemini === g) state.fb.gemini = before.gemini; if (state.fb.groq === q) state.fb.groq = before.groq;
       if (u && state.fb.url === u) { state.fb.url = before.url; state.fb.key = before.fbKey; } state.fb.on = before.on; PACK_KEYS = new Set(); }; },
   setAiDefaults: (ai, fbOn) => { const old = [DEFAULT_AI, DEFAULT_FB_ON]; DEFAULT_AI = { ...DEFAULT_AI, ...ai }; DEFAULT_FB_ON = !!fbOn;
-    if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; const fb = readJSON('ka-fallback', {}) || {}; if (fb.on === undefined) state.fb.on = DEFAULT_FB_ON;
-    return () => { [DEFAULT_AI, DEFAULT_FB_ON] = old; if (localStorage.getItem('ka-ai') === null) state.ai = { ...DEFAULT_AI }; if ((readJSON('ka-fallback', {}) || {}).on === undefined) state.fb.on = DEFAULT_FB_ON; }; },
+    if (localStorage.getItem('prvlar-ai') === null) state.ai = { ...DEFAULT_AI }; const fb = readJSON('prvlar-fallback', {}) || {}; if (fb.on === undefined) state.fb.on = DEFAULT_FB_ON;
+    return () => { [DEFAULT_AI, DEFAULT_FB_ON] = old; if (localStorage.getItem('prvlar-ai') === null) state.ai = { ...DEFAULT_AI }; if ((readJSON('prvlar-fallback', {}) || {}).on === undefined) state.fb.on = DEFAULT_FB_ON; }; },
   setTeam: t => { TEAM = t; return () => { TEAM = PUBLIC_TEAM; }; },
   setUpdateRepo: r => { setUpdateRepo(r); return () => setUpdateRepo(''); },
   setGlassPhoto: url => { PACK_GLASS = url; applyGlassBg(); return () => { PACK_GLASS = ''; applyGlassBg(); }; },
@@ -2875,8 +2880,8 @@ const AtlasSecure = registerPlugin('AtlasSecure');
 const packCache = { get: () => getSetting('ownerPack').catch(() => null), set: v => setSetting('ownerPack', v), del: () => db.settings.delete('ownerPack').catch(() => {}) };
 const ownerPack = ownerPackController({
   ctx: packCtx, cache: packCache, isOwner: e => isOwnerEmail(e),
-  secure: platform() === 'android' ? nativeSecureStore(AtlasSecure) : globalThis.indexedDB ? webSecureStore() : memoryStore(),
-  remote: { download: async () => { const d = await driveClient(false); const [f] = await d.list(OWNER_PACK_NAME); return f ? d.read(f.id) : null; },
+  secure: platform() === 'android' ? legacyAware(nativeSecureStore(AtlasSecure)) : globalThis.indexedDB ? legacyAware(webSecureStore(), webSecureStore('ka-secure')) : memoryStore(),
+  remote: { download: async () => { const d = await driveClient(false); const [f] = await d.list(OWNER_PACK_NAME); if (f) return d.read(f.id); const [old] = await d.list(LEGACY_OWNER_PACK_NAME).catch(() => []); return old ? d.read(old.id) : null; },
     upload: async env => { const d = await driveClient(true); const [f] = await d.list(OWNER_PACK_NAME); return f ? d.update(f.id, env) : d.create(OWNER_PACK_NAME, env); } }
 });
 let booted = false;

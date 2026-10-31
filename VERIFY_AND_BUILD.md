@@ -5,7 +5,7 @@ Upload the **contents** of the project folder to the repository root, so `packag
 
 ## Android phone or tablet (Android 6.0 or later)
 1. **Actions > Build Prvlar Android APK > Run workflow.** It also runs by itself on every push to `main`.
-2. Open the finished run and download **Knowledge-Atlas-2-debug-APK**. Unzip it, copy `app-debug.apk` to the phone, open it and allow installing from that source.
+2. Open the finished run and download **Prvlar-debug-APK**. Unzip it, copy `app-debug.apk` to the phone, open it and allow installing from that source.
 3. On older phones, first update **Android System WebView** and **Chrome** in the Play Store.
 4. **Updating:** from version 0.4 every build is signed with the same key (a debug key kept outside the public repo), so a new APK (such as 0.5) installs over the old one and keeps your documents, notes and results. Versions built before 0.4 used a random key each time: uninstall that old app once before installing (this deletes its data, so re-import your documents).
 5. If the home-screen icon still shows the old design after updating, restart the phone or the launcher; Android caches icons.
@@ -15,7 +15,7 @@ Apple only runs apps signed with an Apple ID. Choose one route.
 
 **Route A: the app, sideloaded with your Apple ID (free).**
 1. **Actions > Build Prvlar iPhone app > Run workflow** (about 15–25 minutes). On a private repository, macOS minutes count ten times against the free monthly allowance.
-2. Download **Knowledge-Atlas-iOS-unsigned-IPA** and unzip it to get `Knowledge-Atlas-unsigned.ipa`.
+2. Download **Prvlar-iOS-unsigned-IPA** and unzip it to get `Prvlar-unsigned.ipa`.
 3. On a Windows PC or Mac, install **Sideloadly** (sideloadly.io) and connect the iPhone by cable. On Windows, Sideloadly also needs Apple's iTunes and iCloud from apple.com, not the Microsoft Store versions.
 4. Drag the `.ipa` into Sideloadly, enter your Apple ID, and press Start.
 5. On the iPhone: **Settings > General > VPN & Device Management**, then trust your Apple ID. On iOS 16 or later also turn on **Settings > Privacy & Security > Developer Mode** and restart.
@@ -23,7 +23,7 @@ Apple only runs apps signed with an Apple ID. Choose one route.
 
 **Route B: the web version on your Home Screen (no Apple ID, no expiry).**
 1. **Actions > Build Prvlar web app > Run workflow.**
-2. To publish it on GitHub Pages, first open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions** (Pages needs a public repository, or a paid plan for a private one). The run then shows the site's address under **pages**. If Pages is off, the run still succeeds: the **pages** job is skipped with a note, and you can download **Knowledge-Atlas-web** and put its files on any static host, such as Netlify Drop or Cloudflare Pages.
+2. To publish it on GitHub Pages, first open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions** (Pages needs a public repository, or a paid plan for a private one). The run then shows the site's address under **pages**. If Pages is off, the run still succeeds: the **pages** job is skipped with a note, and you can download **Prvlar-web** and put its files on any static host, such as Netlify Drop or Cloudflare Pages.
 3. Open the address in **Safari** on the iPhone, tap **Share > Add to Home Screen**. It opens full screen and works offline after the first visit.
 4. Route B also works on any Android phone (Chrome: **⋮ > Install app**) and on computers.
 

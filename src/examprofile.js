@@ -2,7 +2,7 @@
 // topic weights, question style and traps — used as the default "normal" level for practice tests.
 // Pure functions only (tested in tests/examprofile.test.js).
 export const EXTRA_KINDS = [];   // the owner pack may add its own profile kinds
-export const PROFILE_SCHEMA = 'ka-exam-profile';
+export const PROFILE_SCHEMA = 'prvlar-exam-profile';
 export const PROFILE_SCHEMA_VERSION = 1;
 export const QTYPES = ['mcq', 'multi', 'numerical', 'written'];
 export const GENERIC_MIX = { easy: 30, medium: 50, hard: 20 };     // used when an exam's difficulty data is unknown

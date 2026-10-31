@@ -6,7 +6,7 @@ test('roles: add as hash, recognise, change, remove', async () => {
   await assert.rejects(addRole('x@example.com', 'codev', s), /Gmail/);
   await assert.rejects(addRole('a@gmail.com', 'admin', s), /Unknown role/);
   const h = await addRole('Co.Dev@Gmail.com ', 'codev', s);
-  assert.ok(!s.getItem('ka-roles').includes('gmail'));
+  assert.ok(!s.getItem('prvlar-roles').includes('gmail'));
   assert.equal(await roleOf('co.dev@gmail.com', s), 'codev');
   await addRole('co.dev@gmail.com', 'tester', s); assert.equal(roleList(s).length, 1);
   assert.equal(await roleOf('co.dev@gmail.com', s), 'tester');
@@ -16,7 +16,7 @@ test('roles: add as hash, recognise, change, remove', async () => {
 test('roles: published roles.json is recognised; owner always wins', async () => {
   const s = mem(); const h = await sha256Hex('t@gmail.com');
   assert.equal(await roleOf('t@gmail.com', s, [{ h, role: 'tester' }, { h: 'bad', role: 'codev' }]), 'tester');
-  s.setItem('ka-owners', JSON.stringify([h]));
+  s.setItem('prvlar-owners', JSON.stringify([h]));
   assert.equal(await roleOf('t@gmail.com', s, [{ h, role: 'tester' }]), 'owner');
   await assert.rejects(addRole('t@gmail.com', 'codev', s), /already an owner/);
 });

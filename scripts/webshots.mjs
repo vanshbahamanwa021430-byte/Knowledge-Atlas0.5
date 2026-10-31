@@ -37,17 +37,17 @@ for (const kind of ['phone', 'desktop']) {
       await hash('home'); const h = await p.textContent('.greet h1'); if (!/, Sam$/.test(h.trim())) throw Error('greeting: ' + h);
       if (!await p.$('.quick[data-view="code"]')) throw Error('no Smarty Code quick action for a CS student');
     }, p);
-  } else await p.evaluate(() => { localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); localStorage.setItem('ka-name', '"Sam"'); localStorage.setItem('ka-stream', '"cs"'); location.reload(); }), await p.waitForTimeout(800);
+  } else await p.evaluate(() => { localStorage.setItem('prvlar-onboarded', 'true'); localStorage.setItem('prvlar-entry', '"guest"'); localStorage.setItem('prvlar-name', '"Sam"'); localStorage.setItem('prvlar-stream', '"cs"'); location.reload(); }), await p.waitForTimeout(800);
   await step(`${kind}: layout (${kind === 'phone' ? 'bottom nav' : 'sidebar'})`, async () => {
     await hash('home'); const nav = await p.evaluate(() => { const vis = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; }; return { tabs: vis('.tabbar, .bottom-nav, nav.tabs'), side: vis('.sidebar, aside.side, nav.side') }; });
     if (kind === 'phone' ? !nav.tabs : !nav.side) throw Error(JSON.stringify(nav));
     const overflow = await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1); if (overflow) throw Error('horizontal overflow');
   }, p);
   for (const t of THEMES) await step(`${kind}: ${t} theme — Home, Study, Practice, Smarty Code, Settings`, async () => {
-    await p.evaluate(th => { localStorage.setItem('ka-theme', JSON.stringify(th)); }, t); await p.reload(); await p.waitForTimeout(600);
+    await p.evaluate(th => { localStorage.setItem('prvlar-theme', JSON.stringify(th)); }, t); await p.reload(); await p.waitForTimeout(600);
     for (const v of ['home', 'library', 'practice', 'code', 'settings']) { await hash(v); await p.waitForTimeout(v === 'code' ? 900 : 250); await p.screenshot({ path: `${OUT}/${kind}-${t}-${v}.png` }); }
   }, p);
-  await p.evaluate(() => localStorage.setItem('ka-theme', '"light"')); await p.reload(); await p.waitForTimeout(500);
+  await p.evaluate(() => localStorage.setItem('prvlar-theme', '"light"')); await p.reload(); await p.waitForTimeout(500);
   await step(`${kind}: Account card shows Sign in with Google (web client ID configured)`, async () => { await hash('settings'); await p.waitForSelector('[data-action="cloudSignIn"]'); }, p);
   if (kind === 'phone') {
     await step('Smarty Code: JavaScript runs in a sandboxed worker; fetch is blocked', async () => {
@@ -62,7 +62,7 @@ for (const kind of ['phone', 'desktop']) {
       await p.click('.cm-content'); await p.keyboard.press('Control+A'); await p.keyboard.type('def factorial(n):\nreturn n * factorial(n - 1)\n');
       await p.click('[data-action="codeRun"]'); await p.waitForSelector('text=0/3 tests pass', { timeout: 60000 });
       if (!/RecursionError/.test(await p.textContent('.run-table'))) throw Error('no RecursionError'); await p.screenshot({ path: `${OUT}/code-python-fail.png` });
-      await p.evaluate(() => { localStorage.setItem('ka-key', '"' + 'AI' + 'zaTEST-not-real' + '"'); }); await p.evaluate(() => { localStorage.setItem('ka-remember', 'true'); });
+      await p.evaluate(() => { localStorage.setItem('prvlar-key', '"' + 'AI' + 'zaTEST-not-real' + '"'); }); await p.evaluate(() => { localStorage.setItem('prvlar-remember', 'true'); });
       await hash('settings'); await p.fill('#apikey', 'AI' + 'zaTEST-not-real'); await p.waitForTimeout(200); await hash('code');
       await p.click('[data-cstep="review"]'); await p.click('[data-action="codeReview"]'); await p.waitForSelector('.issue.bug');
       await p.click('[data-action="codeHint"]'); await p.waitForSelector('.hint-box'); await p.click('[data-action="codeHint"]'); await p.screenshot({ path: `${OUT}/code-review-hints.png` });
@@ -76,7 +76,7 @@ for (const kind of ['phone', 'desktop']) {
       await p.screenshot({ path: `${OUT}/code-c-simulated.png` });
     }, p);
     await step('Smarty Code in dark and glass', async () => {
-      for (const t of ['dark', 'glass']) { await p.evaluate(th => localStorage.setItem('ka-theme', JSON.stringify(th)), t); await p.reload(); await p.waitForTimeout(500); await hash('code'); await p.click('[data-cstep="code"]'); await p.waitForSelector('.cm-host.is-cm'); await p.screenshot({ path: `${OUT}/code-${t}.png` }); }
+      for (const t of ['dark', 'glass']) { await p.evaluate(th => localStorage.setItem('prvlar-theme', JSON.stringify(th)), t); await p.reload(); await p.waitForTimeout(500); await hash('code'); await p.click('[data-cstep="code"]'); await p.waitForSelector('.cm-host.is-cm'); await p.screenshot({ path: `${OUT}/code-${t}.png` }); }
     }, p);
   }
   await step(`${kind}: /privacy and /terms pages`, async () => {

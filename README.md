@@ -2,7 +2,7 @@
 
 Turn your own documents into a study map, study them section by section, and test yourself. One HTML/CSS/JS app (Vite) packaged for every platform. Your documents, notes, study progress and results stay on the device (IndexedDB/localStorage). No account, no server.
 
-**Download:** https://vanshbahamanwa021430-byte.github.io/Knowledge-Atlas0.5/download/ (Android APK, Windows, iPhone/iPad web app) · **Use it in your browser:** https://vanshbahamanwa021430-byte.github.io/Knowledge-Atlas0.5/
+**Download:** https://vanshbahamanwa021430-byte.github.io/Prvlar/download/ (Android APK, Windows, iPhone/iPad web app) · **Use it in your browser:** https://vanshbahamanwa021430-byte.github.io/Prvlar/
 
 ## Runs on
 

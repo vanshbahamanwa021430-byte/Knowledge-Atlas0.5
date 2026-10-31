@@ -1,11 +1,11 @@
 // Owner pack: owner-only content shipped outside the app. The app (APK, web, desktop) contains none of it.
-// Format: a JSON envelope { format: 'ka-owner-pack', version, encrypted: 'AES-GCM', kdf: 'PBKDF2-SHA256', salt, iv, data }.
+// Format: a JSON envelope { format: 'ka-owner-pack' (format id kept from before the Prvlar rename), version, encrypted: 'AES-GCM', kdf: 'PBKDF2-SHA256', salt, iv, data }.
 // Plaintext: { format, version, built, module: '<ES module source>', data: {...}, assets: { name: 'data:…' } }.
 // Stored in the owner's own Google Drive (appDataFolder, file OWNER_PACK_NAME), cached encrypted on the device for
 // offline use, decrypted with a key derived from the owner's passphrase (PBKDF2-SHA256 → AES-GCM). The passphrase
 // is kept in secure storage (Android Keystore through the AtlasSecure plugin; elsewhere wrapped by a
 // non-extractable WebCrypto key in IndexedDB). Signing out or a non-owner sign-in removes the cache and passphrase.
-export const OWNER_PACK_FORMAT = 'ka-owner-pack', OWNER_PACK_VERSION = 1, OWNER_PACK_NAME = 'ka-owner-pack.json';
+export const OWNER_PACK_FORMAT = 'ka-owner-pack', OWNER_PACK_VERSION = 1, OWNER_PACK_NAME = 'prvlar-owner-pack.json', LEGACY_OWNER_PACK_NAME = 'ka-owner-pack.json';
 const enc = new TextEncoder(), dec = new TextDecoder();
 const b64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode(...u8.subarray(i, i + 0x8000)); return btoa(s); };
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
@@ -36,7 +36,7 @@ export async function decryptPack(env, pass) {
 
 // Secure storage for the passphrase. Tests pass a memory store.
 export function memoryStore() { const m = new Map(); return { get: async k => m.get(k) ?? null, set: async (k, v) => { m.set(k, v); }, del: async k => { m.delete(k); } }; }
-export function webSecureStore(dbName = 'ka-secure') {
+export function webSecureStore(dbName = 'prvlar-secure') {
   const idb = () => new Promise((res, rej) => { const r = indexedDB.open(dbName, 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   const tx = async (mode, f) => { const d = await idb(); return new Promise((res, rej) => { const t = d.transaction('kv', mode), q = f(t.objectStore('kv')); t.oncomplete = () => res(q?.result); t.onerror = () => rej(t.error); }); };
   const wrapKey = async () => { let k = await tx('readonly', s => s.get('__wrap')); if (!k) { k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']); await tx('readwrite', s => s.put(k, '__wrap')); } return k; };

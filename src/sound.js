@@ -48,7 +48,7 @@ export function silenceStats(data, sampleRate, { win = 0.05, threshold = 0.002 }
 const WORKLET = `const makeGen = ${makeGen.toString()};
 class Noise extends AudioWorkletProcessor { constructor(o) { super(); this.g = makeGen(o.processorOptions.kind, sampleRate, o.processorOptions.seed); this.g2 = makeGen(o.processorOptions.kind, sampleRate, o.processorOptions.seed + 7); }
   process(_, outs) { const o = outs[0]; const L = o[0], R = o[1] || o[0]; for (let i = 0; i < L.length; i++) { L[i] = this.g(); if (R !== L) R[i] = this.g2(); } return true; } }
-registerProcessor('ka-noise', Noise);`;
+registerProcessor('prvlar-noise', Noise);`;
 // Builds the sound graph in any (online or offline) context. Returns { output, start, stop }.
 export async function buildSound(c, kind, { useWorklet = true } = {}) {
   const out = c.createGain();
@@ -56,7 +56,7 @@ export async function buildSound(c, kind, { useWorklet = true } = {}) {
     try {
       if (!c.__kaWorklet) { const url = URL.createObjectURL(new Blob([WORKLET], { type: 'text/javascript' })); c.__kaWorklet = c.audioWorklet.addModule(url); }
       await c.__kaWorklet;
-      const n = new AudioWorkletNode(c, 'ka-noise', { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { kind, seed: 12345 } });
+      const n = new AudioWorkletNode(c, 'prvlar-noise', { numberOfInputs: 0, outputChannelCount: [2], processorOptions: { kind, seed: 12345 } });
       n.connect(out); return { output: out, start() {}, stop() { n.disconnect(); }, mode: 'worklet' };
     } catch (e) { globalThis.__kaWorkletError = String(e?.message || e); /* fall back to a buffer */ }
   }

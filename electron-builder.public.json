@@ -1,5 +1,5 @@
 {
-  "appId": "com.knowledgeatlas.app",
+  "appId": "com.prvlar.app",
   "productName": "Prvlar",
   "artifactName": "Prvlar-${version}-windows-${arch}.${ext}",
   "files": [
@@ -39,6 +39,7 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "perMachine": false,
-    "artifactName": "Prvlar-${version}-windows-setup.${ext}"
+    "artifactName": "Prvlar-${version}-windows-setup.${ext}",
+    "include": "resources/electron/migrate-old.nsh"
   }
 }

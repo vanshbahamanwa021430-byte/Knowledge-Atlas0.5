@@ -71,7 +71,7 @@
     "vite": "^6.0.0"
   },
   "build": {
-    "appId": "com.knowledgeatlas.app",
+    "appId": "com.prvlar.app",
     "productName": "Prvlar",
     "files": [
       "dist/**/*",

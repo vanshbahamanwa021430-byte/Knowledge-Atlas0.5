@@ -1,6 +1,9 @@
 import Dexie from 'dexie';
+import { normalizePrefs } from './migrate.js';
 
-export const db = new Dexie('knowledge-atlas-personal-v2');
+// 0.9.8: the database is named for Prvlar; data from the old Knowledge Atlas database is copied over once (old one kept).
+export const DB_NAME = 'prvlar-personal-v2', LEGACY_DB_NAME = 'knowledge-atlas-personal-v2';
+export const db = new Dexie(DB_NAME);
 db.version(1).stores({ documents: 'id,created', attempts: 'id,documentId,submittedAt', settings: 'key' });
 // 0.7: flashcards (spaced repetition), study sessions (minutes per document and day), planner items (exams and to-dos)
 // and daily activity counters. Only new tables are added, so existing documents, results and settings stay as they are.
@@ -54,7 +57,7 @@ export async function applySyncDiff(put, del, tombs) {
   } finally { syncFlags.applying = false; }
 }
 export const listBlobIds = async () => (await db.blobs.toCollection().primaryKeys()).map(String);
-export const SECRET_PREFS = ['ka-key', 'ka-ai', 'ka-runner'];
+export const SECRET_PREFS = ['prvlar-key', 'prvlar-ai', 'prvlar-runner'];
 export { readPref };
 export const saveBlob = (id, data) => db.blobs.put({ id, data });
 export const getBlob = async id => (await db.blobs.get(id))?.data;
@@ -68,10 +71,20 @@ export const saveProfile = p => db.profiles.put(p);
 export const deleteProfile = id => db.profiles.delete(id);
 // Small preferences kept in localStorage that belong in a backup (never the AI key).
 export const BACKUP_PREFS = [   // the owner pack may push its own keys
- 'ka-theme', 'ka-roles', 'ka-goals', 'ka-focus', 'ka-reading', 'ka-remind', 'ka-autocards', 'ka-exam-pick', 'ka-uni-me', 'ka-name', 'ka-uisize', 'ka-stream', 'ka-code', 'ka-docs-only', 'ka-onboarded', 'ka-owners', 'ka-flags', 'ka-skills', 'ka-smweb', 'ka-report-auto',
+ 'prvlar-theme', 'prvlar-roles', 'prvlar-goals', 'prvlar-focus', 'prvlar-reading', 'prvlar-remind', 'prvlar-autocards', 'prvlar-exam-pick', 'prvlar-uni-me', 'prvlar-name', 'prvlar-uisize', 'prvlar-stream', 'prvlar-code', 'prvlar-docs-only', 'prvlar-onboarded', 'prvlar-owners', 'prvlar-flags', 'prvlar-skills', 'prvlar-smweb', 'prvlar-report-auto',
 ];
 
 // Ask the browser not to evict our data under storage pressure (important on Android).
+const MIGRATED = 'prvlar-db-migrated';
+db.on('ready', async () => {
+  const ls = globalThis.localStorage;
+  try { if (!ls || ls.getItem(MIGRATED)) return; if (!(await Dexie.exists(LEGACY_DB_NAME))) { ls.setItem(MIGRATED, '1'); return; }
+    const old = new Dexie(LEGACY_DB_NAME); await old.open();
+    let n = 0;
+    for (const t of old.tables) { if (!db.tables.some(x => x.name === t.name)) continue; const rows = await t.toArray(); if (rows.length) { await db.table(t.name).bulkPut(rows); n += rows.length; } }
+    old.close(); ls.setItem(MIGRATED, JSON.stringify({ rows: n, at: Date.now() }));
+  } catch (e) { console.warn('Could not copy data from the old Knowledge Atlas database', e); }
+});
 export async function requestPersistence() { try { return await navigator.storage?.persist?.(); } catch { return false; } }
 
 export async function saveDocument(doc) { await db.documents.put(doc); }
@@ -113,16 +126,16 @@ export async function exportAll() {
   const prefs = {};
   for (const k of BACKUP_PREFS) { const v = readPref(k); if (v !== undefined) prefs[k] = v; }
   return {
-    format: 'knowledge-atlas-backup', version: 3, exported: Date.now(),
+    format: 'prvlar-backup', version: 3, exported: Date.now(),
     documents: await db.documents.toArray(), attempts: await db.attempts.toArray(), settings: (await db.settings.toArray())
       .filter(s => !/^(pack-|ownerPack)/.test(s.key)),   // owner-pack data is re-downloadable, large and private
-    notes: readLocal('ka-notes'), visited: readLocal('ka-visited'),
+    notes: readLocal('prvlar-notes'), visited: readLocal('prvlar-visited'),
     cards: await db.cards.toArray(), sessions: await db.sessions.toArray(), plans: await db.plans.toArray(), days: await db.days.toArray(), profiles: await db.profiles.toArray(), prefs
   };
 }
 
 export async function importAll(data) {
-  if (!data || data.format !== 'knowledge-atlas-backup' || !Array.isArray(data.documents)) throw Error('This is not a Prvlar backup file.');
+  if (!data || !['prvlar-backup', 'knowledge-atlas-backup'].includes(data.format) || !Array.isArray(data.documents)) throw Error('This is not a Prvlar backup file.');
   const list = k => (Array.isArray(data[k]) ? data[k] : []);
   await db.transaction('rw', [db.documents, db.attempts, db.settings, db.cards, db.sessions, db.plans, db.days, db.profiles], async () => {
     await db.documents.bulkPut(data.documents.filter(d => d && d.id && Array.isArray(d.sections)));
@@ -131,7 +144,7 @@ export async function importAll(data) {
     await db.cards.bulkPut(list('cards').filter(c => c && c.id && c.front && c.back));
     await db.sessions.bulkPut(list('sessions').filter(s => s && s.id && s.day));
     await db.plans.bulkPut(list('plans').filter(p => p && p.id && p.kind));
-    await db.profiles.bulkPut(list('profiles').filter(p => p && p.id && p.schema === 'ka-exam-profile' && p.pattern));
+    await db.profiles.bulkPut(list('profiles').filter(p => p && p.id && p.schema === 'prvlar-exam-profile' && p.pattern));
     // Daily counters: keep the larger value of each counter, so restoring twice doesn't double them.
     for (const d of list('days').filter(d => d && d.day)) {
       const have = (await db.days.get(d.day)) || { day: d.day };
@@ -139,10 +152,11 @@ export async function importAll(data) {
       await db.days.put(have);
     }
   });
-  localStorage.setItem('ka-notes', JSON.stringify({ ...readLocal('ka-notes'), ...(data.notes || {}) }));
+  localStorage.setItem('prvlar-notes', JSON.stringify({ ...readLocal('prvlar-notes'), ...(data.notes || {}) }));
   // Sections already studied: merge both lists per document.
-  const visited = readLocal('ka-visited');
+  const visited = readLocal('prvlar-visited');
   for (const [id, list] of Object.entries(data.visited || {})) if (Array.isArray(list)) visited[id] = [...new Set([...(visited[id] || []), ...list])];
-  localStorage.setItem('ka-visited', JSON.stringify(visited));
+  localStorage.setItem('prvlar-visited', JSON.stringify(visited));
+  if (data.prefs && typeof data.prefs === 'object') data.prefs = normalizePrefs(data.prefs, BACKUP_PREFS);
   if (data.prefs && typeof data.prefs === 'object') for (const k of BACKUP_PREFS) if (k in data.prefs) localStorage.setItem(k, JSON.stringify(data.prefs[k]));
 }

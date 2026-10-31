@@ -49,12 +49,12 @@ jobs:
           test -d "$APP" || { echo 'ERROR: App.app not found in the archive'; find "$RUNNER_TEMP/App.xcarchive" -maxdepth 4 | head -40; exit 1; }
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
           cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
-          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/Knowledge-Atlas-unsigned.ipa" Payload)
-          ls -lh Knowledge-Atlas-unsigned.ipa
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/Prvlar-unsigned.ipa" Payload)
+          ls -lh Prvlar-unsigned.ipa
       - name: Upload the IPA
         uses: actions/upload-artifact@v5
         with:
-          name: Knowledge-Atlas-iOS-unsigned-IPA
-          path: Knowledge-Atlas-unsigned.ipa
+          name: Prvlar-iOS-unsigned-IPA
+          path: Prvlar-unsigned.ipa
           if-no-files-found: error
           retention-days: 14

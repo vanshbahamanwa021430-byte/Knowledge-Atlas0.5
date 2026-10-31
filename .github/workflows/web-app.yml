@@ -36,7 +36,7 @@ jobs:
       - name: Upload web app files
         uses: actions/upload-artifact@v5
         with:
-          name: Knowledge-Atlas-web
+          name: Prvlar-web
           path: dist
           if-no-files-found: error
           retention-days: 14
@@ -51,7 +51,7 @@ jobs:
             echo "GitHub Pages is on with Source: GitHub Actions, so the site will be published."
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=GitHub Pages not published::Pages is off for this repository (or its Source is not 'GitHub Actions'). The web app is still in the Knowledge-Atlas-web download above. To publish it, open Settings > Pages and set Source to GitHub Actions (needs a public repository or a paid plan), then run this workflow again."
+            echo "::notice title=GitHub Pages not published::Pages is off for this repository (or its Source is not 'GitHub Actions'). The web app is still in the Prvlar-web download above. To publish it, open Settings > Pages and set Source to GitHub Actions (needs a public repository or a paid plan), then run this workflow again."
           fi
       - name: Prepare GitHub Pages upload
         if: steps.pages.outputs.enabled == 'true'

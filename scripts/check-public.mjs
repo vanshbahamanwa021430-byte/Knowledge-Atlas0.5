@@ -12,7 +12,8 @@ const bannedIn = text => { const seen = new Set(); for (const tok of text.toLowe
   for (const n of LENS) for (let i = 0; i + n <= tok.length; i++) { const sub = tok.slice(i, i + n); if (SET.has(n + ':' + h(sub))) return sub; } } return null; };
 const hits = [];
 const SKIP = /^(node_modules|build|\.gradle|Pods)$/;   // generated folders (rebuilt from the clean source)
-const walk = d => readdirSync(d).forEach(f => { const p = join(d, f); if (statSync(p).isDirectory()) return SKIP.test(f) ? null : walk(p); if (/\.(js|mjs|cjs|css|html|json|webmanifest|txt|svg|md|xml)$/.test(f)) { const t = readFileSync(p, 'utf8'); for (const r of bad) { const m = t.match(r); if (m) hits.push(`${p}: ${r} → …${t.slice(Math.max(0, m.index - 40), m.index + 40)}…`); } const w = bannedIn(t); if (w) hits.push(`${p}: banned word (length ${w.length})`); } });
+const walk = d => readdirSync(d).forEach(f => { const p = join(d, f); if (statSync(p).isDirectory()) return SKIP.test(f) ? null : walk(p); if (/\.(js|mjs|cjs|css|html|json|webmanifest|txt|svg|md|xml)$/.test(f)) { const t = readFileSync(p, 'utf8'); for (const r of (/third-party-licenses\.txt$/.test(p) ? bad.slice(1) : bad)) {   // third-party copyright lines keep their authors’ emails
+  const m = t.match(r); if (m) hits.push(`${p}: ${r} → …${t.slice(Math.max(0, m.index - 40), m.index + 40)}…`); } const w = bannedIn(t); if (w) hits.push(`${p}: banned word (length ${w.length})`); } });
 walk(dir);
 const files = []; const list = d => readdirSync(d).forEach(f => { const p = join(d, f); statSync(p).isDirectory() ? (SKIP.test(f) ? null : list(p)) : files.push(p); }); list(dir);
 for (const f of files) if (/catalog/i.test(f) || bannedIn(f)) hits.push('file: ' + f);

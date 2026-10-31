@@ -18,12 +18,12 @@ test('owners manager: add Gmail as hash, remove it, built-in cannot be removed',
   const s = mem();
   await assert.rejects(addOwner('dev@example.com', s), /Gmail/);
   const h = await addOwner('Co.Dev+x@googlemail.com', s);
-  assert.deepEqual(addedOwners(s), [h]); assert.ok(!s.getItem('ka-owners').includes('googlemail'));
+  assert.deepEqual(addedOwners(s), [h]); assert.ok(!s.getItem('prvlar-owners').includes('googlemail'));
   assert.ok(await isOwnerEmail('co.dev+x@googlemail.com', s)); await addOwner('co.dev+x@googlemail.com', s); assert.equal(addedOwners(s).length, 1);
   assert.equal(ownerHashes(s).length, 2);
   assert.throws(() => removeOwner(OWNER_HASHES[0], s), /Built-in/);
   removeOwner(h, s); assert.ok(!await isOwnerEmail('co.dev+x@googlemail.com', s));
-  s.setItem('ka-owners', '["not-a-hash", 5]'); assert.deepEqual(addedOwners(s), []);
+  s.setItem('prvlar-owners', '["not-a-hash", 5]'); assert.deepEqual(addedOwners(s), []);
 });
 const G = 'AI' + 'za', Q = 'gs' + 'k_';   // fake key prefixes, split so secret scanners don't flag the test
 test('AI request inspector masks keys in URLs, headers and bodies', () => {

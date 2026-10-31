@@ -1,5 +1,5 @@
-// Smarty skills: named, reusable instructions written by the student (or drafted by Smarty). Pure; stored in 'ka-skills'.
-export const SKILLS_KEY = 'ka-skills', MAX_SKILLS = 50;
+// Smarty skills: named, reusable instructions written by the student (or drafted by Smarty). Pure; stored in 'prvlar-skills'.
+export const SKILLS_KEY = 'prvlar-skills', MAX_SKILLS = 50;
 export const slug = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 32) || 'skill';
 export function normalizeSkill(x = {}, now = Date.now()) {
   const steps = (Array.isArray(x.steps) ? x.steps : String(x.steps || '').split(/\n+/)).map(s => String(s).replace(/^\s*(\d+[.)]|[-*•])\s*/, '').trim()).filter(Boolean).slice(0, 12);
