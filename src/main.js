@@ -1127,7 +1127,7 @@ function weakCard() {
 }
 function viewMore() {
   const g = GROUPS.find(x => x.tab === 'more');
-  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Prvlar ${esc(VERSION)} · Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES)</p></div>`;
+  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Prvlar ${esc(VERSION)} · Made by Vansh and Anirudh Behre (B.Tech CSE, UPES)</p></div>`;
 }
 
 function viewResults() {
@@ -1252,7 +1252,7 @@ function teamCardHTML(m) {
 function viewAbout() {
   const d = TEAM[0], msg = encodeURIComponent(`Hi ${d.name}, I have a suggestion for Prvlar: `);
   return `${backHead('About us')}<div class="view narrow about-view">
-<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Prvlar</h1><p class="dev-role">Version ${esc(VERSION)}</p><p class="dev-credit">Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES)</p><p class="dev-credit beta">Beta testers: Ashish Arora</p></div></section>
+<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Prvlar</h1><p class="dev-role">Version ${esc(VERSION)}</p><p class="dev-credit">Made by Vansh and Anirudh Behre (B.Tech CSE, UPES)</p><p class="dev-credit beta">Beta testers: Ashish Arora</p></div></section>
 <section class="card" aria-labelledby="ab-what"><h2 class="h2" id="ab-what">About Prvlar</h2>
 <p class="dev-note name-note">Prvlar is named after five siblings of the Bahamanwa family.</p>
 <p class="dev-note">Prvlar turns your own documents into a study map. Learn one section at a time with simple explanations, then test yourself until it sticks. It is built by students${ED.who}, for students.</p></section>
