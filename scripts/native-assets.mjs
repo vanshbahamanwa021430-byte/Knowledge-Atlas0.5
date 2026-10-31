@@ -109,6 +109,8 @@ if (platform === 'android') {
   g = g.replace(/versionCode \d+/, m => `versionCode ${100000 + (+m.split(' ')[1] % 100000)}`);
   if (!g.includes('play-services-auth')) g = g.replace(/(    implementation project\(':capacitor-android'\)\n)/, `$1    // Google Authorization API for the optional Drive (appDataFolder) sync sign-in.\n    implementation "com.google.android.gms:play-services-auth:21.3.0"\n`);
   writeFileSync(gradle, g);
+  // On-time reminders (0.9.4): exact alarms on Android 12/12L and 13+.
+  if (!readFileSync(manifest, 'utf8').includes('USE_EXACT_ALARM')) patch(manifest, s => s.replace('<uses-permission', '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n    <uses-permission'));
   if (!readFileSync(manifest, 'utf8').includes('WAKE_LOCK')) patch(manifest, s => s.replace('<uses-permission', '<uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission'));
   const javaDir = R('android/app/src/main/java/com/knowledgeatlas/app');
   mkdirSync(javaDir, { recursive: true });
