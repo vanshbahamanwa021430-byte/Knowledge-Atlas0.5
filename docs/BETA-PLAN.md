@@ -14,4 +14,3 @@ Gates before the beta: security tests, regression tests (Smarty, imports, flowch
 
 ## Open blockers (must be closed before the beta starts)
 1. **Paid AI account and terms**: move the free proxy to a billed Google Cloud project (paid-services terms, no training on prompts) or another provider whose terms allow this audience; confirm the 18+ requirement.
-2. **Signed contributor IP assignment agreement** with Anirudh Behre (contributor/co-developer; keeps automatic co-dev Pro).

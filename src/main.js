@@ -34,8 +34,9 @@ import { mountEditor } from './editor.js';
 import { privacyHTML, termsHTML } from './legal.js';
 import { blankPattern, BLANK_SECTION, patternTotals, patternErrors, profileFromPattern } from './patternbuilder.js';
 import { PRESETS, normalizeTiming, resolveMinutes, autoMinutes, canPause, describeTiming, dueWarning, activeMs, leftMs, tickQuestion, questionExpired, fmtDuration } from './timing.js';
-import { ROLES, roleList, addRole, removeRole, roleOf, can, CODEV_TABS, BETA_FLAGS } from './devlog.js';
+import { ROLES, roleList, migrateRoles099, addRole, removeRole, roleOf, can, CODEV_TABS, BETA_FLAGS } from './devlog.js';
 import { OWNER_HASHES, isOwnerEmail, addedOwners, addOwner, removeOwner, maskSecrets, logs, requests, perf, recordRender, crashes, clearCrashes, FLAGS, flags, setFlag, installLogCapture } from './devlog.js';
+try { migrateRoles099(); } catch { /* storage unavailable */ }
 installLogCapture();
 import { platform as gatePlatform } from './platform.js';
 import { needsWelcome, afterSignIn, afterGuest, afterSignOut } from './gate.js';
@@ -1127,7 +1128,7 @@ function weakCard() {
 }
 function viewMore() {
   const g = GROUPS.find(x => x.tab === 'more');
-  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Prvlar ${esc(VERSION)} · Made by Vansh and Anirudh Behre (B.Tech CSE, UPES)</p></div>`;
+  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Prvlar ${esc(VERSION)} · Made by Vansh</p></div>`;
 }
 
 function viewResults() {
@@ -1252,7 +1253,7 @@ function teamCardHTML(m) {
 function viewAbout() {
   const d = TEAM[0], msg = encodeURIComponent(`Hi ${d.name}, I have a suggestion for Prvlar: `);
   return `${backHead('About us')}<div class="view narrow about-view">
-<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Prvlar</h1><p class="dev-role">Version ${esc(VERSION)}</p><p class="dev-credit">Made by Vansh and Anirudh Behre (B.Tech CSE, UPES)</p><p class="dev-credit beta">Beta testers: Ashish Arora</p></div></section>
+<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Prvlar</h1><p class="dev-role">Version ${esc(VERSION)}</p><p class="dev-credit">Made by Vansh</p><p class="dev-credit beta">Beta testers: Ashish Arora</p></div></section>
 <section class="card" aria-labelledby="ab-what"><h2 class="h2" id="ab-what">About Prvlar</h2>
 <p class="dev-note name-note">Prvlar is named after five siblings of the Bahamanwa family.</p>
 <p class="dev-note">Prvlar turns your own documents into a study map. Learn one section at a time with simple explanations, then test yourself until it sticks. It is built by students${ED.who}, for students.</p></section>
@@ -2325,7 +2326,7 @@ ${p.done ? `<div class="status ok">${icon('trophy', 20)}<p>${p.items.filter(q =>
 async function refreshOwner({ afterSignIn = false } = {}) {
   const a = account(); const was = state.owner + '|' + state.role; state.owner = !!(a?.email && await isOwnerEmail(a.email).catch(() => false));
   state.role = state.owner ? 'owner' : (a?.email ? await roleOf(a.email, localStorage, await publishedRoles()).catch(() => null) : null);
-  if (afterSignIn && !was.startsWith('true') && (state.role === 'codev' || state.role === 'tester')) toast(state.role === 'codev' ? 'Co-developer mode on: Developer panel unlocked.' : 'Beta tester mode on: early features are in More › Beta features.', 'ok');
+  if (afterSignIn && !was.startsWith('true') && (state.role === 'codev' || state.role === 'tester' || state.role === 'friend')) toast(state.role === 'codev' ? 'Co-developer mode on: Developer panel unlocked.' : state.role === 'friend' ? 'Complimentary Pro is on.' : 'Beta tester mode on: early features are in More › Beta features.', 'ok');
   if (was !== state.owner + '|' + state.role) render();
   let r = await syncOwnerPack();
   // First time on this device: ask the pack passphrase once; it is then kept in secure storage, so later sign-ins unlock instantly.
@@ -2340,6 +2341,7 @@ async function publishedRoles() { if (PUBLISHED_ROLES) return PUBLISHED_ROLES; t
 const canDo = what => can(state.owner ? 'owner' : state.role, what);
 const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>`
   : state.role === 'codev' ? `<span class="chip owner-badge role-codev" title="Co-developer: Developer panel unlocked">${icon('code', 13)} Co-dev</span>`
+  : state.role === 'friend' ? `<span class="chip owner-badge role-tester" title="Complimentary Pro">${icon('flask', 13)} Pro</span>`
   : state.role === 'tester' ? `<span class="chip owner-badge role-tester" title="Beta tester: early features unlocked">${icon('flask', 13)} Tester</span>` : '';
 const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['reports', 'AI reports'], ['owners', 'Owners'], ['access', 'Access']];
 function viewBeta() {
@@ -2371,8 +2373,8 @@ function viewDev() {
   else if (tab === 'pack') body = ownerPackHTML();
   else if (tab === 'access') { const list = roleList();
     body = `<p class="fine">Give a Gmail a role. It is stored as a SHA-256 hash (the address is not kept) and syncs with your own settings. Roles are a client-side convenience, not security.</p>
-<div class="code-acts"><input id="dev-role-email" class="input" type="email" placeholder="Gmail address" autocomplete="off"><select id="dev-role" class="input"><option value="codev">Co-developer</option><option value="tester">Beta tester</option></select><button class="btn primary" data-action="devAddRole">Add</button></div>
-<p class="fine"><b>Co-developer:</b> Developer panel (logs, errors, flags, build, crashes), no roles, keys or owner pack. <b>Beta tester:</b> early features and the Report shortcut, no developer data.</p>
+<div class="code-acts"><input id="dev-role-email" class="input" type="email" placeholder="Gmail address" autocomplete="off"><select id="dev-role" class="input"><option value="codev">Co-developer</option><option value="tester">Beta tester</option><option value="friend">Complimentary Pro</option></select><button class="btn primary" data-action="devAddRole">Add</button></div>
+<p class="fine"><b>Co-developer:</b> Developer panel (logs, errors, flags, build, crashes), no roles, keys or owner pack. <b>Beta tester:</b> early features and the Report shortcut, no developer data. <b>Complimentary Pro:</b> a free Pro grant (early features), no developer data.</p>
 <ul class="sm-list">${list.map(r => `<li>${icon(r.role === 'codev' ? 'code' : 'flask', 14)} <code>${r.h.slice(0, 12)}…</code> <span class="chip">${esc(ROLES[r.role])}</span> <button class="btn outline sm danger" data-devrmrole="${r.h}">Remove</button></li>`).join('') || '<li class="muted">No roles yet.</li>'}</ul>
 <p class="fine">To recognise them on their own devices, publish the hashes as <code>roles.json</code> next to the app (website root), then redeploy.</p><div class="code-acts"><button class="btn outline sm" data-action="devCopyRoles">${icon('download', 16)}Copy roles.json</button></div>`; }
   else { const added = addedOwners(); body = `<p class="fine">Owners are recognised by a SHA-256 hash of their Google email; addresses are not stored. Added owners sync through your own Drive. Built-in owners are set in the code (docs/owner-mode.md). Co-developers must also be test users on the Google consent screen while it is in Testing.</p><ul class="sm-list">${OWNER_HASHES.map(h => `<li><code>${h.slice(0, 12)}…</code> <span class="chip">built-in</span></li>`).join('')}${added.map(h => `<li><code>${h.slice(0, 12)}…</code> <button class="link-btn danger" data-devrmowner="${h}">Remove</button></li>`).join('')}</ul><div class="code-acts"><input class="input" id="dev-owner" type="email" placeholder="Co-developer’s Gmail address" autocomplete="off"><button class="btn primary" data-action="devAddOwner">Add owner</button></div>`; }

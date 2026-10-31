@@ -25,7 +25,6 @@ Gate: **Now** / **Before beta** / **Before paid launch**.
 | 7 | OSS licences & fonts | LR | Low | MIT/ISC/BSD/Apache/MPL notices; OFL fonts (Pinyon Script, Playfair Display, Inter) need licence text, no font-name reuse if modified. | Rerun gen-licenses on dep change. | Implemented: THIRD_PARTY_NOTICES.md:48 (Inter), :245 (Playfair etc.), :291 (Pinyon); public/fonts/OFL-PinyonScript.txt; public/third-party-licenses.txt. | Now (keep) |
 | 8 | Trademark "Prvlar" + icon | LR | Medium | Unregistered; conflicting earlier mark could force rename. | IP India search Class 9/41/42; file TM-A; keep icon original. | Open (web search only). | Before paid launch |
 | 9a | GST / business | LR | Medium | CGST s.22: registration above ₹20 lakh (₹10 lakh special states); s.24 compulsory cases. Need entity + bank account to take payments. | CA advice; sole prop/LLP. | Open. | Before paid launch |
-| 9b | Contributor / co-developer IP | RS | High | No written agreement: unclear ownership of code contributed by Anirudh (contributor/co-developer). | Signed contributor IP assignment agreement to Vansh/entity; check UPES IP policy. | Open. | Before beta |
 | 10 | Consumer protection / auto-renew | LR | Medium | CPA 2019, E-Commerce Rules 2020 (grievance officer, refund policy), Dark Patterns Guidelines 2023 (no subscription trap); RBI e-mandate: 24 h pre-debit notice, AFA above ₹15,000. | Easy cancel, clear price/renewal, refund policy page. | Planned. | Before paid launch |
 | 11 | AI grading disclaimer | RS | Medium | Wrong marks → complaints/misleading claims. | Label every AI mark "provisional". | Implemented: src/ai.js:278, src/main.js:1043 ("AI, first opinion"), terms src/legal.js:27. | Now (keep) |
 | 12 | Error/crash data | LR/RS | Medium | 0.9.9 crash reports are local-only (src/main.js:1178) but live privacy page still says they go to a Google Sheet → notice mismatch. Problem reports still go to Sheet. | Update privacy text for 0.9.9; restrict Sheet; deletion within 30 days. | Code Implemented; privacy text Open. | Now (with 0.9.9) |
@@ -39,7 +38,7 @@ Gate: **Now** / **Before beta** / **Before paid launch**.
 
 ## Release gates
 - **Now:** privacy text matches 0.9.9; age gate; AI disclaimer; licence notices regenerated.
-- **Before beta:** AI report button; OAuth branding/production; contact email; signed contributor IP assignment agreement; incident runbook; proxy on paid/consented setup.
+- **Before beta:** AI report button; OAuth branding/production; contact email; incident runbook; proxy on paid/consented setup.
 - **Before paid launch:** billed Gemini project; Play Billing + grants verified; entity, GST advice, bank; refund/cancel policy & dark-pattern review; trademark filing; full DPDP compliance (by 13 May 2027).
 
 ## Sources (read 31 Oct 2026)

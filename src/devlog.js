@@ -26,7 +26,7 @@ export function removeOwner(hash, store = globalThis.localStorage) {
 // Roles beyond Owner (0.9.8). Client-side convenience only, not security: anyone can read the app's code.
 // Stored as SHA-256 hashes of the Gmail in 'prvlar-roles' ([{h, role}]); the owner's settings sync through the owner's Drive,
 // and a published hashes-only roles.json (next to the app) lets other people's devices recognise them.
-export const ROLES = { codev: 'Co-developer', tester: 'Beta tester' };
+export const ROLES = { codev: 'Co-developer', tester: 'Beta tester', friend: 'Complimentary Pro' };
 const cleanRoles = a => Array.isArray(a) ? a.filter(r => r && /^[0-9a-f]{64}$/.test(r.h) && ROLES[r.role]) : [];
 export function roleList(store = globalThis.localStorage) { try { return cleanRoles(JSON.parse(store.getItem('prvlar-roles') || '[]')); } catch { return []; } }
 export async function addRole(email, role, store = globalThis.localStorage) {
@@ -36,6 +36,14 @@ export async function addRole(email, role, store = globalThis.localStorage) {
   if (ownerHashes(store).includes(h)) throw Error('That Gmail is already an owner.');
   store.setItem('prvlar-roles', JSON.stringify([...roleList(store).filter(r => r.h !== h), { h, role }]));
   return h;
+}
+// 0.9.9: the only co-developer grant was a personal friend's; keep his access as a complimentary Pro grant (once).
+export function migrateRoles099(store = globalThis.localStorage) {
+  if (store.getItem('prvlar-roles-mig099')) return 0;
+  const l = roleList(store); let n = 0;
+  const out = l.map(r => r.role === 'codev' ? (n++, { ...r, role: 'friend' }) : r);
+  if (n) store.setItem('prvlar-roles', JSON.stringify(out));
+  store.setItem('prvlar-roles-mig099', '1'); return n;
 }
 export function removeRole(hash, store = globalThis.localStorage) { store.setItem('prvlar-roles', JSON.stringify(roleList(store).filter(r => r.h !== hash))); }
 // published: roles from roles.json (hashes only). Owner always wins; local entries override published ones.
@@ -50,7 +58,8 @@ export async function roleOf(email, store = globalThis.localStorage, published =
 export const can = (role, what) => ({
   owner: ['dev', 'roles', 'pack', 'keys', 'beta', 'report'],
   codev: ['dev', 'beta', 'report'],
-  tester: ['beta', 'report']
+  tester: ['beta', 'report'],
+  friend: ['beta', 'report']   // complimentary Pro grant from the owner: early features, no Developer panel
 }[role] || []).includes(what);
 export const CODEV_TABS = ['errors', 'info', 'logs', 'flags', 'crash', 'reports'];
 
