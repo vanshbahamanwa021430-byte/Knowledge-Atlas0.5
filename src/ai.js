@@ -150,6 +150,8 @@ async function callModel(ai, system, user, images = []) {
   const payload = { model: p.model, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: userContent(p, user, images) }] };
   if (p.temperature != null) payload.temperature = p.temperature;
   let res = await postJson(p.endpoint, headers, payload, p.timeout);
+  // Busy model (503): wait a moment and try once more before reporting it.
+  if (res.status === 503) { await new Promise(r => setTimeout(r, 2000)); res = await postJson(p.endpoint, headers, payload, p.timeout); }
   let detail = res.ok ? '' : await errorDetail(res);
   // If a model rejects JSON mode, retry once without it; the prompts already demand JSON only.
   if ((res.status === 400 || res.status === 422) && /response_format|json/i.test(detail)) {

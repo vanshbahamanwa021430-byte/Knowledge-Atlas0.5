@@ -23,6 +23,37 @@ export function removeOwner(hash, store = globalThis.localStorage) {
   store.setItem('ka-owners', JSON.stringify(addedOwners(store).filter(h => h !== hash)));
 }
 
+// Roles beyond Owner (0.9.8). Client-side convenience only, not security: anyone can read the app's code.
+// Stored as SHA-256 hashes of the Gmail in 'ka-roles' ([{h, role}]); the owner's settings sync through the owner's Drive,
+// and a published hashes-only roles.json (next to the app) lets other people's devices recognise them.
+export const ROLES = { codev: 'Co-developer', tester: 'Beta tester' };
+const cleanRoles = a => Array.isArray(a) ? a.filter(r => r && /^[0-9a-f]{64}$/.test(r.h) && ROLES[r.role]) : [];
+export function roleList(store = globalThis.localStorage) { try { return cleanRoles(JSON.parse(store.getItem('ka-roles') || '[]')); } catch { return []; } }
+export async function addRole(email, role, store = globalThis.localStorage) {
+  if (!ROLES[role]) throw Error('Unknown role.');
+  if (!isGmail(email)) throw Error('Enter a Gmail address.');
+  const h = await sha256Hex(normEmail(email));
+  if (ownerHashes(store).includes(h)) throw Error('That Gmail is already an owner.');
+  store.setItem('ka-roles', JSON.stringify([...roleList(store).filter(r => r.h !== h), { h, role }]));
+  return h;
+}
+export function removeRole(hash, store = globalThis.localStorage) { store.setItem('ka-roles', JSON.stringify(roleList(store).filter(r => r.h !== hash))); }
+// published: roles from roles.json (hashes only). Owner always wins; local entries override published ones.
+export async function roleOf(email, store = globalThis.localStorage, published = []) {
+  const e = normEmail(email); if (!e) return null;
+  const h = await sha256Hex(e);
+  if (ownerHashes(store).includes(h)) return 'owner';
+  const hit = [...cleanRoles(published), ...roleList(store)].reverse().find(r => r.h === h);
+  return hit ? hit.role : null;
+}
+// What each role may do (UI gating only).
+export const can = (role, what) => ({
+  owner: ['dev', 'roles', 'pack', 'keys', 'beta', 'report'],
+  codev: ['dev', 'beta', 'report'],
+  tester: ['beta', 'report']
+}[role] || []).includes(what);
+export const CODEV_TABS = ['errors', 'info', 'logs', 'flags', 'crash'];
+
 // Masks anything that looks like a credential before it is shown or exported.
 export function maskSecrets(v) {
   if (v == null) return v;
@@ -61,3 +92,5 @@ export function installLogCapture(target = globalThis) {
   target.addEventListener?.('error', e => recordCrash(e.error || e.message));
   target.addEventListener?.('unhandledrejection', e => recordCrash(e.reason));
 }
+
+export const BETA_FLAGS = FLAGS.filter(([k]) => k.startsWith('preview-'));

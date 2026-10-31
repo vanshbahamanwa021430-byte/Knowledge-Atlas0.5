@@ -68,7 +68,7 @@ export const saveProfile = p => db.profiles.put(p);
 export const deleteProfile = id => db.profiles.delete(id);
 // Small preferences kept in localStorage that belong in a backup (never the AI key).
 export const BACKUP_PREFS = [   // the owner pack may push its own keys
- 'ka-theme', 'ka-goals', 'ka-focus', 'ka-reading', 'ka-remind', 'ka-autocards', 'ka-exam-pick', 'ka-uni-me', 'ka-name', 'ka-uisize', 'ka-stream', 'ka-code', 'ka-docs-only', 'ka-onboarded', 'ka-owners', 'ka-flags', 'ka-skills', 'ka-smweb', 'ka-report-auto',
+ 'ka-theme', 'ka-roles', 'ka-goals', 'ka-focus', 'ka-reading', 'ka-remind', 'ka-autocards', 'ka-exam-pick', 'ka-uni-me', 'ka-name', 'ka-uisize', 'ka-stream', 'ka-code', 'ka-docs-only', 'ka-onboarded', 'ka-owners', 'ka-flags', 'ka-skills', 'ka-smweb', 'ka-report-auto',
 ];
 
 // Ask the browser not to evict our data under storage pressure (important on Android).

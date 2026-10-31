@@ -33,6 +33,7 @@ import { mountEditor } from './editor.js';
 import { privacyHTML, termsHTML } from './legal.js';
 import { blankPattern, BLANK_SECTION, patternTotals, patternErrors, profileFromPattern } from './patternbuilder.js';
 import { PRESETS, normalizeTiming, resolveMinutes, autoMinutes, canPause, describeTiming, dueWarning, activeMs, leftMs, tickQuestion, questionExpired, fmtDuration } from './timing.js';
+import { ROLES, roleList, addRole, removeRole, roleOf, can, CODEV_TABS, BETA_FLAGS } from './devlog.js';
 import { OWNER_HASHES, isOwnerEmail, addedOwners, addOwner, removeOwner, maskSecrets, logs, requests, perf, recordRender, crashes, clearCrashes, FLAGS, flags, setFlag, installLogCapture } from './devlog.js';
 installLogCapture();
 import { platform as gatePlatform } from './platform.js';
@@ -368,7 +369,7 @@ function tabBtn(t) {
 function sidebarHTML() {
   return `<nav class="sidebar" aria-label="Main">
 <button class="brand" data-view="home" aria-label="Prvlar home">${logo()}<span class="wordmark">Prvlar</span></button>
-<ul class="side-nav">${SIDE.filter(t => t.v !== 'dev' || state.owner).map(t => { const on = SIDE_OF[state.view] === t.v; return `<li${t.head ? ' class="side-head"' : ''}><button class="side-link${on ? ' is-on' : ''}${t.head ? ' is-head' : ''}" data-view="${t.v}"${on ? ' aria-current="page"' : ''}>${icon(t.icon, 21)}<span>${t.label}</span>${t.v === 'test' ? timerBadge() : ''}</button></li>`; }).join('')}</ul>
+<ul class="side-nav">${SIDE.filter(t => t.v !== 'dev' || canDo('dev')).map(t => { const on = SIDE_OF[state.view] === t.v; return `<li${t.head ? ' class="side-head"' : ''}><button class="side-link${on ? ' is-on' : ''}${t.head ? ' is-head' : ''}" data-view="${t.v}"${on ? ' aria-current="page"' : ''}>${icon(t.icon, 21)}<span>${t.label}</span>${t.v === 'test' ? timerBadge() : ''}</button></li>`; }).join('')}</ul>
 ${storageCardHTML()}
 </nav>`;
 }
@@ -432,6 +433,7 @@ function viewHTML() {
     case 'settings': return viewSettings();
     case 'about': return viewAbout();
     case 'report': return reportHTML();
+    case 'beta': return viewBeta();
     case 'smarty': return viewSmarty();
     case 'code': return viewCode();
     case 'dev': return viewDev();
@@ -964,7 +966,7 @@ const hubSub = v => ({ errors: `${plural(openErrors().length, 'question')} to re
   focus: state.focusRun.phase !== 'idle' ? `${PHASES[state.focusRun.phase]} · ${state.focusRun.running ? 'running' : 'paused'}` : null, progress: `Level ${progressStats().lvl.level} · ${plural(progressStats().current, 'day')} streak`,
   settings: aiAvailable() ? `AI: ${aiName()}` : 'Set up the AI helper' })[v];
 const navAttr = v => v.includes(':') ? `data-go="${esc(v)}"` : `data-view="${esc(v)}"`;
-const hubList = links => `<ul class="list card hub-list">${links.filter(([v]) => v !== 'dev' || state.owner).map(([v, ic, label, sub]) => `<li><button class="list-row" ${navAttr(v)}><span class="feature-icon f-blue">${icon(ic, 21)}</span><span class="lr-text"><b>${esc(label)}</b><span>${esc(hubSub(v) || sub)}</span></span>${icon('chevR', 20)}</button></li>`).join('')}</ul>`;
+const hubList = links => `<ul class="list card hub-list">${links.filter(([v]) => (v !== 'dev' || canDo('dev')) && (v !== 'beta' || canDo('beta'))).map(([v, ic, label, sub]) => `<li><button class="list-row" ${navAttr(v)}><span class="feature-icon f-blue">${icon(ic, 21)}</span><span class="lr-text"><b>${esc(label)}</b><span>${esc(hubSub(v) || sub)}</span></span>${icon('chevR', 20)}</button></li>`).join('')}</ul>`;
 function viewHub(tab) {
   const g = GROUPS.find(x => x.tab === tab), primary = tab === 'practice' ? `<button class="btn primary big block" data-view="test">${icon('test', 19)}Start a practice test</button>` : tab === 'plan' ? `<button class="btn primary big block" data-view="planner">${icon('plus', 19)}Add an exam or to-do</button>` : '';
   const weak = tab === 'practice' ? weakCard() : tab === 'plan' ? todayCard() : '';
@@ -2023,18 +2025,33 @@ ${p.done ? `<div class="status ok">${icon('trophy', 20)}<p>${p.items.filter(q =>
 
 /* ---------- Owner mode: Developer panel (convenience only, not security; harmless diagnostics) ---------- */
 async function refreshOwner({ afterSignIn = false } = {}) {
-  const a = account(); const was = state.owner; state.owner = !!(a?.email && await isOwnerEmail(a.email).catch(() => false)); if (was !== state.owner) render();
+  const a = account(); const was = state.owner + '|' + state.role; state.owner = !!(a?.email && await isOwnerEmail(a.email).catch(() => false));
+  state.role = state.owner ? 'owner' : (a?.email ? await roleOf(a.email, localStorage, await publishedRoles()).catch(() => null) : null);
+  if (afterSignIn && !was.startsWith('true') && (state.role === 'codev' || state.role === 'tester')) toast(state.role === 'codev' ? 'Co-developer mode on: Developer panel unlocked.' : 'Beta tester mode on: early features are in More › Beta features.', 'ok');
+  if (was !== state.owner + '|' + state.role) render();
   let r = await syncOwnerPack();
   // First time on this device: ask the pack passphrase once; it is then kept in secure storage, so later sign-ins unlock instantly.
   if (afterSignIn && state.owner && r?.reason === 'locked') { const pass = prompt('Owner pack passphrase (asked once on this device)'); if (pass) { r = await syncOwnerPack({ passphrase: pass, interactive: true }); if (r?.error) toast(r.error, 'error'); } }
   if (afterSignIn && state.owner && ownerPack.isActive()) toast('Owner mode on, AI ready', 'ok');
   else if (afterSignIn && state.owner && r?.reason === 'missing') toast('Owner mode on. No owner pack found: import it in the Developer panel.', 'warn');
 }
-const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>` : '';
-const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners']];
+let PUBLISHED_ROLES = null;
+async function publishedRoles() { if (PUBLISHED_ROLES) return PUBLISHED_ROLES; try { const r = await fetch('./roles.json', { cache: 'no-cache' }); PUBLISHED_ROLES = r.ok ? await r.json() : []; } catch { PUBLISHED_ROLES = []; } return PUBLISHED_ROLES; }
+const canDo = what => can(state.owner ? 'owner' : state.role, what);
+const ownerBadge = () => state.owner ? `<span class="chip owner-badge" title="Owner mode: developer tools are unlocked">${icon('shield', 13)} Owner</span>`
+  : state.role === 'codev' ? `<span class="chip owner-badge role-codev" title="Co-developer: Developer panel unlocked">${icon('code', 13)} Co-dev</span>`
+  : state.role === 'tester' ? `<span class="chip owner-badge role-tester" title="Beta tester: early features unlocked">${icon('flask', 13)} Tester</span>` : '';
+const DEV_TABS = [['pack', 'Owner pack'], ['errors', 'Errors'], ['info', 'Build'], ['logs', 'Logs'], ['ai', 'AI requests'], ['db', 'Database'], ['flags', 'Flags'], ['data', 'Test data'], ['crash', 'Crashes'], ['owners', 'Owners'], ['access', 'Access']];
+function viewBeta() {
+  if (!canDo('beta')) return `${backHead('Beta features')}<div class="view narrow"><section class="card"><p>Beta features are for beta testers. Sign in with a tester Google account.</p></section></div>`;
+  return `${backHead('Beta features', ownerBadge())}<div class="view narrow beta-view"><section class="card"><h2 class="h2">${icon('flask', 18)} Early features</h2><p class="fine">These may change or break. Turn one on, try it, and tell us how it went.</p>
+${BETA_FLAGS.map(([k, l]) => `<label class="toggle-row compact"><span><b>${esc(l)}</b><span>${esc(k)}</span></span><input type="checkbox" class="switch" data-devflag="${k}"${flags()[k] ? ' checked' : ''}></label>`).join('') || '<p class="muted">No early features right now.</p>'}</section>
+<section class="card"><h2 class="h2">${icon('bug', 18)} Found something?</h2><p class="fine">Reports include app diagnostics only unless you choose to add more.</p><button class="btn primary" data-view="report">Report a problem</button></section></div>`;
+}
 function viewDev() {
-  if (!state.owner) return `${backHead('Developer panel')}<div class="view narrow"><section class="card"><p>Developer tools are available in owner mode only (sign in with an owner Google account).</p></section></div>`;
-  const tab = state.devTab || 'info', pre = x => `<pre class="code-out dev-pre">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 2))}</pre>`;
+  if (!state.owner && !canDo('dev')) return `${backHead('Developer panel')}<div class="view narrow"><section class="card"><p>Developer tools are available in owner mode only (sign in with an owner Google account).</p></section></div>`;
+  const tabs = state.owner ? DEV_TABS : DEV_TABS.filter(([k]) => CODEV_TABS.includes(k));
+  const tab = tabs.some(([k]) => k === state.devTab) ? state.devTab : 'info', pre = x => `<pre class="code-out dev-pre">${esc(typeof x === 'string' ? x : JSON.stringify(x, null, 2))}</pre>`;
   let body = '';
   if (tab === 'info') {
     const nav = performance.getEntriesByType?.('navigation')?.[0], mem = performance.memory;
@@ -2051,8 +2068,14 @@ function viewDev() {
 <h3 class="h3">This device</h3>${c.length ? c.slice().reverse().slice(0, 15).map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No errors on this device.</p>'}`; }
   else if (tab === 'crash') { const c = crashes(); body = `<button class="btn outline sm" data-action="devClearCrashes">Clear</button>${c.length ? c.slice().reverse().map(x => `<details><summary>${new Date(x.at).toLocaleString()} · ${esc(x.msg.slice(0, 80))}</summary>${pre(x.stack || x.msg)}</details>`).join('') : '<p class="muted">No crashes recorded.</p>'}`; }
   else if (tab === 'pack') body = ownerPackHTML();
+  else if (tab === 'access') { const list = roleList();
+    body = `<p class="fine">Give a Gmail a role. It is stored as a SHA-256 hash (the address is not kept) and syncs with your own settings. Roles are a client-side convenience, not security.</p>
+<div class="code-acts"><input id="dev-role-email" class="input" type="email" placeholder="Gmail address" autocomplete="off"><select id="dev-role" class="input"><option value="codev">Co-developer</option><option value="tester">Beta tester</option></select><button class="btn primary" data-action="devAddRole">Add</button></div>
+<p class="fine"><b>Co-developer:</b> Developer panel (logs, errors, flags, build, crashes), no roles, keys or owner pack. <b>Beta tester:</b> early features and the Report shortcut, no developer data.</p>
+<ul class="sm-list">${list.map(r => `<li>${icon(r.role === 'codev' ? 'code' : 'flask', 14)} <code>${r.h.slice(0, 12)}…</code> <span class="chip">${esc(ROLES[r.role])}</span> <button class="btn outline sm danger" data-devrmrole="${r.h}">Remove</button></li>`).join('') || '<li class="muted">No roles yet.</li>'}</ul>
+<p class="fine">To recognise them on their own devices, publish the hashes as <code>roles.json</code> next to the app (website root), then redeploy.</p><div class="code-acts"><button class="btn outline sm" data-action="devCopyRoles">${icon('download', 16)}Copy roles.json</button></div>`; }
   else { const added = addedOwners(); body = `<p class="fine">Owners are recognised by a SHA-256 hash of their Google email; addresses are not stored. Added owners sync through your own Drive. Built-in owners are set in the code (docs/owner-mode.md). Co-developers must also be test users on the Google consent screen while it is in Testing.</p><ul class="sm-list">${OWNER_HASHES.map(h => `<li><code>${h.slice(0, 12)}…</code> <span class="chip">built-in</span></li>`).join('')}${added.map(h => `<li><code>${h.slice(0, 12)}…</code> <button class="link-btn danger" data-devrmowner="${h}">Remove</button></li>`).join('')}</ul><div class="code-acts"><input class="input" id="dev-owner" type="email" placeholder="Co-developer’s Gmail address" autocomplete="off"><button class="btn primary" data-action="devAddOwner">Add owner</button></div>`; }
-  return `${backHead('Developer panel', ownerBadge())}<div class="view narrow dev"><p class="fine">Owner mode is a convenience, not security. Nothing here changes what the app may legally show.</p><div class="code-modes" role="tablist">${DEV_TABS.map(([k, l]) => `<button role="tab" class="chip-btn${tab === k ? ' is-on' : ''}" data-devtab="${k}">${l}</button>`).join('')}</div><section class="card">${body}</section></div>`;
+  return `${backHead('Developer panel', ownerBadge())}<div class="view narrow dev"><p class="fine">${state.owner ? 'Owner' : 'Co-developer'} mode is a convenience, not security. Nothing here changes what the app may legally show.</p><div class="code-modes" role="tablist">${tabs.map(([k, l]) => `<button role="tab" class="chip-btn${tab === k ? ' is-on' : ''}" data-devtab="${k}">${l}</button>`).join('')}</div><section class="card">${body}</section></div>`;
 }
 function ownerPackHTML() {
   const st = state.packStatus || ownerPack.status(), label = { on: 'Active', off: 'Not loaded', locked: 'Locked — enter the passphrase', missing: 'Not in your Drive yet', error: 'Error' }[st.status] || st.status;
@@ -2212,12 +2235,14 @@ const actions = {
   cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner({ afterSignIn: true }); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
   cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner({ afterSignIn: true }); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
-  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut(); writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
+  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut();  state.role = null; writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
   devClearLogs() { logs.clear(); render(); }, devClearCrashes() { clearCrashes(); render(); },
   async devCount() { state.devCounts = await Promise.all(db.tables.map(async t => [t.name, await t.count()])); render(); },
   devExport() { const b = new Blob([JSON.stringify(maskSecrets(state.devRowsAll || []), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `ka-${state.devTable}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
   devSeed: () => devSeed(), devUnseed: () => devUnseed(),
-  async devAddOwner() { const v = document.getElementById('dev-owner')?.value || ''; try { await addOwner(v); toast('Owner added (stored as a hash).', 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
+  async devAddRole() { if (!state.owner) return toast('Only the owner can manage roles.', 'warn'); const v = document.getElementById('dev-role-email')?.value || '', r = document.getElementById('dev-role')?.value; try { await addRole(v, r); toast(`${ROLES[r]} added (stored as a hash).`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
+  async devCopyRoles() { if (!state.owner) return; const t = JSON.stringify(roleList(), null, 1); try { await navigator.clipboard.writeText(t); toast('roles.json copied.', 'ok'); } catch { prompt('Copy roles.json', t); } },
+  async devAddOwner() { if (!state.owner) return toast('Only the owner can manage owners.', 'warn'); const v = document.getElementById('dev-owner')?.value || ''; try { await addOwner(v); toast('Owner added (stored as a hash).', 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
   cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
   cloudPass() { const v = prompt('Sync passphrase (at least 8 characters). Use the same one on every device.'); if (v == null) return; if (v.length < 8) return toast('Use at least 8 characters.', 'warn'); setPassphrase(v); render(); },
   musicPlay() { musicPlay(); }, musicPause() { musicPause(); },
@@ -2549,7 +2574,7 @@ async function deleteDoc(id) {
 /* =================================================================== events */
 const run = fn => { Promise.resolve().then(fn).catch(fail); };
 app.addEventListener('click', e => {
-  const b = e.target.closest('[data-action],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
+  const b = e.target.closest('[data-action],[data-smattrm],[data-smskill],[data-skilledit],[data-skilldel],[data-devrmrole],[data-view],[data-open],[data-del],[data-toggle],[data-node],[data-docnode],[data-attempt],[data-q],[data-flag],[data-theme-set],[data-stab],[data-stab2],[data-prompt],[data-review],[data-review-node],[data-grade],[data-deck],[data-delcard],[data-errf],[data-retry],[data-retry-pick],[data-retry-self],[data-errcard],[data-delplan],[data-ptab],[data-phase],[data-sound],[data-rec-test],[data-rec-topic],[data-speak],[data-speak-card],[data-font],[data-level],[data-lab],[data-useprof],[data-delprof],[data-delpaper],[data-upsem],[data-mesem],[data-meretry],[data-smtab],[data-smpick],[data-findimg],[data-zoom],[data-figpage],[data-fbup],[data-go],[data-smsuggest],[data-smconv],[data-smren],[data-smdel],[data-smact],[data-uisize],[data-cmode],[data-cstep],[data-cprob],[data-devtab],[data-devtable],[data-devrmowner],[data-tmode],[data-msrc],[data-spcur],[data-mqplay],[data-mqdel],[data-spapp]');
   if (!b || b.disabled) { if (state.menu && !e.target.closest('.menu-wrap')) { state.menu = false; render(); } return; }
   const d = b.dataset;
   if (d.action) return run(() => actions[d.action](b));
@@ -2580,6 +2605,8 @@ app.addEventListener('click', e => {
   if (d.go) { const [v, sub] = d.go.split(':'); if (v === 'smarty') state.smartyTab = sub; go(v); if (v === 'settings' && sub) setTimeout(() => document.getElementById(sub)?.scrollIntoView({ block: 'start' }), 60); return; }
   if (d.devtab) { state.devTab = d.devtab; if (d.devtab === 'db' && !state.devCounts) return actions.devCount(); if (d.devtab === 'errors' && !state.devErr) return actions.devErrLoad(); return render(); }
   if (d.devtable) { state.devTable = d.devtable; db.table(d.devtable).toArray().then(rows => { state.devRowsAll = rows; state.devRows = rows.slice(0, 20).map(r => JSON.parse(JSON.stringify(r, (k, v) => typeof v === 'string' && v.length > 200 ? v.slice(0, 200) + '…' : v instanceof Uint8Array || v instanceof ArrayBuffer ? `[${v.byteLength} bytes]` : v))); render(); }); return; }
+  if (d.devrmrole) { if (state.owner) removeRole(d.devrmrole); return render(); }
+  if (d.devrmowner && !state.owner) return;
   if (d.devrmowner) { try { removeOwner(d.devrmowner); } catch (e) { toast(e.message, 'warn'); } return render(); }
   if (d.tmode) { state.timing.mode = d.tmode; if (d.tmode === 'preset') state.timing.minutes = Number(d.tmin); saveTiming(); return render(); }
   if (d.msrc) { music.source = d.msrc; return render(); }
@@ -2654,7 +2681,7 @@ app.addEventListener('change', e => {
   if (t.id === 'focus-sleep') { state.focusPrefs.sleep = Number(t.value); writeJSON('ka-focus', state.focusPrefs); return; }
   if (t.id === 'music-follow') { state.focusPrefs.musicFollow = music.follow = t.checked; writeJSON('ka-focus', state.focusPrefs); return; }
   if (t.matches?.('[data-musicfiles]')) { const n = addLocalFiles(t.files || []); if (!n) toast('No audio files found.', 'warn'); else if (music.q.at >= 0 && !music.playing) playLocal(music.q.at); t.value = ''; return; }
-  if (t.dataset?.devflag) { setFlag(t.dataset.devflag, t.checked); return render(); }
+  if (t.dataset?.devflag) { if (!canDo('beta') && !canDo('dev')) return; setFlag(t.dataset.devflag, t.checked); return render(); }
   if (t.id === 'sync-auto' || t.id === 'sync-encrypt' || t.id === 'sync-keys') { setSyncPrefs({ [t.id.slice(5)]: t.checked }); if (t.id === 'sync-encrypt' && t.checked && !hasPassphrase()) actions.cloudPass(); return render(); }
   if (t.id === 'clang') { const c = codeState(); const fresh = c.src.trim() === starter(c.problem, c.lang).trim(); c.lang = t.value; if (fresh) c.src = starter(c.problem, c.lang); c.run = null; saveCode(); return render(); }
   if (t.id === 'ctopic' || t.id === 'clevel') { codeState()[t.id === 'ctopic' ? 'topic' : 'level'] = t.value; return render(); }
