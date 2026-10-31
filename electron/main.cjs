@@ -1,6 +1,6 @@
 // Windows desktop shell. Serves the built web app from a privileged app:// scheme (not file://) so that
 // ES modules, web workers (pdf.js) and IndexedDB behave exactly as in a normal secure origin.
-const { aiUrlAllowed, googleSignIn } = require('./net-guard.cjs');
+const { aiUrlAllowed, publicUrlAllowed, googleSignIn } = require('./net-guard.cjs');
 const { app, BrowserWindow, session, protocol, net, ipcMain, shell } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -89,9 +89,14 @@ if (!app.requestSingleInstanceLock()) {
         if (!String(event.senderFrame?.url || '').startsWith(ORIGIN)) return { error: 'forbidden' };
         const u = new URL(String(req?.url));
         if (u.protocol !== 'https:' && u.protocol !== 'http:') return { error: 'forbidden' };
-        if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.)/.test(u.hostname)) return { error: 'forbidden' };   // public pages only
+        if (!publicUrlAllowed(u)) return { error: 'forbidden' };   // public pages only (ECC M5)
         const timeout = Math.min(Math.max(Number(req.timeout) || 60000, 5000), 120000);
-        const res = await net.fetch(u.toString(), { signal: AbortSignal.timeout(timeout) });
+        let res, url = u, hops = 0;
+        for (;;) {   // follow redirects by hand so every hop is re-checked
+          res = await net.fetch(url.toString(), { signal: AbortSignal.timeout(timeout), redirect: 'manual' });
+          if (res.status < 300 || res.status > 399 || !res.headers.get('location')) break;
+          url = new URL(res.headers.get('location'), url); if (++hops > 5 || !publicUrlAllowed(url)) return { error: 'forbidden' };
+        }
         const data = req.as === 'bytes' ? Buffer.from(await res.arrayBuffer()).toString('base64') : await res.text();
         return { status: res.status, data };
       } catch (e) { return { error: e?.name === 'TimeoutError' || e?.name === 'AbortError' ? 'timeout' : 'network' }; }

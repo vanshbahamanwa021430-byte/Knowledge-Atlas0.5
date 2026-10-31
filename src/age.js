@@ -17,5 +17,7 @@ export function checkAge(dob, store = localStorage, today = new Date()) {
   return result;
 }
 export function ageStatus(store = localStorage) { try { const v = JSON.parse(store.getItem(KEY) || 'null'); return v && ['adult', 'minor'].includes(v.result) ? v.result : 'unknown'; } catch { return 'unknown'; } }
+// ECC M7: after an under-18 result, the check can be repeated only after 30 days (a typo can be fixed by clearing app data).
+export function ageRecheckAllowed(store = localStorage, now = new Date()) { try { const v = JSON.parse(store.getItem(KEY) || 'null'); if (!v || v.result !== 'minor') return true; return (now - new Date(v.checked)) / 864e5 >= 30; } catch { return true; } }
 export const isAdult = (store = localStorage) => ageStatus(store) === 'adult';
 export const MINOR_MSG = 'Online AI, Google sign-in and problem reports are only for users aged 18 or over. Everything else in Prvlar works offline on this device: documents, the study map, notes, flashcards, the planner, the focus timer and your progress.';

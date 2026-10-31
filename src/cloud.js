@@ -139,10 +139,16 @@ async function syncBlobs(d) {
 function setStatus(s) { const v = { ...syncStatus(), ...s }; write('prvlar-sync-status', v); listeners.forEach(f => f(v)); return v; }
 const listeners = new Set();
 export const onSyncStatus = f => listeners.add(f);
-export async function deleteCloudData() {
-  const d = drive(await getToken(true)); const files = await d.listAll();
-  for (const f of files) if (!/^(prvlar|ka)-owner-pack\.json$/.test(f.name)) await d.remove(f.id);   // the owner pack is not sync data
-  setStatus({ at: 0, size: 0, error: '', conflicts: 0 }); return files.length;
+// ECC M2 (0.9.9): stop auto-sync first so nothing is re-uploaded, delete, then revoke Google access on every
+// platform and sign out. Returns the number of files actually removed (the owner pack is not sync data and stays).
+export async function deleteCloudData({ fetchImpl = globalThis.fetch } = {}) {
+  setSyncPrefs({ auto: false }); clearTimeout(timer); timer = null;
+  const t = await getToken(true), d = drive(t); const files = await d.listAll(); let removed = 0;
+  for (const f of files) if (!/^(prvlar|ka)-owner-pack\.json$/.test(f.name)) { await d.remove(f.id); removed++; }
+  setStatus({ at: 0, size: 0, error: '', conflicts: 0 });
+  try { await fetchImpl('https://oauth2.googleapis.com/revoke', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'token=' + encodeURIComponent(t) }); } catch { /* offline: the token still expires within the hour */ }
+  signOut();
+  return removed;
 }
 // Auto sync: on open, a few seconds after a change, every 10 minutes while online, and when coming back online.
 let timer = null, started = false;

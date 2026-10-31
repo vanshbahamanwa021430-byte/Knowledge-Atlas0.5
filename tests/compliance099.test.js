@@ -22,3 +22,24 @@ test('AI answer report: categories, excerpt limits, status audit trail, export',
   assert.throws(() => setStatus(r.id, 'bogus', 'x', s));
   assert.equal(JSON.parse(exportReports(s)).reports.length, 1);
 });
+import { aiDecision } from '../src/aigate.js';
+test('ECC H1: every non-local AI path needs adult + consent', () => {
+  assert.equal(aiDecision({ local: true, age: 'minor' }), 'ok');
+  assert.equal(aiDecision({ age: 'unknown', consent: true }), 'ask-age');
+  assert.equal(aiDecision({ age: 'minor', consent: true }), 'minor');
+  assert.equal(aiDecision({ age: 'adult', consent: false }), 'ask-consent');
+  assert.equal(aiDecision({ age: 'adult', consent: true }), 'ok');
+});
+import { ageRecheckAllowed } from '../src/age.js';
+import { scrub } from '../src/aireport.js';
+import { createRequire } from 'node:module';
+test('ECC M7: minor result blocks an immediate re-check for 30 days', () => {
+  const s = mem(); checkAge('2012-01-01', s, T); assert.equal(ageRecheckAllowed(s, T), false); assert.equal(ageRecheckAllowed(s, new Date(2026, 11, 5)), true);
+  const a = mem(); checkAge('1990-01-01', a, T); assert.equal(ageRecheckAllowed(a, T), true);
+});
+test('ECC L1: report scrub covers refresh tokens and client secrets', () => { const t = scrub('1//' + 'a'.repeat(30) + ' GOCSPX-' + 'b'.repeat(20)); assert.ok(!/1\/\/a|GOCSPX-b/.test(t), t); });
+test('ECC M5/L3: importer and AI host checks refuse private, CGNAT and mapped IPv6 hosts', () => {
+  const g = createRequire(import.meta.url)('../electron/net-guard.cjs');
+  for (const u of ['http://172.20.0.1/x', 'http://0.0.0.0/', 'http://[::1]/', 'https://printer.local/', 'http://100.64.1.1/', 'file:///etc/passwd', 'https://u:p@example.com/']) assert.ok(!g.publicUrlAllowed(new URL(u)), u);
+  assert.ok(g.publicUrlAllowed(new URL('https://example.com/paper.pdf'))); assert.ok(!g.aiUrlAllowed(new URL('https://[::ffff:7f00:1]/v1'))); assert.ok(!g.aiUrlAllowed(new URL('https://100.100.1.1/v1')));
+});

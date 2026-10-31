@@ -54,13 +54,14 @@ async function deriveKey(pass, salt, rounds) {
   const base = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: rounds, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
-export async function encryptJSON(obj, pass, rounds = 210000) {
+const clampRounds = r => Math.min(2000000, Math.max(1000, Number(r) || 210000));   // ECC L4: crafted files cannot hang decrypt
+export async function encryptJSON(obj, pass, rounds = 600000) {
   const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await deriveKey(pass, salt, rounds), enc.encode(JSON.stringify(obj)));
   return { format: SYNC_FORMAT, encrypted: 'AES-GCM', kdf: 'PBKDF2-SHA256', rounds, salt: b64(salt), iv: b64(iv), data: b64(ct) };
 }
 export async function decryptJSON(box, pass) {
-  try { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, await deriveKey(pass, unb64(box.salt), box.rounds || 210000), unb64(box.data)); return JSON.parse(dec.decode(pt)); }
+  try { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(box.iv) }, await deriveKey(pass, unb64(box.salt), clampRounds(box.rounds)), unb64(box.data)); return JSON.parse(dec.decode(pt)); }
   catch { throw Error('Wrong passphrase, or the cloud copy is damaged.'); }
 }
 export const isEncrypted = x => !!x?.encrypted;

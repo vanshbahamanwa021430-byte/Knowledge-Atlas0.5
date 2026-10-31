@@ -3,7 +3,7 @@
 const KEY = 'prvlar-crashlog', ON = 'prvlar-crash-ok';
 export const redact = s => String(s || '')
   .replace(/AIza[0-9A-Za-z_-]{20,}/g, '[key]').replace(/gsk_[0-9A-Za-z]{20,}/g, '[key]').replace(/sk-[0-9A-Za-z_-]{16,}/g, '[key]')
-  .replace(/ya29\.[0-9A-Za-z._-]+/g, '[token]').replace(/eyJ[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+/g, '[token]')
+  .replace(/ya29\.[0-9A-Za-z._-]+/g, '[token]').replace(/1\/\/[\w-]{20,}/g, '[token]').replace(/GOCSPX-[\w-]{10,}/g, '[key]').replace(/eyJ[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+\.[0-9A-Za-z_-]+/g, '[token]')
   .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[email]').replace(/([?&](key|token|access_token|id_token)=)[^&\s]+/gi, '$1[hidden]');
 export function crashEnabled(store = localStorage) { return store.getItem(ON) === '1'; }
 export function setCrashEnabled(v, store = localStorage) { store.setItem(ON, v ? '1' : '0'); if (!v) store.removeItem(KEY); }

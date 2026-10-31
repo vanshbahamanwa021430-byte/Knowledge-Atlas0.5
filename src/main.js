@@ -53,7 +53,8 @@ music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'fo
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
 import { drawerHTML, edgeSwipe } from './drawer.js';
-import { checkAge, ageStatus, isAdult, MINOR_MSG } from './age.js';
+import { checkAge, ageStatus, isAdult, MINOR_MSG, ageRecheckAllowed } from './age.js';
+import { aiDecision } from './aigate.js';
 import { CATEGORIES as REP_CATS, STATUSES as REP_STATUS, makeReport, addReport, listReports, setStatus as setRepStatus, exportReports, deleteAllReports } from './aireport.js';
 import { safeBgUrl } from './safeurl.js';
 import { conceptNodes, graphEdges, acceptPrereqs, conceptResults, PREREQ_PROMPT } from './livemap.js';
@@ -238,15 +239,18 @@ function reportSheetHTML() {
 <p class="fine">Saved on this device: the answer text and a short excerpt of the context (never whole documents). Keys, emails and phone numbers are removed.</p>
 <div class="row"><button class="btn primary" data-action="aiRepSend">${icon('send', 17)}Report</button><button class="btn outline" data-action="aiRepCancel">Cancel</button></div></section>`;
 }
+// Quiet check for background AI (marking, plan weights): never prompts, never sends unless age and consent are already set.
+const localAi = () => usingServer() && /^http:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(state.ai?.url || '');
+function aiAllowedQuiet() { return aiDecision({ local: localAi(), age: ageStatus(), consent: localStorage.getItem('prvlar-ai-consent') === '1' }) === 'ok'; }
 function aiConsentOk() {
-  if (usingServer() && /^http:\/\/(localhost|127\.0\.0\.1)/.test(state.ai?.url || '')) return true;   // a model on this device
+  if (localAi()) return true;   // a model on this device
   requireAdult('use online AI');
   if (localStorage.getItem('prvlar-ai-consent') === '1') return true;
   if (!confirm('Allow online AI? Parts of your documents and questions are sent to the AI service you chose to answer them. Everything else stays on this device.')) return false;
   localStorage.setItem('prvlar-ai-consent', '1'); return true;
 }
 function requireAi(what) {
-  if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); return aiConfig(); }
+  if (usingServer()) { if (!aiAvailable()) throw Error('Enter your AI server address in Settings.'); if (!aiConsentOk()) throw Error('Online AI was not allowed. You can allow it in Settings › Data and backup.'); return aiConfig(); }   // ECC H1: server modes are gated too
   if (!state.key.trim()) throw Error(`Add an AI key in Settings to ${what}. Free keys from Google Gemini or Groq work.`);
   if (!navigator.onLine) throw Error('You are offline. This needs an internet connection.');
   if (!aiConsentOk()) throw Error('Online AI was not allowed. You can allow it in Settings › Data and backup.');
@@ -1963,6 +1967,7 @@ async function submit() {
       try {
         if (!aiAvailable()) throw Error('no AI key or AI server is set');
         if (!state.aiConsent) throw Error('sending answers to the AI was not confirmed');
+        if (!aiAllowedQuiet()) throw Error(isAdult() ? 'online AI was not allowed' : 'online AI marking is only for users aged 18 or over');
         if (!usingServer() && !navigator.onLine) throw Error('you are offline');
         grades.push(...await gradeWritten(doc, aiConfig(), questions, answers));
       } catch (e) {
@@ -2423,7 +2428,7 @@ function codeState() {
 }
 const saveCode = () => { const c = state.code; writeJSON('prvlar-code', { mode: c.mode, lang: c.lang, pid: c.pid, src: c.src }); };
 function loadProblem(p) { const c = codeState(); Object.assign(c, { pid: p.id, problem: p, src: starter(p, c.lang), tests: formatTests(problemTests(p)), step: 'plan', plan: null, review: null, run: null, hint: '', hintsUsed: 0, saved: false, startedAt: Date.now() }); saveCode(); }
-const codeAi = () => smartyAi();
+const codeAi = () => { requireAi('use Smarty Code'); return smartyAi(); };
 function runRows(run) {
   if (!run) return '';
   if (run.error) return `<div class="status bad" role="alert">${icon('xCircle', 20)}<pre class="code-err">${esc(run.error)}</pre></div>`;
@@ -2522,7 +2527,7 @@ async function mountCodeEditor() {
 const actions = {
   ageConfirm() { const v = document.getElementById('age-dob')?.value; const r = checkAge(v); state.ageAsk = null; if (r === 'minor') { state.error = MINOR_MSG; } else state.notice = 'Thanks. Online features are available.'; render(); },
   ageCancel() { state.ageAsk = null; render(); },
-  ageRecheck() { state.ageAsk = { what: 'use online features' }; render(); },
+  ageRecheck() { if (!ageRecheckAllowed()) throw Error('You can check your age again 30 days after the last check.'); state.ageAsk = { what: 'use online features' }; render(); },
   aiRepCancel() { state.aiRep = null; render(); },
   aiRepSend() {
     const cat = document.querySelector('input[name=airep-cat]:checked')?.value, note = document.getElementById('airep-note')?.value || '';
@@ -2567,7 +2572,7 @@ const actions = {
     if (!doc) throw Error('Link a document to this exam so Smarty knows the topics.');
     let topics = (doc.sections || []).filter(n => n.depth <= 1 && n.title).map(n => ({ title: n.title, nodeId: n.id }));
     if (!topics.length) topics = (doc.sections || []).slice(0, 40).map(n => ({ title: n.title || n.ref || 'Section', nodeId: n.id }));
-    const ai = aiAvailable() ? smartyAi() : null;
+    const ai = aiAvailable() && aiAllowedQuiet() ? smartyAi() : null;   // ECC H1: weights only with age + consent
     if (ai) { try { const r = await smartyJson(ai, `An exam is on ${ex.date}. Rate how important each topic is for revision (1 = normal, 2 = important, 3 = very important). Topics: ${JSON.stringify(topics.map(t => t.title).slice(0, 80))}. Reply as JSON: {"weights":[numbers in the same order]}.`); (r?.weights || []).forEach((w, i) => { if (topics[i]) topics[i].weight = w; }); } catch { /* the plan works without weights */ } }
     const plan = buildStudyPlan({ examId: ex.id, examTitle: ex.title, examDate: ex.date, topics, today: today(), minutesPerDay: state.goals.dailyMinutes });
     const rec = state.plans.find(p => p.kind === 'studyplan' && p.examId === ex.id) || { id: uuid(), kind: 'studyplan', examId: ex.id, created: Date.now() };
@@ -2595,7 +2600,7 @@ const actions = {
   async devAddRole() { if (!state.owner) return toast('Only the owner can manage roles.', 'warn'); const v = document.getElementById('dev-role-email')?.value || '', r = document.getElementById('dev-role')?.value; try { await addRole(v, r); toast(`${ROLES[r]} added (stored as a hash).`, 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
   async devCopyRoles() { if (!state.owner) return; const t = JSON.stringify(roleList(), null, 1); try { await navigator.clipboard.writeText(t); toast('roles.json copied.', 'ok'); } catch { prompt('Copy roles.json', t); } },
   async devAddOwner() { if (!state.owner) return toast('Only the owner can manage owners.', 'warn'); const v = document.getElementById('dev-owner')?.value || ''; try { await addOwner(v); toast('Owner added (stored as a hash).', 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
-  cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); deleteAllReports(); setCrashEnabled(false); localStorage.removeItem('prvlar-report-log'); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
+  cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive, turn off sync and sign out (Google access is revoked)? Your study data on this device is kept; AI answer reports and crash logs on this device are deleted.')) return; cloudDo(async () => { const n = await deleteCloudData(); deleteAllReports(); setCrashEnabled(false); localStorage.removeItem('prvlar-report-log'); await refreshOwner().catch(() => {}); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive. Sync is off and you are signed out.`, 'ok'); }); },
   cloudPass() { const v = prompt('Sync passphrase (at least 8 characters). Use the same one on every device.'); if (v == null) return; if (v.length < 8) return toast('Use at least 8 characters.', 'warn'); setPassphrase(v); render(); },
   musicPlay() { musicPlay(); }, musicPause() { musicPause(); },
   spLogin() { spotifyLogin(); },
@@ -2710,7 +2715,7 @@ const actions = {
         state.examMeta = { profileId: prof.id, profileName: prof.name, level: pk.level, levelName: plan.levelName, minutes: plan.minutes, mix: plan.mix };
       } else { state.questions = attachFigures(await generateExam(doc, ai), [], doc); state.examMeta = {}; }
       state.examMeta.timing = normalizeTiming(state.timing); state.examMeta.minutes = resolveMinutes(state.timing, { questions: state.questions, paperMinutes: planMin });
-      Object.assign(state, { answers: {}, flags: new Set(), qIndex: 0, startedAt: Date.now(), result: null, review: null, aiConsent: true, autoFailed: false, pauses: [], qTimes: {}, warned: [], lastTick: Date.now(), timeUp: 0 });
+      Object.assign(state, { answers: {}, flags: new Set(), qIndex: 0, startedAt: Date.now(), result: null, review: null, aiConsent: aiAllowedQuiet(), autoFailed: false, pauses: [], qTimes: {}, warned: [], lastTick: Date.now(), timeUp: 0 });
       saveDraft();
     } finally { state.busy = ''; }
     render(); window.scrollTo(0, 0);
@@ -2955,7 +2960,7 @@ app.addEventListener('click', e => {
     else { const at = state.review || state.result; const q = at?.questions?.find(z => z.id === y), g = (at?.grades || []).find(z => z.id === y); if (!q) return; state.aiRep = { kind: 'assessment', answer: `Mark ${g?.awarded ?? '?'}/${q.marks}. ${g?.feedback || ''}`, context: q.prompt }; }
     return render();
   }
-  if (d.devrep) return run(() => { const [id, st] = d.devrep.split(':'); if (!(state.owner || state.role === 'codev')) throw Error('Only the owner and co-developers can review reports.'); setRepStatus(id, st, account()?.email || (state.owner ? 'owner' : 'codev')); render(); });
+  if (d.devrep) return run(() => { const [id, st] = d.devrep.split(':'); if (!(state.owner || state.role === 'codev')) throw Error('Only the owner and co-developers can review reports.'); setRepStatus(id, st, state.owner ? 'owner' : 'co-developer'); /* ECC L2: role label, not an email */ render(); });
   if (d.sptask) return run(async () => { const rec = state.plans.find(p => p.id === d.spplan); if (!rec) return; rec.plan = toggleTask(rec.plan, d.sptask); await savePlan(rec); render(); });
   if (d.spsel) { state.spSel = d.spsel; return render(); }
   if (d.action) return run(() => actions[d.action](b));

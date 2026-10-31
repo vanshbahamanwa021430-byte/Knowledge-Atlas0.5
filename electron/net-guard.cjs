@@ -2,7 +2,7 @@
 const http = require('http'), crypto = require('crypto');
 
 // ---- M4: which URLs the page may POST AI requests to ----
-const PRIVATE = /^(10\.|127\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)/i;
+const PRIVATE = /^(10\.|127\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|\[?::ffff:|\[?::1\]?$|\[?f[cd][0-9a-f]{2}:|\[?fe80:)/i;
 function aiUrlAllowed(u, local = false) {
   const host = u.hostname.toLowerCase();
   const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1';
@@ -74,4 +74,10 @@ function googleSignIn(req, deps) {
     });
   });
 }
-module.exports = { aiUrlAllowed, googleSignIn, pkcePair };
+// ECC M5 (0.9.9): the past-paper importer may fetch public http(s) pages only (same private-host rules as AI).
+function publicUrlAllowed(u) {
+  if (u.username || u.password || (u.protocol !== 'https:' && u.protocol !== 'http:')) return false;
+  const host = u.hostname.toLowerCase();
+  return !(host === 'localhost' || PRIVATE.test(host) || /^\[/.test(host) || host.endsWith('.local') || host.endsWith('.internal') || !host.includes('.'));
+}
+module.exports = { aiUrlAllowed, publicUrlAllowed, googleSignIn, pkcePair };
