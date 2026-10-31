@@ -439,7 +439,7 @@ function viewHTML() {
     case 'dev': return viewDev();
     case 'practice': return viewHub('practice');
     case 'plan': return viewHub('plan');
-    case 'licenses': return `${backHead('Open-source licences')}<div class="view narrow"><section class="card"><pre class="licenses">${esc(NOTICES)}</pre></section></div>`;
+    case 'licenses': return `${backHead('Open-source licences')}<div class="view narrow"><section class="card"><pre class="licenses">${esc(NOTICES)}</pre><p class="fine"><a href="./third-party-licenses.txt" target="_blank" rel="noopener">Full licence texts of every bundled package</a></p></section></div>`;
     case 'privacy': return viewPrivacy();
     case 'terms': return viewTerms();
     case 'examlab': return viewExamLab();
@@ -687,6 +687,7 @@ function profileSummaryHTML(p, level) {
 <p class="fine">${esc(p.fullName || p.name)}${pt.durationMin ? ` · real paper: ${pt.totalQuestions} questions, ${pt.totalMarks || '?'} marks, ${pt.durationMin} min` : ''}. Practice keeps the exam's question types, marks, negative marking and time per question.</p>
 <ul class="exam-secs">${pt.sections.map((s, i) => `<li><b>${esc(s.name)}</b><span>${esc(TYPE_LABEL[s.type])} · ${s.count} × ${s.marks} marks · ${neg(s.negative)}${pt.sectionalMin ? ` · ${pt.sectionalMin[i]} min` : ''}${s.type === 'multi' && s.partial === 'jee-advanced' ? ' · partial marks' : ''}</span></li>`).join('')}</ul>
 <p class="fine">${p.difficulty ? `Difficulty from past papers: ${esc(p.difficulty.basis || '')}` : 'No reliable difficulty data for this exam, so a standard 30/50/20 mix is used.'}</p>
+<p class="fine exam-disclaimer">Practice in the style of this exam only. Not affiliated with or endorsed by the exam’s conducting body (such as NTA). No official papers are included.</p>
 ${p.assumptions?.length ? `<div class="status warn">${icon('alert', 18)}<p><b>Assumed, not official:</b> ${p.assumptions.map(esc).join(' ')}</p></div>` : ''}
 <details class="exam-src"><summary>Where this comes from</summary><p class="fine">${esc(p.coverage?.note || '')}</p>
 ${p.topics?.length ? `<p class="fine"><b>Most asked:</b> ${p.topics.slice(0, 8).map(t => esc(t.name) + (t.weight != null ? ` (${t.weight})` : '')).join(', ')}${p.topicsBasis ? ` — ${esc(p.topicsBasis)}` : ''}</p>` : ''}
