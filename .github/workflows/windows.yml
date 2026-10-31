@@ -25,11 +25,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: KnowledgeAtlas-windows
-          path: release-public/*.exe
-      - name: Attach installer to the release
+          path: |
+            release-public/*.exe
+            release-public/*.zip
+      - name: Attach installer and portable zip to the release
         if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.tag != ''
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.inputs.tag || github.ref_name }}
-        run: gh release upload "$TAG" release-public/*.exe --clobber -R "$GITHUB_REPOSITORY"
+        run: gh release upload "$TAG" release-public/*.exe release-public/*-windows-x64.zip --clobber -R "$GITHUB_REPOSITORY"

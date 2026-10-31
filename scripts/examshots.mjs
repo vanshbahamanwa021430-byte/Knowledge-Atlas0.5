@@ -2,7 +2,7 @@ import { chromium } from 'playwright-core';
 const CHROME = (await import('fs')).existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined;
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] }); const p = await b.newPage({ viewport: { width: 412, height: 900 } });
 const errs = []; p.on('pageerror', e => errs.push(e.message));
-await p.addInitScript(() => { localStorage.setItem('ka-onboarded', 'true'); });
+await p.addInitScript(() => { localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); });
 const O = '/workspace/out/exam-registry-0.9.5'; (await import('fs')).mkdirSync(O, { recursive: true });
 await p.goto('http://localhost:4173/#library'); await p.waitForTimeout(1200);
 await p.setInputFiles('input[data-import] >> nth=0', '/workspace/smoke/doc.md'); await p.waitForSelector('.v-study');

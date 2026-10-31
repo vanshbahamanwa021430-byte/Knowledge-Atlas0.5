@@ -35,6 +35,8 @@ import { blankPattern, BLANK_SECTION, patternTotals, patternErrors, profileFromP
 import { PRESETS, normalizeTiming, resolveMinutes, autoMinutes, canPause, describeTiming, dueWarning, activeMs, leftMs, tickQuestion, questionExpired, fmtDuration } from './timing.js';
 import { OWNER_HASHES, isOwnerEmail, addedOwners, addOwner, removeOwner, maskSecrets, logs, requests, perf, recordRender, crashes, clearCrashes, FLAGS, flags, setFlag, installLogCapture } from './devlog.js';
 installLogCapture();
+import { platform as gatePlatform } from './platform.js';
+import { needsWelcome, afterSignIn, afterGuest, afterSignOut } from './gate.js';
 import { cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
 import { registerPlugin } from '@capacitor/core';
 import { checkForUpdate, AUTO_INTERVAL, RELEASES_PAGE, UPDATE_REPO, setUpdateRepo } from './update.js';
@@ -142,7 +144,12 @@ const userName = () => String(readJSON('ka-name', ED.defaultName) || '').trim().
 function applyUiSize() { const z = (UI_SIZES.find(x => x[0] === readJSON('ka-uisize', 'm')) || UI_SIZES[1])[2]; document.documentElement.style.setProperty('--ui-zoom', String(z)); }
 const uiSizeSeg = () => `<div class="seg ui-size" role="radiogroup" aria-label="Text size">${UI_SIZES.map(([v, l]) => `<button role="radio" class="seg-btn${readJSON('ka-uisize', 'm') === v ? ' is-on' : ''}" data-uisize="${v}" aria-checked="${readJSON('ka-uisize', 'm') === v}">${l}</button>`).join('')}</div>`;
 // First run: three short screens (name, comfort, AI). Shown once; everything is changeable in Settings.
+function welcomeHTML() {
+  const busy = state.busy === 'sync';
+  return `<div class="onboard welcome-gate" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card"><span class="ob-art">${logo()}</span><h1>Welcome to Knowledge Atlas</h1><p>Sign in to back up and sync your study across devices, in your own Google Drive. Or keep everything on this device.</p>${cloudAvailable() ? `<button class="btn primary big block g-btn" data-action="gateSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button>` : `<button class="btn primary big block g-btn" disabled aria-disabled="true">${icon('login', 20)}Sign in with Google</button><p class="fine gate-soon">Google sign-in is coming soon on iPhone and iPad. For now, continue without an account; everything works on this device.</p>`}<button class="btn ghost block" data-action="gateGuest">Continue without account</button><p class="fine">Works fully offline. You can sign in later in Settings.</p></div></div>`;
+}
 function onboardingHTML() {
+  if (needsWelcome({ available: cloudAvailable(), soon: gatePlatform() === 'ios', signedIn: !!account(), entry: readJSON('ka-entry', '') })) return welcomeHTML();
   if (readJSON('ka-onboarded', false)) return '';
   const step = state.onStep || 0;
   const body = step === 0 ? `<span class="ob-art">${logo()}</span><h1>Welcome to Knowledge Atlas</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck.</p><label class="field"><span>What should we call you?</span><input class="input" id="ob-name" value="${esc(userName())}" placeholder="Your name (optional)" autocomplete="nickname" maxlength="40"></label><label class="field"><span>What do you study?</span><select class="input select" id="ob-stream"><option value="">Choose (optional)</option>${STREAMS.map(([v, l]) => `<option value="${v}"${userStream() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`
@@ -2084,7 +2091,7 @@ const actions = {
   async glassNone() { state.glassBg = 'none'; await setSetting('glass-bg', 'none'); applyGlassBg(); render(); },
   cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner(); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
-  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut(); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
+  cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut(); writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
   devClearLogs() { logs.clear(); render(); }, devClearCrashes() { clearCrashes(); render(); },
   async devCount() { state.devCounts = await Promise.all(db.tables.map(async t => [t.name, await t.count()])); render(); },
   devExport() { const b = new Blob([JSON.stringify(maskSecrets(state.devRowsAll || []), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `ka-${state.devTable}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
@@ -2107,6 +2114,8 @@ const actions = {
   codeNext() { const c = codeState(); loadProblem(suggestProblem(tutorWeak(state.learner || emptyProfile()).map(t => t.name), c.done || [])); render(); },
   codeReset() { const c = codeState(); c.src = starter(c.problem, c.lang); saveCode(); render(); },
   codeExercise() { const c = codeState(), x = c.lesson?.exercise; if (!x) return; loadProblem({ id: 'lesson-' + Date.now(), topic: c.concept || 'Recursion', level: 'easy', title: String(x.title || 'Exercise'), text: String(x.text || ''), fn: String(x.fn), params: (x.params || []).map(String), tests: (x.tests || []).filter(t => Array.isArray(t?.args)).map(t => [t.args, t.expected]) }); c.mode = 'solve'; render(); },
+  gateSignIn: () => cloudDo(async () => { await signIn(); const a = afterSignIn(); writeJSON('ka-entry', a.entry); writeJSON('ka-onboarded', a.onboarded); const n = account()?.name; if (n && !readJSON('ka-name', '')) writeJSON('ka-name', String(n).split(' ')[0].slice(0, 40)); await refreshOwner(); startAutoSync(); render(); syncNow({ interactive: true }).catch(() => {}); }),
+  gateGuest() { writeJSON('ka-entry', afterGuest().entry); render(); },
   obNext() { state.onStep = (state.onStep || 0) + 1; render(); },
   obBack() { state.onStep = Math.max(0, (state.onStep || 0) - 1); render(); },
   obDone() { writeJSON('ka-onboarded', true); render(); },

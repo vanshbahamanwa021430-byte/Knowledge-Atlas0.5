@@ -37,7 +37,7 @@ for (const kind of ['phone', 'desktop']) {
       await hash('home'); const h = await p.textContent('.greet h1'); if (!/, Sam$/.test(h.trim())) throw Error('greeting: ' + h);
       if (!await p.$('.quick[data-view="code"]')) throw Error('no Smarty Code quick action for a CS student');
     }, p);
-  } else await p.evaluate(() => { localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-name', '"Sam"'); localStorage.setItem('ka-stream', '"cs"'); location.reload(); }), await p.waitForTimeout(800);
+  } else await p.evaluate(() => { localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); localStorage.setItem('ka-name', '"Sam"'); localStorage.setItem('ka-stream', '"cs"'); location.reload(); }), await p.waitForTimeout(800);
   await step(`${kind}: layout (${kind === 'phone' ? 'bottom nav' : 'sidebar'})`, async () => {
     await hash('home'); const nav = await p.evaluate(() => { const vis = s => { const e = document.querySelector(s); return !!e && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0; }; return { tabs: vis('.tabbar, .bottom-nav, nav.tabs'), side: vis('.sidebar, aside.side, nav.side') }; });
     if (kind === 'phone' ? !nav.tabs : !nav.side) throw Error(JSON.stringify(nav));

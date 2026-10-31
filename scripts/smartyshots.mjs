@@ -34,7 +34,7 @@ const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome'
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 await ctx.route(/commons\.wikimedia\.org/, r => r.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: JSON.stringify({ query: { pages: { 1: { title: 'File:Heart diagram.svg.png', index: 1, imageinfo: [{ thumburl: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#fde"/><circle cx="160" cy="100" r="60" fill="#c33"/></svg>'), descriptionurl: 'https://commons.wikimedia.org/wiki/File:Heart', extmetadata: { LicenseShortName: { value: 'CC BY-SA 4.0' }, Artist: { value: 'Example Author' }, LicenseUrl: { value: 'https://creativecommons.org/licenses/by-sa/4.0/' } } }] } } } }) }));
 await ctx.route(/api\.openai\.com|generativelanguage\.googleapis\.com|api\.groq\.com|api\.github\.com/, ai);
-await ctx.addInitScript(() => { localStorage.setItem('ka-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('ka-onboarded', 'true'); });
+await ctx.addInitScript(() => { localStorage.setItem('ka-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); });
 const p = await ctx.newPage(); p.setDefaultTimeout(5000); const errors = [], results = [];
 p.on('pageerror', e => errors.push(e.message)); p.on('dialog', d => d.accept());
 const hash = h => p.evaluate(x => { location.hash = x; }, h).then(() => p.waitForTimeout(250));

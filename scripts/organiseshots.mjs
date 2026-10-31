@@ -6,7 +6,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const TABS = PH === 'before' ? ['home', 'library', 'study', 'test', 'more'] : ['home', 'library', 'practice', 'plan', 'more'];
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome', args: ['--no-sandbox'] });
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
-await ctx.addInitScript(() => { localStorage.setItem('ka-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('ka-onboarded', 'true'); });
+await ctx.addInitScript(() => { localStorage.setItem('ka-update', JSON.stringify({ auto: false, last: Date.now() })); localStorage.setItem('ka-onboarded', 'true'); localStorage.setItem('ka-entry', '"guest"'); });
 const p = await ctx.newPage(); p.on('dialog', d => d.accept());
 await p.goto(URL); await p.waitForTimeout(800);
 await p.evaluate(() => { location.hash = 'library'; }); await p.waitForTimeout(300);
