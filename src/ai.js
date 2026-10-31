@@ -80,11 +80,37 @@ export function resolveAI(ai) {
 }
 
 // JSON mode is requested, but some models still wrap the object in ``` fences or add a sentence.
+export function repairJson(t) {
+  let out = '', inStr = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (!inStr) { if (c === '"') inStr = true; out += c; continue; }
+    if (c === '\\') {
+      const n = t[i + 1];
+      if (n === 'u' && /^[0-9a-fA-F]{4}$/.test(t.slice(i + 2, i + 6))) { out += c; continue; }
+      if (n && '"\\/'.includes(n)) { out += c + n; i++; continue; }
+      if (n && 'bfnrt'.includes(n) && !/[a-zA-Z]/.test(t[i + 2] || '')) { out += c + n; i++; continue; }
+      out += '\\\\'; continue;
+    }
+    if (c === '"') { inStr = false; out += c; continue; }
+    if (c === '\n') { out += '\\n'; continue; }
+    if (c === '\r') { out += '\\r'; continue; }
+    if (c === '\t') { out += '\\t'; continue; }
+    out += c;
+  }
+  return out.replace(/,\s*([}\]])/g, '$1');
+}
+
 function parseJsonReply(text) {
   const s = String(text ?? '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
   try { return JSON.parse(s); } catch { /* fall through */ }
   const a = s.indexOf('{'), b = s.lastIndexOf('}');
-  if (a >= 0 && b > a) return JSON.parse(s.slice(a, b + 1));
+  if (a >= 0 && b > a) {
+    const body = s.slice(a, b + 1);
+    try { return JSON.parse(body); } catch { /* try a repair */ }
+    // Common model slips: LaTeX backslashes (\frac) left unescaped, raw newlines inside strings, trailing commas.
+    return JSON.parse(repairJson(body));
+  }
   throw Error('not JSON');
 }
 
@@ -151,7 +177,13 @@ async function callModel(ai, system, user, images = []) {
   }
   let content;
   try { content = (await res.json()).choices[0].message.content; } catch { throw Error('The AI returned an unexpected response. Check the AI server address.'); }
-  try { return parseJsonReply(content); } catch { throw Error('The AI returned unreadable output. Try again.'); }
+  try { return parseJsonReply(content); } catch { /* one automatic retry below */ }
+  if (!payload._retried) {
+    payload._retried = true; const again = { ...payload }; delete again._retried;
+    const r2 = await postJson(p.endpoint, headers, again, p.timeout).catch(() => null);
+    if (r2?.ok) { try { return parseJsonReply((await r2.json()).choices[0].message.content); } catch { /* fall through */ } }
+  }
+  throw Error('The AI returned unreadable output. Try again.');
 }
 
 // Vision: Gemini's OpenAI-compatible endpoint accepts pictures as data-URL image parts. Others get text only.
