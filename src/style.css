@@ -1901,3 +1901,21 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .sp-task { display: flex; align-items: center; gap: 8px; min-height: 40px; }
 .sp-task.is-done > span:nth-child(3) { text-decoration: line-through; color: var(--ink-3); }
 @media (prefers-reduced-motion: reduce) { .drawer, .drawer-scrim, .sm-mic.is-on { animation: none; } }
+/* Living Map, gaps, mission (0.9.9) */
+.lm-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.lm-key { font-size: .8rem; padding: 2px 10px; border-radius: 99px; border: 2px solid var(--line); }
+.lm-nodes { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.lm-node { width: 100%; min-height: 64px; display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+.lm-node:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.lm-t { font-weight: 600; }
+.lm-m, .lm-need { font-size: .8rem; color: var(--ink-2); }
+.lv-strong { border-color: var(--green); }
+.lv-learning { border-color: var(--amber); }
+.lv-weak { border-color: var(--red); border-style: dashed; }
+.lv-new { border-color: var(--line); }
+.lm-node.is-next { box-shadow: 0 0 0 3px var(--blue); }
+.lm-next, .mc-hero { display: flex; align-items: center; gap: 12px; }
+.lm-next > div, .mc-hero > div { flex: 1; }
+.gap-say { font-size: 1.05rem; font-weight: 600; }
+.mc-seq { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+.mc-seq li { display: flex; justify-content: space-between; gap: 8px; }

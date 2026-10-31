@@ -53,6 +53,11 @@ music.keepPlaying = () => state.focusRun.running && state.focusRun.phase === 'fo
 onMusicChange(() => { if (state.view === 'focus') render(); });
 import { speak, stopSpeaking, speechSupported } from './speech.js';
 import { drawerHTML, edgeSwipe } from './drawer.js';
+import { safeBgUrl } from './safeurl.js';
+import { conceptNodes, graphEdges, acceptPrereqs, conceptResults, PREREQ_PROMPT } from './livemap.js';
+import { conceptMastery, recommendNext, missionControl } from './mastery.js';
+import { findGaps, gapSentence } from './gaps.js';
+import { validateGraph } from './graphcheck.js';
 import { record as crashRecord, crashEnabled, setCrashEnabled, reports as crashReports, reportText as crashText } from './crashlog.js';
 import { encryptJSON, decryptJSON } from './sync.js';
 import { ACTIONS as SM_EV_ACTIONS, screenContext, actionPrompt, parseCards, parseTasks, parseNotes } from './everywhere.js';
@@ -312,7 +317,7 @@ let PACK_GLASS = '';   // the owner pack's background photo, if any
 function applyGlassBg() {
   const v = state.glassBg, root = document.documentElement;
   if (v === 'none') root.style.setProperty('--glass-photo', 'linear-gradient(160deg, #6f8f7b, #2f4a3c)');
-  else if (v) root.style.setProperty('--glass-photo', `url("${v}")`); else if (PACK_GLASS) root.style.setProperty('--glass-photo', `url("${PACK_GLASS}")`); else root.style.removeProperty('--glass-photo');
+  else if (safeBgUrl(v)) root.style.setProperty('--glass-photo', `url("${safeBgUrl(v)}")`); else if (safeBgUrl(PACK_GLASS)) root.style.setProperty('--glass-photo', `url("${safeBgUrl(PACK_GLASS)}")`); else root.style.removeProperty('--glass-photo');
 }
 async function pickGlassBg(file) {
   if (!file || !/^image\//.test(file.type)) throw Error('Choose a picture (JPG, PNG or WebP).');
@@ -545,6 +550,9 @@ function viewHTML() {
     case 'planner': return viewPlanner();
     case 'focus': return viewFocus();
     case 'progress': return viewProgress();
+    case 'livemap': return viewLiveMap();
+    case 'gaps': return viewGaps();
+    case 'mission': return viewMission();
     default: return viewHome();
   }
 }
@@ -1680,6 +1688,64 @@ function weeklyCard() {
 <p class="fine">${w.activeDays} of 7 days active · streak ${plural(w.streak, 'day')}${w.change !== null ? ` · ${w.change >= 0 ? "+" : ""}${w.change}% vs last week` : ""}</p>
 ${due ? `<button class="btn primary sm" data-view="cards">${icon('cards', 16)}${plural(due, 'card')} due today</button>` : ''}</section>`;
 }
+// ---------- 0.9.9 Living Knowledge Map, Knowledge Gap Detector, Mission Control (all from real data) ----------
+function docModel(doc) {
+  const ol = outline(doc), { nodes, conceptOf } = conceptNodes(ol);
+  const stored = Array.isArray(doc.prereqs) ? doc.prereqs.filter(e => nodes.some(n => n.id === e.from) && nodes.some(n => n.id === e.to)) : [];
+  const edges = graphEdges(nodes, stored), inferred = !stored.length;
+  const results = conceptResults(state.attempts, doc.id, src => { const n = nodeForSource(doc, src); return n ? conceptOf(n.id) : null; });
+  const cards = (state.cards || []).filter(c => c.documentId === doc.id && c.nodeId).map(c => ({ ...c, nodeId: conceptOf(c.nodeId) }));
+  const read = [...new Set((state.visited[doc.id] || []).map(conceptOf).filter(Boolean))];
+  const mastery = conceptMastery({ nodes, results, cards, read });
+  return { nodes, edges, inferred, results, mastery, next: recommendNext(nodes, edges, mastery), check: validateGraph({ nodes, edges }) };
+}
+const pickDoc = id => `<label class="field"><span>Document</span><select class="input select" id="lm-doc">${state.docs.map(d => `<option value="${esc(d.id)}"${d.id === id ? ' selected' : ''}>${esc(docTitle(d))}</option>`).join('')}</select></label>`;
+const curDoc = () => (state.doc && docById(state.doc)) || state.docs[0] || null;
+const noDocs = what => `<div class="empty card">${icon('library', 34)}<h2>Import a document first</h2><p>${esc(what)}</p><button class="btn primary" data-view="library">${icon('upload', 18)}Go to documents</button></div>`;
+const LEVEL = { strong: 'Strong', learning: 'Learning', weak: 'Weak', new: 'Not started' };
+function viewLiveMap() {
+  const doc = curDoc(); if (!doc) return `${backHead('Living Map')}<div class="view narrow">${noDocs('The Living Map shows how well you know each concept in a document.')}</div>`;
+  const m = docModel(doc), title = id => m.nodes.find(n => n.id === id)?.title || '';
+  const needs = id => m.edges.filter(e => e.from === id).map(e => title(e.to));
+  const chip = n => { const x = m.mastery.get(n.id), nx = m.next?.id === n.id;
+    return `<li><button class="lm-node lv-${x.level}${nx ? ' is-next' : ''}" data-docnode="${esc(doc.id)}:${esc(n.id)}" aria-label="${esc(n.title)}: ${LEVEL[x.level]}${x.mastery === null ? '' : ', ' + x.mastery + '% mastery'}${nx ? ', recommended next' : ''}"><span class="lm-t">${esc(n.title)}</span><span class="lm-m">${x.mastery === null ? 'Not started' : x.mastery + '%'}${nx ? ` · ${icon('target', 13)} Next` : ''}</span>${needs(n.id).length ? `<span class="lm-need">Needs: ${esc(needs(n.id).join(', '))}</span>` : ''}</button></li>`; };
+  const tops = m.nodes.filter(n => !n.parent);
+  const issues = m.check.issues.filter(i => i.type !== 'orphan');
+  return `${backHead('Living Map')}<div class="view narrow livemap">${state.docs.length > 1 ? pickDoc(doc.id) : ''}
+${m.next ? `<section class="card lm-next">${icon('target', 22)}<div><b>Study next: ${esc(m.next.title)}</b><p class="fine">${m.next.reason === 'weak' ? 'Your test answers show this is weak' : m.next.reason === 'not started' ? 'Not started yet, and its prerequisites are in place' : 'Still learning'}.</p></div><button class="btn primary sm" data-docnode="${esc(doc.id)}:${esc(m.next.id)}">${icon('study', 16)}Open</button></section>` : `<section class="card"><p>${icon('checkCircle', 18)} Every concept here is strong. Try a practice test to confirm.</p></section>`}
+<div class="lm-legend" aria-label="Legend">${Object.entries(LEVEL).map(([k, v]) => `<span class="lm-key lv-${k}">${v}</span>`).join('')}</div>
+<p class="fine">${m.inferred ? `${icon('info', 14)} Prerequisites are <b>inferred from document order</b> (an earlier section in the same chapter comes first).` : `${icon('smarty', 14)} Prerequisites suggested by Smarty and checked for loops.`} Mastery comes only from your marked test answers and flashcard reviews; sections you have only read show 10%.</p>
+<div class="row"><button class="btn outline sm" data-action="findPrereqs">${icon('smarty', 16)}Find prerequisites with Smarty</button>${!m.inferred ? `<button class="btn outline sm" data-action="resetPrereqs">${icon('route', 16)}Use document order</button>` : ''}</div>
+${issues.length ? `<div class="status warn">${icon('info', 18)}<p>${plural(issues.length, 'map problem')} found (for example ${esc(issues[0].type.replace(/-/g, ' '))}).</p></div>` : ''}
+${tops.map(t => { const kids = m.nodes.filter(n => n.parent === t.id); return `<section class="card lm-group"><h2 class="h2">${esc(t.title)}</h2><ul class="lm-nodes">${(kids.length ? [t, ...kids] : [t]).map(chip).join('')}</ul></section>`; }).join('')}</div>`;
+}
+function viewGaps() {
+  const doc = curDoc(); if (!doc) return `${backHead('Knowledge gaps')}<div class="view narrow">${noDocs('Take a practice test on a document, and Smarty finds the concept behind your mistakes.')}</div>`;
+  const m = docModel(doc), title = id => m.nodes.find(n => n.id === id)?.title || id;
+  const prereq = {}; for (const e of m.edges) (prereq[title(e.from)] ||= []).push(title(e.to));
+  const g = findGaps(m.results.map(r => ({ topic: title(r.nodeId), awarded: r.awarded, marks: r.marks })), prereq);
+  const idOf = t => m.nodes.find(n => n.title === t)?.id;
+  return `${backHead('Knowledge gaps')}<div class="view narrow gaps">${state.docs.length > 1 ? pickDoc(doc.id) : ''}
+${!m.results.length ? `<div class="empty card">${icon('test', 34)}<h2>No marked answers yet</h2><p>Take a practice test on this document. The detector uses your real marks, never guesses.</p><button class="btn primary" data-view="test">${icon('test', 18)}Start a practice test</button></div>`
+  : !g.weak.length ? `<section class="card"><p>${icon('checkCircle', 18)} No weak topics in your marked answers (all at 60% or more).</p></section>`
+  : `${g.roots.length ? `<h2 class="section-h">${icon('crosshair', 20)}Root causes</h2>${g.roots.map(r => `<section class="card gap-root"><p class="gap-say">${esc(gapSentence(r))}</p><p class="fine">${r.tested ? `Your score on ${esc(r.concept)}: ${Math.round(r.score * 100)}%.` : `${esc(r.concept)} has not been tested yet.`} Explains ${plural(r.explains.length, 'weak topic')}.${m.inferred ? ' Links inferred from document order.' : ''}</p>${idOf(r.concept) ? `<button class="btn primary sm" data-docnode="${esc(doc.id)}:${esc(idOf(r.concept))}">${icon('study', 16)}Revise ${esc(r.concept)}</button>` : ''}</section>`).join('')}` : `<p class="muted">The weak topics below do not share a weak prerequisite, so revise them directly.</p>`}
+<h2 class="section-h">Weak topics</h2><ul class="list card">${g.weak.map(w => `<li class="topic-row"><span>${esc(w.topic)}</span><b>${Math.round(w.score * 100)}%</b></li>`).join('')}</ul>`}</div>`;
+}
+function viewMission() {
+  const doc = curDoc(), t = today();
+  const exam = state.plans.filter(p => p.kind === 'exam' && p.date >= t).sort(sortPlans)[0] || null;
+  const due = dueQueue(state.cards || []).length;
+  if (!doc) return `${backHead('Mission Control')}<div class="view narrow">${noDocs('Mission Control plans your next study step from your own documents, tests and flashcards.')}</div>`;
+  const m = docModel(doc), mc = missionControl({ nodes: m.nodes, edges: m.edges, mastery: m.mastery, dueCards: due, minutesToday: minutesOn(t), goalMinutes: state.goals.dailyMinutes, exam });
+  const act = x => x.kind === 'cards' ? `data-view="cards"` : `data-docnode="${esc(doc.id)}:${esc(x.nodeId)}"`;
+  return `${backHead('Mission Control')}<div class="view narrow mission">${state.docs.length > 1 ? pickDoc(doc.id) : ''}
+${mc.mission ? `<section class="card mc-hero">${icon('rocket', 26)}<div><span class="fine">Next mission</span><h2 class="h2">${esc(mc.mission.label)}</h2><p class="fine">About ${fmtMin(mc.mission.minutes)}</p></div><button class="btn primary" ${act(mc.mission)}>${icon('play', 18)}Start</button></section>` : `<section class="card"><p>${icon('checkCircle', 18)} Nothing urgent. Take a practice test to find what to work on.</p></section>`}
+<section class="stats3"><div class="stat"><b>${mc.mastery === null ? '–' : mc.mastery + '%'}</b><span>${mc.mastery === null ? 'Mastery (no marked answers yet)' : `Mastery (${mc.measured} of ${mc.total} concepts measured)`}</span></div><div class="stat"><b>${mc.dueCards}</b><span>Cards due</span></div><div class="stat"><b>${fmtMin(mc.minutesToday)}</b><span>${mc.goalLeft ? fmtMin(mc.goalLeft) + ' left of today’s goal' : 'Today’s goal met'}</span></div></section>
+${exam ? `<p class="fine">${icon('calendar', 14)} ${esc(exam.title)} in ${plural(daysUntil(exam.date, t), 'day')}.</p>` : ''}
+${mc.sequence.length ? `<section class="card"><h2 class="h2">Today’s sequence · ${fmtMin(mc.minutes)}</h2><ol class="mc-seq">${mc.sequence.map(x => `<li><button class="link-btn" ${act(x)}>${esc(x.label)}</button><span class="fine">${fmtMin(x.minutes)}</span></li>`).join('')}</ol></section>` : ''}
+<section class="card"><h2 class="h2">Weak concepts</h2>${mc.weak.length ? `<ul class="list">${mc.weak.map(w => `<li class="topic-row"><span>${esc(w.title)}</span><b>${w.mastery}%</b></li>`).join('')}</ul>` : '<p class="muted">None measured as weak.</p>'}<div class="row"><button class="btn outline sm" data-view="livemap">${icon('map', 16)}Living Map</button><button class="btn outline sm" data-view="gaps">${icon('crosshair', 16)}Knowledge gaps</button></div></section></div>`;
+}
+
 function viewProgress() {
   const s = progressStats(), t = today(), days = lastDays(14, t), mins = days.map(minutesOn);
   const labels = days.map(d => new Date(dayStart(d)).toLocaleDateString(undefined, { weekday: 'short' }));
@@ -2416,6 +2482,17 @@ async function mountCodeEditor() {
 }
 
 const actions = {
+  async findPrereqs() {
+    const doc = curDoc(); if (!doc) return; const ai = requireAi('find prerequisites'); if (!ai) return;
+    const { nodes } = conceptNodes(outline(doc)); if (nodes.length < 2) throw Error('This document has too few topics to link.');
+    state.notice = 'Smarty is linking the concepts…'; render();
+    const r = await smartyJson(ai, PREREQ_PROMPT(nodes.slice(0, 120).map(n => n.title)));
+    const edges = acceptPrereqs(nodes, r?.links);
+    if (!edges.length) throw Error('Smarty did not suggest usable prerequisites. Document order is still used.');
+    doc.prereqs = edges; await saveDocument(doc); state.docs = await getDocuments();
+    state.notice = `Smarty linked ${plural(edges.length, 'prerequisite')} (loops removed).`; render();
+  },
+  async resetPrereqs() { const doc = curDoc(); if (!doc) return; doc.prereqs = []; await saveDocument(doc); state.docs = await getDocuments(); render(); },
   drawerOpen() { state.drawer = true; state.drawerQ = ''; drawerJustOpened = true; loadConvs().then(() => { if (state.drawer) render(); }).catch(() => {}); render(); },
   drawerClose() { closeDrawer(); },
   drawerNewChat() { actions.smNew(); go('smarty'); },
@@ -2743,8 +2820,8 @@ const actions = {
     state.notice = how === 'cancelled' ? '' : `Mind map exported as ${name}. Open it in a mind-map app that imports Markdown (Markmap, XMind, Obsidian).`; render();
   },
   async exportBackupEnc() {
-    const pass = prompt('Choose a passphrase for this backup (at least 8 characters). You need it to restore; it cannot be recovered.');
-    if (pass === null) return; if (pass.length < 8) throw Error('Use a passphrase of at least 8 characters.');
+    const pass = prompt('Choose a passphrase for this backup (at least 12 characters). You need it to restore; it cannot be recovered.');
+    if (pass === null) return; if (pass.length < 12) throw Error('Use a passphrase of at least 12 characters.');
     const name = 'prvlar-backup-' + new Date().toISOString().slice(0, 10) + '-encrypted.json';
     const how = await saveTextFile(name, JSON.stringify({ prvlarBackup: 1, ...(await encryptJSON(await exportAll(), pass)) }));
     if (how !== 'cancelled') { state.notice = `Encrypted backup saved: ${name}`; render(); }
@@ -2912,6 +2989,7 @@ app.addEventListener('click', e => {
 });
 app.addEventListener('change', e => {
   const t = e.target;
+  if (t.id === 'lm-doc') { selectDoc(t.value); return render(); }
   if (t.matches('[data-import]')) { const files = [...t.files]; t.value = ''; return run(() => importFiles(files)); }
   if (t.dataset.pref099) { if (t.dataset.pref099 === 'ai') localStorage.setItem('prvlar-ai-consent', t.checked ? '1' : '0'); else setCrashEnabled(t.checked); return render(); }
   if (t.matches('[data-restore]')) { const f = t.files[0]; t.value = ''; return run(() => restoreBackup(f)); }
