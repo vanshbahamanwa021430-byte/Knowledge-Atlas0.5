@@ -5,6 +5,9 @@ name: Release signed Android APK
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag: { description: 'Release tag (e.g. v0.9.5)', required: true }
 permissions:
   contents: write
 jobs:
@@ -20,9 +23,10 @@ jobs:
       - name: Check tag matches package.json version
         run: |
           VER=$(node -p "require('./package.json').version")
-          test "v$VER" = "$GITHUB_REF_NAME" || { echo "ERROR: tag $GITHUB_REF_NAME but package.json version is $VER. Bump package.json and tag v$VER."; exit 1; }
+          REF="${{ github.event.inputs.tag || github.ref_name }}"; test "v$VER" = "$REF" || { echo "ERROR: tag $REF but package.json version is $VER. Bump package.json and tag v$VER."; exit 1; }
           echo "VERSION=$VER" >> "$GITHUB_ENV"
       - name: Check signing secrets
+        id: sec
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -30,29 +34,38 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           for v in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
-            test -n "${!v}" || { echo "ERROR: repository secret $v is missing (Settings > Secrets and variables > Actions). See README."; exit 1; }
+            if [ -z "${!v}" ]; then
+              echo "::notice::Signing secret $v is not set, so no APK is built here. The release APK is signed locally and attached by hand."
+              echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
           done
+          echo "ok=true" >> "$GITHUB_OUTPUT"
       - name: Use the runner's Android SDK
+        if: steps.sec.outputs.ok == 'true'
         run: |
           SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
           echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"; echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
           SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)"
           yes | "$SDKMANAGER" --licenses > /dev/null || true
       - name: Install, check and test
+        if: steps.sec.outputs.ok == 'true'
         run: |
           npm install --no-audit --no-fund
           npm run check
           npm test
       - name: Build web app and Android project
+        if: steps.sec.outputs.ok == 'true'
         run: |
           npm run build
           npx cap add android
           node scripts/native-assets.mjs android
           npx cap sync android
       - name: Compile unsigned release APK
+        if: steps.sec.outputs.ok == 'true'
         working-directory: android
         run: bash ./gradlew --no-daemon assembleRelease --stacktrace
       - name: Align and sign (v1 + v2 + v3)
+        if: steps.sec.outputs.ok == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -74,6 +87,7 @@ jobs:
           if "$BT/aapt2" dump xmltree --file AndroidManifest.xml "$OUT" | grep -qi testOnly; then echo "ERROR: testOnly set"; exit 1; fi
           echo "APK=$OUT" >> "$GITHUB_ENV"
       - name: Publish GitHub Release
+        if: steps.sec.outputs.ok == 'true'
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.APK }}
