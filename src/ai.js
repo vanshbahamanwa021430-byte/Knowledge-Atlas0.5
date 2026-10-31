@@ -216,9 +216,12 @@ async function callModel(ai, system, user, images = []) {
 
 // Vision: Gemini's OpenAI-compatible endpoint accepts pictures as data-URL image parts. Others get text only.
 export function userContent(p, user, images = []) {
-  const imgs = (images || []).filter(x => /^data:image\//.test(x)).slice(0, 4);
-  if (!imgs.length || !(p.vision || /generativelanguage\.googleapis\.com/.test(p.endpoint || ''))) return user;
-  return [{ type: 'text', text: user }, ...imgs.map(url => ({ type: 'image_url', image_url: { url } }))];
+  const gem = p.free || /generativelanguage\.googleapis\.com/.test(p.endpoint || '');
+  const imgs = (p.vision || gem) ? (images || []).filter(x => /^data:image\//.test(x)).slice(0, 4) : [];
+  // Audio (MP3/WAV) goes to Gemini (own key or Prvlar free) as input_audio, so Smarty can listen and transcribe.
+  const auds = gem ? (images || []).map(x => /^data:audio\/(mpeg|mp3|wav|x-wav|wave);base64,(.+)$/.exec(x)).filter(Boolean).slice(0, 2) : [];
+  if (!imgs.length && !auds.length) return user;
+  return [{ type: 'text', text: user }, ...imgs.map(url => ({ type: 'image_url', image_url: { url } })), ...auds.map(m => ({ type: 'input_audio', input_audio: { data: m[2], format: /wav/.test(m[1]) ? 'wav' : 'mp3' } }))];
 }
 
 // Models often drift on marks; the exam format fixes them (MCQ 1, written 5), so coerce instead of rejecting.

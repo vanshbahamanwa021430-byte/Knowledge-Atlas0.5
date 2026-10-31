@@ -26,7 +26,7 @@ test('attachments: XLSX read on device', async () => {
 const fileOf = (name, content, type = '') => { const b = typeof content === 'string' ? new TextEncoder().encode(content) : content; return { name, type, size: b.length, text: async () => new TextDecoder().decode(b), arrayBuffer: async () => b.buffer.slice(b.byteOffset, b.byteOffset + b.length) }; };
 test('attachments: text, audio note, unknown text, unreadable binary, prompt block', async () => {
   const a = await readAttachment(fileOf('q.py', 'print(1)')); assert.equal(a.kind, 'text'); assert.equal(a.text, 'print(1)');
-  const au = await readAttachment(fileOf('talk.mp3', new Uint8Array(10))); assert.match(au.note, /transcribed/);
+  const au = await readAttachment(fileOf('talk.mp3', new Uint8Array(10))); assert.match(au.note, /transcript/);
   const u = await readAttachment(fileOf('notes.weird', 'plain words here')); assert.equal(u.kind, 'text');
   await assert.rejects(readAttachment(fileOf('x.bin', new Uint8Array([0, 0, 1, 2]))), /can’t be read on the device/);
   const big = { ...fileOf('huge.pdf', 'x'), size: 30 * 1048576 }; await assert.rejects(readAttachment(big), /Too big/);
@@ -52,4 +52,17 @@ test('web search: Gemini grounding parsed with sources; non-Gemini key degrades'
   assert.equal(r.text, 'Answer.'); assert.deepEqual(r.sources.map(s => s.title), ['A', 'B']); assert.deepEqual(sent.body.tools, [{ google_search: {} }]);
   await assert.rejects(webSearchAnswer('gsk_x', 'q', { fetchImpl: fake }), e => e.code === 'NO_GROUNDING');
   await assert.rejects(webSearchAnswer('AIzaX', 'q', { fetchImpl: async () => ({ ok: false, status: 429, json: async () => ({ error: { message: 'quota' } }) }) }), e => e.code === 'RATE');
+});
+
+import { userContent } from '../src/ai.js';
+import { readAttachment as readAtt2 } from '../src/attach.js';
+test('audio: MP3/WAV attached and sent to Gemini/Prvlar free as input_audio; other providers get text only', async () => {
+  const a = await readAtt2(new File([new Uint8Array(100)], 'lecture.mp3', { type: 'audio/mpeg' }), { toDataURL: async () => 'data:audio/mpeg;base64,QUJD', parseFile: async () => ({ sections: [] }) });
+  assert.equal(a.audio, 'data:audio/mpeg;base64,QUJD');
+  const parts = userContent({ endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions' }, 'q', [a.audio]);
+  assert.deepEqual(parts[1], { type: 'input_audio', input_audio: { data: 'QUJD', format: 'mp3' } });
+  assert.equal(userContent({ free: true, endpoint: 'x' }, 'q', ['data:audio/wav;base64,QQ=='])[1].input_audio.format, 'wav');
+  assert.equal(userContent({ endpoint: 'https://api.groq.com/openai/v1/chat/completions' }, 'q', [a.audio]), 'q');
+  const o = await readAtt2(new File([new Uint8Array(10)], 'x.ogg', { type: 'audio/ogg' }), { toDataURL: async () => '' });
+  assert.ok(!o.audio && /MP3/.test(o.note));
 });

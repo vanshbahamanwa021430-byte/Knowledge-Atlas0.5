@@ -10,7 +10,7 @@
 //   MODEL           (var)     default gemini-flash-latest
 // KV binding: COUNTS
 const GEMINI = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-const MAX_BODY = 200_000, MAX_TOKENS = 4096, MAX_MESSAGES = 40;
+const MAX_BODY = 12_000_000, MAX_TOKENS = 4096, MAX_MESSAGES = 40;
 
 const day = () => new Date().toISOString().slice(0, 10);
 const json = (obj, status, origin) => new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json', ...cors(origin) } });

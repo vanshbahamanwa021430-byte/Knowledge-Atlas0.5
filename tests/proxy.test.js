@@ -21,7 +21,7 @@ test('proxy: origin check, device limit, global cap, key never returned', async 
 });
 test('proxy: not configured, too large, CORS preflight', async () => {
   assert.equal((await worker.fetch(req(), env({ GEMINI_KEY: '' }))).status, 503);
-  assert.equal((await worker.fetch(req({ body: JSON.stringify({ messages: [{ role: 'user', content: 'x'.repeat(250000) }] }) }), env())).status, 413);
+  assert.equal((await worker.fetch(req({ body: JSON.stringify({ messages: [{ role: 'user', content: 'x'.repeat(12500000) }] }) }), env())).status, 413);
   const pre = await worker.fetch(new Request('https://p/v1/chat/completions', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env());
   assert.equal(pre.status, 204); assert.equal(pre.headers.get('Access-Control-Allow-Origin'), ORIGIN);
 });

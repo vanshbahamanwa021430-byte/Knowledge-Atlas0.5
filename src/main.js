@@ -1946,7 +1946,7 @@ async function smartySend(q) {
   requireAi('ask Smarty'); const ai = smartyAi(); if (!smartyConsent()) return;
   await loadConvs(); const th = state.smartyChat || (state.smartyChat = []);
   const slash = parseSlash(q, skillsList()); const skill = slash.skill || (state.smSkill && skillsList().find(x => x.id === state.smSkill)) || null; if (slash.skill) q = slash.rest || q;
-  const att = (state.smAtt || []).filter(a => !a.busy && !a.error), images = att.filter(a => a.image).map(a => a.image);
+  const att = (state.smAtt || []).filter(a => !a.busy && !a.error), images = att.filter(a => a.image || a.audio).map(a => a.image || a.audio);
   th.push({ role: 'user', text: (skill ? `/${skill.name} ` : '') + q, files: att.map(a => a.name) }); state.smartyDraft = ''; state.busy = 'smarty'; state.smPlus = false; state.smSuggest = null; render();
   const extra = skillPrompt(skill) + attachmentBlock(att);
   try {

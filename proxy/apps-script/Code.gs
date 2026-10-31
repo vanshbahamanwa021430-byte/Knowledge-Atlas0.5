@@ -10,7 +10,7 @@
 var SETUP_GEMINI_KEY = '';            // paste ONLY for the one setup() run, then delete and save
 var DEVICE_LIMIT = 30;                // messages per device (or Google account) per day
 var GLOBAL_LIMIT = 1000;              // messages per day for everyone together
-var MAX_BODY = 200000, MAX_TOKENS = 4096, MAX_MESSAGES = 40;
+var MAX_BODY = 12000000, MAX_TOKENS = 4096, MAX_MESSAGES = 40;
 var MODEL = 'gemini-flash-latest';
 var GEMINI = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
 
