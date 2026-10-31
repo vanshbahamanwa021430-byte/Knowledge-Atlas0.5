@@ -93,14 +93,14 @@ export function chatEndpoint(base) {
 // `ai` is either a key string (cloud provider detected from the key) or
 // { key, server: { url, model } } for a self-hosted router such as OmniRoute.
 export function resolveAI(ai) {
-  if (ai && Array.isArray(ai.chain)) { if (!ai.chain.length) throw Error('Add an AI key or server in Settings first.'); return resolveAI(ai.chain[0]); }
+  if (ai && Array.isArray(ai.chain)) { if (!ai.chain.length) throw Error('Set up Smarty’s brain in Settings first.'); return resolveAI(ai.chain[0]); }
   const cfg = typeof ai === 'string' || ai == null ? { key: ai } : ai;
   const key = String(cfg.key || '').trim();
   if (cfg.server?.free) return { name: FREE_LABEL, endpoint: isGas(cfg.server.url) ? cfg.server.url : chatEndpoint(cfg.server.url), gas: isGas(cfg.server.url), model: 'auto', temperature: 0.2, key, timeout: 120000, local: false, vision: true, free: true };
   if (cfg.server) {
     return { name: 'Your AI server', endpoint: chatEndpoint(cfg.server.url), model: String(cfg.server.model || '').trim() || 'auto', temperature: 0.2, key, timeout: 600000, local: true, vision: !!cfg.server.vision };
   }
-  if (!key) throw Error('Enter an AI key in the toolbar first.');
+  if (!key) throw Error('Set up Smarty’s brain in Settings first.');
   return { ...providerFor(key), key, timeout: 120000 };
 }
 
@@ -160,7 +160,7 @@ export const isBadKeyResponse = (status, detail) => status === 401 || status ===
 async function callModel(ai, system, user, images = []) {
   // Fallback chain: { chain: [cfg, cfg, …] } tries each provider in order when one is unreachable, rejects the key or is rate-limited.
   if (ai && Array.isArray(ai.chain)) {
-    if (!ai.chain.length) throw Error('Add an AI key or server in Settings first.');
+    if (!ai.chain.length) throw Error('Set up Smarty’s brain in Settings first.');
     let last;
     // Requests with pictures go to a vision-capable provider first (Gemini, or a server marked "vision").
     const sees = c => typeof c === 'string' ? c.trim().startsWith('AIza') : !!(c?.server?.vision || String(c?.key || '').startsWith('AIza'));

@@ -1738,3 +1738,4 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .skill-list li { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line, rgba(127,127,127,.2)); }
 .dev-errs { list-style: none; padding: 0; display: grid; gap: 6px; }
 .dev-credit{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.smarty-tag,.smarty-exp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.smarty-tag svg,.smarty-exp svg{color:var(--accent,#6d5dfc)}

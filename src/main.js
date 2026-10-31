@@ -204,7 +204,7 @@ const aiName = () => aiAvailable() ? describeAI(aiConfig()) : '';
 // Chat and "Ask AI" send document text, so ask once per document per session.
 function consentFor(doc) {
   if (state.consent[doc.id]) return true;
-  const ok = confirm(`Send text from “${docTitle(doc)}” to ${aiName() || 'the AI'} to answer your questions? You’ll be asked again next time you open the app.`);
+  const ok = confirm(`Send text from “${docTitle(doc)}” to ${aiName() || 'Smarty'} to answer your questions? You’ll be asked again next time you open the app.`);
   if (ok) state.consent[doc.id] = true;
   return ok;
 }
@@ -578,7 +578,7 @@ function remapNudge(doc) {
   return `<section class="ai-nudge" aria-label="Organise the map with AI"><span class="ask-icon">${icon('sparkles', 20)}</span><div class="nudge-text"><b>${what}</b><span>AI can organise it into topics and sections. Your text stays exactly the same, and you can switch back.</span></div>
 <div class="nudge-actions"><button class="btn primary sm" data-action="remapAI">${icon('sparkles', 17)}Organise with AI</button><button class="icon-btn sm" data-action="hideNudge" aria-label="Hide this suggestion" title="Hide">${icon('x', 18)}</button></div></section>`;
 }
-const remapWorking = () => `<div class="working remap-working" role="status"><span class="spin"></span><div><b>Organising your map with AI…</b><p class="fine">The AI reads the start of each paragraph and groups them into topics. This usually takes under a minute; an offline AI on a PC can take several minutes.</p></div></div>`;
+const remapWorking = () => `<div class="working remap-working" role="status"><span class="spin"></span><div><b>Smarty is organising your map…</b><p class="fine">The AI reads the start of each paragraph and groups them into topics. This usually takes under a minute; an offline AI on a PC can take several minutes.</p></div></div>`;
 
 // Phones draw the map as wide as the screen; wide screens use the side-by-side layout.
 const mapOpts = () => ({ collapsed: state.collapsed, direction: direction(), vWidth: Math.max(280, Math.min(560, (document.querySelector('.main')?.clientWidth || window.innerWidth) - 32)) });
@@ -651,7 +651,7 @@ ${node.text ? (exp ? `<aside class="simple">${'<span class="simple-icon">' + ico
 <p class="ref">${icon('file', 15)}From ${esc(doc.name)}: ${esc(node.source)}</p></article>`;
   const explain = `<section class="explain-panel">${node.text ? `<div class="card explain-card"><div class="ask-head"><span class="ask-icon amber">${icon('bulb', 20)}</span><h2>In simple words</h2></div>
 ${exp ? `<div class="explain-text">${paras(exp)}</div><p class="fine">Written by AI from this section only. Check it against your document.</p>` : '<p>Get a plain-language explanation of this section. Only this section’s text is sent, after you confirm.</p>'}
-${!aiAvailable() ? `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up AI in Settings</button>` : `<button class="btn${exp ? ' outline' : ' primary'}" data-action="explain"${state.busy ? ' disabled' : ''}>${state.busy === 'explain' ? '<span class="spin"></span>Explaining…' : exp ? icon('restore', 18) + 'Explain again' : icon('sparkles', 18) + 'Explain in simple words'}</button>`}</div>`
+${!aiAvailable() ? `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up AI in Settings</button>` : `<button class="btn${exp ? ' outline' : ' primary'}" data-action="explain"${state.busy ? ' disabled' : ''}>${state.busy === 'explain' ? '<span class="spin"></span>Smarty is explaining…' : exp ? icon('restore', 18) + 'Explain again' : icon('sparkles', 18) + 'Explain in simple words'}</button>`}</div>`
     : '<p class="muted empty-line">This heading has no text of its own, so there is nothing to explain. Open one of its parts from the Content tab.</p>'}
 ${wide || !node.text ? '' : askPanel(doc, node)}</section>`;
   const notes = `<section class="card notes-card"><h2 class="h2">${icon('note', 20)}Your notes</h2><textarea class="input notes-area" data-note="${esc(node.id)}" placeholder="Write what you want to remember…">${esc(state.notes[noteKey(node.id)] || '')}</textarea><p class="fine" data-note-status="${esc(node.id)}">Saved on this device as you type.</p></section>`;
@@ -660,9 +660,9 @@ ${wide || !node.text ? '' : askPanel(doc, node)}</section>`;
   const listenBtn = node.text && speechSupported() ? `<button class="icon-btn soft${state.speaking === node.id ? ' is-on' : ''}" data-speak="${esc(node.id)}" aria-label="${state.speaking === node.id ? 'Stop reading aloud' : 'Read aloud'}" title="${state.speaking === node.id ? 'Stop reading' : 'Read aloud'}">${icon(state.speaking === node.id ? 'stop' : 'volume', 20)}</button>` : '';
   const crumbs = `<div class="crumbs-row"><nav class="crumbs" aria-label="Where you are"><span class="crumb-icon">${fileGlyph(typeOf(doc.name))}</span><button data-action="showOnMap">${esc(docTitle(doc))}</button><span class="crumb-sep" aria-hidden="true">/</span><span class="crumb-here">${esc(node.title)}</span></nav>
  <div class="crumb-actions">${listenBtn}<button class="icon-btn soft" data-action="showOnMap" aria-label="Show on the map" title="Show on the map">${icon('map', 20)}</button></div></div>`;
-  return `<div class="view wide">${backHead(docTitle(doc), `${listenBtn}<button class="icon-btn soft" data-action="showOnMap" aria-label="Show on the map" title="Show on the map">${icon('map', 20)}</button><button class="icon-btn soft" data-stab="explain" aria-label="AI explanation" title="AI explanation">${icon('sparkles', 20)}</button>`)}
+  return `<div class="view wide">${backHead(docTitle(doc), `${listenBtn}<button class="icon-btn soft" data-action="showOnMap" aria-label="Show on the map" title="Show on the map">${icon('map', 20)}</button><button class="icon-btn soft" data-stab="explain" aria-label="Smarty explains" title="Smarty explains">${icon('smarty', 20)}</button>`)}
 ${crumbs}<h2 class="section-title">${esc(node.title)}</h2>
-<div class="section-grid${wide && node.text ? ' has-side' : ''}"><div class="section-main">${seg('stab2', tab, [['content', 'Content', 'read'], ['explain', 'AI Explanation', 'sparkles'], ['notes', 'Notes', 'sticky'], ['cards', 'Cards', 'cards']])}${body}${pager}</div>
+<div class="section-grid${wide && node.text ? ' has-side' : ''}"><div class="section-main">${seg('stab2', tab, [['content', 'Content', 'read'], ['explain', 'Smarty explains', 'smarty'], ['notes', 'Notes', 'sticky'], ['cards', 'Cards', 'cards']])}${body}${pager}</div>
 ${wide && node.text ? `<aside class="section-side">${askPanel(doc, node)}</aside>` : ''}</div></div>`;
 }
 
@@ -832,7 +832,7 @@ const examActions = {
     const papers = labPapersForAI(); if (!papers.length) throw Error('Paste a question paper or add a PDF with text first.');
     const name = state.lab.name.trim() || 'My exam', ai = requireAi('analyse your papers');
     if (!confirm(`Send the text of ${plural(papers.length, 'paper')} to ${aiName()} for analysis?`)) return;
-    state.busy = 'analyse'; state.labStatus = 'Analysing your papers…'; render();
+    state.busy = 'analyse'; state.labStatus = 'Smarty is analysing your papers…'; render();
     try {
       const obj = await analysePapers(papers, ai);
       const local = mostRepeated(papers.map(p => p.text));
@@ -871,7 +871,7 @@ ${timingCardHTML()}
 ${ready ? `<div class="status ok">${icon('checkCircle', 20)}<p>Questions will be written by ${esc(aiName())}. Your document’s text is sent only after you confirm.</p></div>`
     : `<div class="status warn">${icon('info', 20)}<div><p>Add an AI key, or choose your own AI server, to write the questions.</p><button class="btn outline sm" data-view="settings">${icon('settings', 17)}Open AI settings</button></div></div>`}
 ${warn.map(w => `<div class="status warn">${icon('alert', 20)}<p>${w}</p></div>`).join('')}
-${state.busy === 'generate' ? '<div class="working" role="status"><span class="spin"></span><div><b>Writing your questions…</b><p class="fine">This usually takes under a minute. An offline AI on a PC can take several minutes.</p></div></div>'
+${state.busy === 'generate' ? '<div class="working" role="status"><span class="spin"></span><div><b>Smarty is making your test…</b><p class="fine">This usually takes under a minute. An offline AI on a PC can take several minutes.</p></div></div>'
     : `<button class="btn primary big block" data-action="generate"${ready ? '' : ' disabled'}>${icon('sparkles', 20)}Generate test</button>`}
 <p class="fine center">If your document can’t support the questions, no test is made rather than inventing content. Questions always come from your document; the exam only sets their style.</p></section>
 ${mine.length ? `<h2 class="section-h">Your tests on this document</h2><ul class="attempts">${mine.slice(0, 5).map(attemptRow).join('')}</ul>` : ''}
@@ -921,7 +921,7 @@ ${state.examMeta?.profileId ? `<p class="exam-badge">${icon('trophy', 15)}${esc(
 <h2 class="q-text">${esc(q.prompt)}</h2>${figureHTML(q)}${body}</article>
 <div class="exam-actions"><button class="icon-btn square" data-action="prevQ" aria-label="Previous question"${i === 0 ? ' disabled' : ''}>${icon('chevL', 22)}</button>
 <button class="icon-btn square flag${flagged ? ' is-on' : ''}" data-flag="${esc(q.id)}" aria-pressed="${flagged}" aria-label="Flag for review">${icon('bookmark', 21)}</button>
-<button class="btn primary big grow" data-action="${last ? 'openGrid' : 'nextQ'}"${state.busy ? ' disabled' : ''}>${state.busy === 'submit' ? '<span class="spin"></span>Marking…' : last ? `Review and submit${icon('next', 19)}` : `Next Question${icon('next', 19)}`}</button></div>
+<button class="btn primary big grow" data-action="${last ? 'openGrid' : 'nextQ'}"${state.busy ? ' disabled' : ''}>${state.busy === 'submit' ? '<span class="spin"></span>Smarty is marking…' : last ? `Review and submit${icon('next', 19)}` : `Next Question${icon('next', 19)}`}</button></div>
 </div>`;
 }
 const wordCount = t => { const n = String(t || '').trim().split(/\s+/).filter(Boolean).length; return plural(n, 'word'); };
@@ -933,7 +933,7 @@ function gridSheetHTML() {
 <p class="muted">${done} of ${qs.length} answered${state.flags.size ? `, ${state.flags.size} flagged` : ''}. Tap a number to go there.</p>
 <div class="qgrid">${qs.map((q, i) => `<button class="qdot${answered(q) ? ' is-done' : ''}${state.flags.has(q.id) ? ' is-flag' : ''}${i === state.qIndex ? ' is-here' : ''}" data-q="${i}" aria-label="Question ${i + 1}${answered(q) ? ', answered' : ''}${state.flags.has(q.id) ? ', flagged' : ''}">${i + 1}</button>`).join('')}</div>
 <ul class="qlegend"><li><span class="qdot is-done"></span>Answered</li><li><span class="qdot is-flag"></span>Flagged</li><li><span class="qdot"></span>Not answered</li></ul>
-<button class="btn primary big block" data-action="submit"${state.busy ? ' disabled' : ''}>${state.busy === 'submit' ? '<span class="spin"></span>Marking…' : `${icon('check', 20)}Submit test`}</button>
+<button class="btn primary big block" data-action="submit"${state.busy ? ' disabled' : ''}>${state.busy === 'submit' ? '<span class="spin"></span>Smarty is marking…' : `${icon('check', 20)}Submit test`}</button>
 <p class="fine center">Unanswered questions score zero.</p></section>`;
 }
 
@@ -954,7 +954,7 @@ function viewResult(a) {
     const yours = answerText(q, ans);
     return `<li class="rq ${cls}"><div class="rq-head"><h3>${i + 1}. ${esc(q.prompt)}</h3><span class="marks">${got < 0 ? '−' + Math.abs(got) : got}/${q.marks}</span></div>${a.timing?.qTimes?.[q.id] ? `<p class="fine q-time">${icon('clock', 13)} ${fmtDuration(a.timing.qTimes[q.id])} on this question</p>` : ''}${figureHTML(q)}
 <dl><dt>Your answer</dt><dd>${esc(yours)}</dd>${q.type !== 'written' ? `<dt>Correct</dt><dd>${esc(correctText(q))}</dd>` : ''}<dt>Marked by</dt><dd>${esc(METHOD[g?.method] || g?.method || '')}</dd>${g?.feedback ? `<dt>Feedback</dt><dd>${esc(g.feedback)}</dd>` : ''}</dl>
-<details><summary>Model answer and source</summary><div class="solution"><p>${esc(q.solution)}</p><p><b>From:</b> ${esc(q.source)}${q.sourceVerified === false ? ' (this label wasn’t found in your document, so check it)' : ''}</p>${q.type === 'written' ? `<p><b>Marking points:</b> ${esc(q.rubric)}</p>` : ''}</div></details>
+<details><summary>${icon('smarty', 15)} Smarty explains: answer and source</summary><div class="solution"><p>${esc(q.solution)}</p><p><b>From:</b> ${esc(q.source)}${q.sourceVerified === false ? ' (this label wasn’t found in your document, so check it)' : ''}</p>${q.type === 'written' ? `<p><b>Marking points:</b> ${esc(q.rubric)}</p>` : ''}</div></details>
 ${q.type === 'written' ? `<label class="adjust">Your mark out of ${q.marks}<input class="input" type="number" inputmode="numeric" min="0" max="${q.marks}" step="1" data-adjust="${esc(q.id)}" value="${got}"></label>` : ''}</li>`;
   }).join('')}</ol>${a.questions.some(q => q.type === 'written') ? `<button class="btn primary block" data-action="adjust">${icon('check', 18)}Save marks</button>` : ''}` : '';
   return `${backHead(state.review ? 'Past result' : 'Test Complete', `<button class="icon-btn" data-action="shareResult" aria-label="Share result" title="Share">${icon('share', 20)}</button>`, true)}<div class="view narrow result">
@@ -1047,7 +1047,7 @@ function viewSettings() {
   const where = isNative() ? (platform() === 'ios' ? 'iPhone or iPad' : 'Android phone or tablet') : isElectron() ? 'Windows PC' : 'browser';
   return `${backHead('Settings')}<div class="view narrow settings">
 ${themeProfile()}
-<nav class="set-jump" aria-label="Settings sections">${[['acct-h', 'Account'], ['prof-h', 'Profile'], ['look-h', 'Appearance'], ['ai-h', 'AI'], ['studyset-h', 'Study'], ['notif-h', 'Notifications'], ['data-h', 'Data'], ['legal-h', 'About']].map(([id, l]) => `<a href="#settings" data-go="settings:${id}">${l}</a>`).join('')}</nav>
+<nav class="set-jump" aria-label="Settings sections">${[['acct-h', 'Account'], ['prof-h', 'Profile'], ['look-h', 'Appearance'], ['ai-h', 'Smarty’s brain'], ['studyset-h', 'Study'], ['notif-h', 'Notifications'], ['data-h', 'Data'], ['legal-h', 'About']].map(([id, l]) => `<a href="#settings" data-go="settings:${id}">${l}</a>`).join('')}</nav>
 ${accountHTML()}
 <section class="card" aria-labelledby="prof-h"><h2 class="h2" id="prof-h">Profile</h2><label class="field"><span>Your name (for the greeting)</span><input class="input" id="set-name" value="${esc(userName())}" placeholder="Optional" maxlength="40" autocomplete="nickname"></label><label class="field"><span>What you study</span><select class="input select" id="set-stream"><option value="">Not set</option>${STREAMS.map(([v, l]) => `<option value="${v}"${userStream() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label><h3 class="h3">App text size</h3>${uiSizeSeg()}</section>
 <section class="card" aria-labelledby="look-h"><h2 class="h2" id="look-h">Appearance</h2><div class="theme-grid" role="radiogroup" aria-labelledby="look-h">${theme.map(([v, l, sub]) => `<button class="theme-opt${state.theme === v ? ' is-on' : ''}" role="radio" aria-checked="${state.theme === v}" data-theme-set="${v}"><span class="theme-swatch sw-${v}" aria-hidden="true"><i></i><i></i><i></i></span><b>${l}</b><span>${sub}</span></button>`).join('')}</div>
@@ -1342,13 +1342,13 @@ ${decks.length ? `<ul class="deck-list">${decks.map(d => { const s = deckStats(d
 function deckCards(d) {
   if (!d.cards.length) return '<p class="muted">No cards in this deck yet.</p>';
   const now = Date.now();
-  return `<ul class="card-rows">${d.cards.sort((a, b) => a.due - b.due).map(c => `<li><div class="cr-text"><span>${esc(c.front.split('\n')[0].slice(0, 140))}</span><span class="fine">${isNew(c) ? 'New' : c.due <= now ? 'Due now' : 'Due in ' + whenLabel(c.due - now)}${c.origin === 'mistake' ? ' · from a mistake' : c.origin === 'ai' ? ' · AI' : ''}</span></div><button class="icon-btn sm" data-delcard="${esc(c.id)}" aria-label="Delete card" title="Delete card">${icon('trash', 17)}</button></li>`).join('')}</ul>`;
+  return `<ul class="card-rows">${d.cards.sort((a, b) => a.due - b.due).map(c => `<li><div class="cr-text"><span>${esc(c.front.split('\n')[0].slice(0, 140))}</span><span class="fine">${isNew(c) ? 'New' : c.due <= now ? 'Due now' : 'Due in ' + whenLabel(c.due - now)}${c.origin === 'mistake' ? ' · from a mistake' : c.origin === 'ai' ? ' · made by Smarty' : ''}</span></div><button class="icon-btn sm" data-delcard="${esc(c.id)}" aria-label="Delete card" title="Delete card">${icon('trash', 17)}</button></li>`).join('')}</ul>`;
 }
 // The Cards tab of a section: AI cards from this section, your own cards, and a quick study session.
 function sectionCards(doc, node) {
   const mine = state.cards.filter(c => c.documentId === doc.id && c.nodeId === node.id);
   return `<section class="card"><div class="ask-head"><span class="ask-icon amber">${icon('cards', 20)}</span><h2>Flashcards for this section</h2></div>
-${node.text ? (!aiAvailable() ? `<p class="muted">Set up an AI service to write cards for you, or add your own below.</p>` : `<button class="btn primary" data-action="fcAI"${state.busy ? ' disabled' : ''}>${state.busy === 'cards' ? '<span class="spin"></span>Writing cards…' : icon('sparkles', 18) + 'Make flashcards with AI'}</button><p class="fine">Uses ${esc(aiName())}. Only this section’s text is sent, after you confirm.</p>`) : ''}
+${node.text ? (!aiAvailable() ? `<p class="muted">Set up an AI service to write cards for you, or add your own below.</p>` : `<button class="btn primary" data-action="fcAI"${state.busy ? ' disabled' : ''}>${state.busy === 'cards' ? '<span class="spin"></span>Smarty is making cards…' : icon('sparkles', 18) + 'Make flashcards with AI'}</button><p class="fine">Uses ${esc(aiName())}. Only this section’s text is sent, after you confirm.</p>`) : ''}
 ${mine.length ? `<div class="row"><button class="btn outline" data-review-node="${esc(node.id)}">${icon('cards', 18)}Study these ${mine.length}</button></div>${deckCards({ cards: mine })}` : '<p class="muted">No cards for this section yet.</p>'}
 <h3 class="h3">Add your own</h3>
 <label class="field"><span>Front</span><textarea class="input" id="fc-front" rows="2" placeholder="Question"></textarea></label>
@@ -1375,7 +1375,7 @@ function errorRow(e) {
 ${r.choice !== undefined ? `<div class="status ${r.choice === q.correct ? 'ok' : 'warn'}">${icon(r.choice === q.correct ? 'checkCircle' : 'alert', 20)}<p>${r.choice === q.correct ? 'Correct! Marked as fixed.' : `Not quite. The answer is ${'ABCD'[q.correct]}.`} ${esc(q.solution)}</p></div>` : ''}`;
     } else {
       body = `<textarea class="input" rows="4" id="retry-text" placeholder="Write your answer again…">${esc(r.text || '')}</textarea>
-${r.shown ? `<div class="solution"><p><b>Model answer:</b> ${esc(q.solution)}</p>${q.rubric ? `<p><b>Marking points:</b> ${esc(q.rubric)}</p>` : ''}</div><div class="row"><button class="btn primary sm" data-retry-self="1">${icon('check', 17)}I got it right</button><button class="btn outline sm" data-retry-self="0">Not yet</button></div>` : `<button class="btn primary sm" data-action="retryShow">Check against the model answer</button>`}`;
+${r.shown ? `<div class="solution"><p class="smarty-tag">${icon('smarty', 15)} <b>Smarty explains</b></p><p>${esc(q.solution)}</p>${q.rubric ? `<p><b>Marking points:</b> ${esc(q.rubric)}</p>` : ''}</div><div class="row"><button class="btn primary sm" data-retry-self="1">${icon('check', 17)}I got it right</button><button class="btn outline sm" data-retry-self="0">Not yet</button></div>` : `<button class="btn primary sm" data-action="retryShow">Check against the model answer</button>`}`;
     }
   }
   const doc = docById(e.documentId), node = nodeForSource(doc, q.source);
@@ -2014,8 +2014,8 @@ ${state.freeLimit && aiAvailable() ? keyHelpHTML() : ''}${!aiAvailable() ? keyHe
     body = skillsHTML();
   } else if (tab === 'practice') {
     const p = state.practice;
-    body = !p ? `<section class="card"><h2 class="h2">Practice made for you</h2><p class="muted">${weak.length ? `Focuses on: ${weak.slice(0, 3).map(t => esc(t.name)).join(', ')}.` : 'Take a test or chat with Smarty first so it learns your weak topics. Until then it practises your main ideas.'} Each question is checked by a second AI pass before you see it.</p>${aiAvailable() ? `<button class="btn primary" data-action="smartyPractice"${state.busy || !state.docs.length ? ' disabled' : ''}>${state.busy === 'practice' ? '<span class="spin"></span>Writing and checking…' : icon('sparkles', 18) + 'Start practice'}</button>` : `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>`}</section>`
-      : `<div class="sm-step"><span>Question ${Math.min(p.at || 0, p.items.length - 1) + 1} of ${p.items.length}</span><span class="sm-bar"><i style="width:${Math.round(100 * Object.keys(p.answers).length / p.items.length)}%"></i></span></div><ol class="sm-practice">${p.items.filter((_, k) => p.done ? true : k === (p.at || 0)).map(q => { const a = p.answers[q.id], shown = a !== undefined; return `<li class="card"><div class="row"><span class="chip">${esc(q.topic || 'General')}</span><span class="chip diff-${q.difficulty}">${q.difficulty}</span>${q.verified ? `<span class="chip">${icon('checkCircle', 14)} checked</span>` : ''}</div><p class="q-text">${esc(q.prompt)}</p><div class="options">${q.options.map((o, j) => `<button class="option${shown ? (j === q.correct ? ' is-right' : j === a ? ' is-wrong' : '') : ''}" data-smpick="${q.id}:${j}"${shown ? ' disabled' : ''}><span class="opt-letter">${'ABCD'[j]}</span><span class="opt-text">${esc(o)}</span></button>`).join('')}</div>${shown && q.explanation ? `<p class="fine">${esc(q.explanation)}</p>` : ''}</li>`; }).join('')}</ol>
+    body = !p ? `<section class="card"><h2 class="h2">Practice made for you</h2><p class="muted">${weak.length ? `Focuses on: ${weak.slice(0, 3).map(t => esc(t.name)).join(', ')}.` : 'Take a test or chat with Smarty first so it learns your weak topics. Until then it practises your main ideas.'} Each question is checked by a second AI pass before you see it.</p>${aiAvailable() ? `<button class="btn primary" data-action="smartyPractice"${state.busy || !state.docs.length ? ' disabled' : ''}>${state.busy === 'practice' ? '<span class="spin"></span>Smarty is writing and checking…' : icon('sparkles', 18) + 'Start practice'}</button>` : `<button class="btn outline" data-view="settings">${icon('settings', 18)}Set up the AI helper</button>`}</section>`
+      : `<div class="sm-step"><span>Question ${Math.min(p.at || 0, p.items.length - 1) + 1} of ${p.items.length}</span><span class="sm-bar"><i style="width:${Math.round(100 * Object.keys(p.answers).length / p.items.length)}%"></i></span></div><ol class="sm-practice">${p.items.filter((_, k) => p.done ? true : k === (p.at || 0)).map(q => { const a = p.answers[q.id], shown = a !== undefined; return `<li class="card"><div class="row"><span class="chip">${esc(q.topic || 'General')}</span><span class="chip diff-${q.difficulty}">${q.difficulty}</span>${q.verified ? `<span class="chip">${icon('checkCircle', 14)} checked</span>` : ''}</div><p class="q-text">${esc(q.prompt)}</p><div class="options">${q.options.map((o, j) => `<button class="option${shown ? (j === q.correct ? ' is-right' : j === a ? ' is-wrong' : '') : ''}" data-smpick="${q.id}:${j}"${shown ? ' disabled' : ''}><span class="opt-letter">${'ABCD'[j]}</span><span class="opt-text">${esc(o)}</span></button>`).join('')}</div>${shown && q.explanation ? `<p class="fine smarty-exp">${icon('smarty', 14)} <b>Smarty explains:</b> ${esc(q.explanation)}</p>` : ''}</li>`; }).join('')}</ol>
 ${p.done ? `<div class="status ok">${icon('trophy', 20)}<p>${p.items.filter(q => p.answers[q.id] === q.correct).length}/${p.items.length} correct. Your profile was updated.</p></div>` : ''}${!p.done && p.items[p.at || 0]?.id in p.answers ? `<button class="btn primary big block" data-action="smNext">${(p.at || 0) + 1 < p.items.length ? 'Next question' : 'See results'} ${icon('next', 18)}</button>` : ''}<button class="btn outline" data-action="smartyNewPractice"${state.busy ? ' disabled' : ''}>${icon('restore', 18)}New practice</button>`;
   } else if (tab === 'profile') {
     const strong = strongTopics(P);
@@ -2324,7 +2324,7 @@ const actions = {
     const ai = requireAi('organise the map');
     const source = { ...doc, sections: doc.originalSections || doc.sections };   // always start from the document's own sections
     const kb = Math.max(1, Math.round(organiseSize(source) / 1000));
-    if (!confirm(`Send the beginning of each paragraph of “${docTitle(doc)}” (about ${kb} KB of text) to ${aiName() || 'the AI'} to organise the map into topics?\n\nYour document's text is not changed, and you can switch back with ⋯ › Use the original headings.`)) return render();
+    if (!confirm(`Send the beginning of each paragraph of “${docTitle(doc)}” (about ${kb} KB of text) to ${aiName() || 'Smarty'} to organise the map into topics?\n\nYour document's text is not changed, and you can switch back with ⋯ › Use the original headings.`)) return render();
     if (state.view !== 'study') go('study');
     state.busy = 'remap'; render();
     let sections;
