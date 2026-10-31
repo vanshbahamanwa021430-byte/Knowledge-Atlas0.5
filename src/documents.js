@@ -3,6 +3,7 @@ import JSZip from 'jszip';
 import { splitSections, outline, sourceContext, contextInfo, verifySources } from './structure.js';
 import { uuid } from './platform.js';
 import { needsOcr, ocrPdf, ocrImage } from './ocr.js';
+import { layoutText } from './pdflayout.js';
 import { toLines, questionRegions } from './figures.js';
 
 const OCR_FAIL = 'No readable text was found, even after scanning the pages for text (OCR). Try a clearer scan or photo.';
@@ -104,7 +105,8 @@ export async function parseFile(file) {
     for (let i = 1; i <= pdf.numPages; i++) {
       const pg = await pdf.getPage(i), c = await pg.getTextContent();
       if (i <= 80) try { if (await pageHasFigure(pdfjs, pg)) figPages.push(i); } catch { /* ignore */ }
-      const text = c.items.map(x => x.str + (x.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+\n/g, '\n').trim();
+      let text = c.items.map(x => x.str + (x.hasEOL ? '\n' : ' ')).join('').replace(/[ \t]+\n/g, '\n').trim();
+      try { const vp = pg.getViewport({ scale: 1 }); const lt = layoutText(c.items.map(t => ({ str: t.str, x: t.transform[4], y: vp.height - t.transform[5], w: t.width || 0, h: t.height || 10 })), vp.width); if (lt.trim()) text = lt; } catch { /* plain text order */ }
       sections.push({ ref: 'Page ' + i, title: firstLine(text).slice(0, 75) || 'Page ' + i, level: 1, text });
     }
     if (needsOcr(sections.map(s => s.text).join(''), pdf.numPages)) {
