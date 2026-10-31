@@ -58,7 +58,7 @@ if (!app.requestSingleInstanceLock()) {
             res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><p style="font:16px system-ui;padding:24px">You can close this tab and return to Knowledge Atlas.</p>');
             if (u.searchParams.get('state') !== state) return finish({ error: 'State mismatch' });
             if (u.searchParams.get('error')) return finish({ error: u.searchParams.get('error') });
-            return finish({ access_token: u.searchParams.get('access_token'), expires_in: Number(u.searchParams.get('expires_in')) || 3600 });
+            return finish({ access_token: u.searchParams.get('access_token'), expires_in: Number(u.searchParams.get('expires_in')) || 3600, scope: u.searchParams.get('scope') || '' });
           }
           res.writeHead(404); res.end();
         });
@@ -66,7 +66,7 @@ if (!app.requestSingleInstanceLock()) {
         server.on('error', () => finish({ error: 'Port 53682 is busy' }));
         server.listen(PORT, '127.0.0.1', () => {
           const auth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-          for (const [k, v] of Object.entries({ client_id: String(req.clientId || ''), redirect_uri: redirect, response_type: 'token', scope: String(req.scope || ''), state, include_granted_scopes: 'true', prompt: 'select_account' })) auth.searchParams.set(k, v);
+          for (const [k, v] of Object.entries({ client_id: String(req.clientId || ''), redirect_uri: redirect, response_type: 'token', scope: String(req.scope || ''), state, include_granted_scopes: 'true', prompt: req.consent ? 'consent select_account' : 'select_account' })) auth.searchParams.set(k, v);
           shell.openExternal(auth.toString());
         });
       });

@@ -3,7 +3,7 @@
 // Client IDs are build-time config (VITE_GOOGLE_WEB_CLIENT_ID, VITE_GOOGLE_ANDROID=1); without them the option is hidden.
 import { registerPlugin } from '@capacitor/core';
 import { platform } from './platform.js';
-import { drive, syncRound, diffForLocal, SYNC_FORMAT, SYNC_VERSION, DriveError } from './sync.js';
+import { drive, syncRound, diffForLocal, SYNC_FORMAT, SYNC_VERSION, DriveError, hasDriveScope } from './sync.js';
 import { syncLocalTables, applySyncDiff, syncFlags, BACKUP_PREFS, SECRET_PREFS, readPref, getBlob, saveBlob, listBlobIds } from './storage.js';
 
 export const SCOPES = ['https://www.googleapis.com/auth/drive.appdata', 'openid', 'email', 'profile'];
@@ -26,30 +26,36 @@ export const hasPassphrase = () => !!passphrase;
 
 let gis = null;
 const loadGis = () => (gis ??= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = () => res(window.google); s.onerror = () => { gis = null; rej(Error('Could not load Google sign-in. Check your connection.')); }; document.head.append(s); }));
-async function getToken(interactive) {
-  if (token && Date.now() < tokenExp - 60000) return token;
+const DRIVE_SCOPE = SCOPES[0];
+const scopeError = (tok = '') => Object.assign(Error('Allow Drive access to sync. Google did not give Knowledge Atlas permission to use its app folder in your Drive.'), { reason: 'scope', token: tok });
+async function getToken(interactive, consent = false) {
+  if (!consent && token && Date.now() < tokenExp - 60000) return token;
   if (platform() === 'android') {
     const r = await GoogleDrive.authorize({ scopes: SCOPES, silent: !interactive });
+    if (r.scopes && !hasDriveScope(r.scopes)) throw scopeError(r.accessToken);
     token = r.accessToken; tokenExp = Date.now() + 50 * 60000; return token;
   }
   if (desktop()) {
     if (!interactive && !token) throw Object.assign(Error('Sign-in needed'), { code: 'NEEDS_UI' });
-    const r = await window.atlasNative.googleToken(WEB_CLIENT_ID, SCOPES.join(' '));
+    const r = await window.atlasNative.googleToken(WEB_CLIENT_ID, SCOPES.join(' '), consent);
     if (r?.error) throw Error(r.error === 'access_denied' ? 'Sign-in was cancelled.' : 'Google sign-in failed: ' + r.error);
+    if (r.scope && !hasDriveScope(r.scope)) throw scopeError(r.access_token);
     token = r.access_token; tokenExp = Date.now() + r.expires_in * 1000; return token;
   }
   const g = await loadGis();
   return new Promise((res, rej) => {
-    const c = g.accounts.oauth2.initTokenClient({ client_id: WEB_CLIENT_ID, scope: SCOPES.join(' '), prompt: interactive ? '' : 'none', hint: account()?.email,
-      callback: r => { if (r.error) return rej(Error(r.error === 'access_denied' ? 'Sign-in was cancelled.' : 'Google sign-in failed: ' + r.error)); token = r.access_token; tokenExp = Date.now() + (Number(r.expires_in) || 3600) * 1000; res(token); },
+    const c = g.accounts.oauth2.initTokenClient({ client_id: WEB_CLIENT_ID, scope: SCOPES.join(' '), prompt: consent ? 'consent' : interactive ? '' : 'none', hint: account()?.email, include_granted_scopes: true,
+      callback: r => { if (r.error) return rej(Error(r.error === 'access_denied' ? 'Sign-in was cancelled.' : 'Google sign-in failed: ' + r.error)); if (!g.accounts.oauth2.hasGrantedAllScopes(r, DRIVE_SCOPE)) return rej(scopeError(r.access_token)); token = r.access_token; tokenExp = Date.now() + (Number(r.expires_in) || 3600) * 1000; res(token); },
       error_callback: e => rej(Error(e?.type === 'popup_closed' ? 'Sign-in was cancelled.' : 'Google sign-in failed.')) });
     c.requestAccessToken();
   });
 }
 // A Drive client for the signed-in account (appDataFolder only). Used by sync and the owner pack.
 export async function driveClient(interactive = false) { return drive(await getToken(interactive)); }
+// Ask Google again for Drive (app folder) access, showing the consent screen.
+export async function grantDrive() { token = null; tokenExp = 0; await getToken(true, true); setStatus({ error: '', reason: '' }); }
 export async function signIn() {
-  const t = await getToken(true);
+  let t; try { t = await getToken(true); } catch (e) { if (e.reason !== 'scope') throw e; t = e.token; setStatus({ error: e.message, reason: 'scope' }); }
   const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${t}` } });
   const u = r.ok ? await r.json() : {};
   write('ka-sync-account', { email: u.email || '', name: u.name || '', picture: u.picture || '' });
@@ -89,11 +95,12 @@ async function doSync({ interactive = false } = {}) {
     for (const [k, { v }] of Object.entries(merged.prefs || {})) if (!(p.keys && p.encrypt) && SECRET_PREFS.includes(k)) continue; else write(k, v);
     prefsSnapshot(p.keys && p.encrypt);
     const blobBytes = await syncBlobs(d);
-    return setStatus({ at: Date.now(), size: size + blobBytes, error: '', conflicts: merged.conflicts.length, changed: Object.values(put).reduce((a, x) => a + x.length, 0) + Object.values(del).reduce((a, x) => a + x.length, 0) });
+    return setStatus({ at: Date.now(), size: size + blobBytes, error: '', reason: '', conflicts: merged.conflicts.length, changed: Object.values(put).reduce((a, x) => a + x.length, 0) + Object.values(del).reduce((a, x) => a + x.length, 0) });
   } catch (e) {
     if (e instanceof DriveError && e.status === 401) { token = null; }
+    if (e?.reason === 'scope') { token = null; return setStatus({ error: e.message, reason: 'scope' }); }
     if (e?.code === 'NEEDS_UI' || /NEEDS_UI|Sign-in needed/.test(e?.message || '')) return setStatus({ error: 'Tap “Sync now” to confirm your Google account.' });
-    return setStatus({ error: e.message || 'Sync failed.' });
+    return setStatus({ error: e.message || 'Sync failed.', reason: e?.reason || '' });
   }
 }
 // Original PDFs (page pictures) are immutable: upload the ones the cloud lacks, download the ones this device lacks.

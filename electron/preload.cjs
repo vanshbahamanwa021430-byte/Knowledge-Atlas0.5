@@ -7,5 +7,5 @@ contextBridge.exposeInMainWorld('atlasNative', {
   // Past-paper pages and PDFs (checked again in the main process).
   getUrl: (url, as, timeout) => ipcRenderer.invoke('net:get', { url, as, timeout }),
   // Google sign-in through the system browser (loopback), for optional Drive sync.
-  googleToken: (clientId, scope) => ipcRenderer.invoke('google:token', { clientId, scope })
+  googleToken: (clientId, scope, consent = false) => ipcRenderer.invoke('google:token', { clientId, scope, consent: !!consent })
 });

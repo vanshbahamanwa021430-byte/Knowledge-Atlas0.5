@@ -79,3 +79,13 @@ test('install from a file: verifies, uploads to Drive, caches and activates; no 
   const s = await c.install(env, PASS);
   assert.equal(s.status, 'on'); assert.equal(drive.uploads, 1); assert.ok(cacheBox.v);
 });
+
+test('import from file works without Drive; a failed Drive upload still installs locally', async () => {
+  const env = await encryptPack(PACK, PASS, 1000);
+  const a = setup(); const r1 = await a.c.install(env, PASS, { upload: false });
+  assert.equal(r1.status, 'on'); assert.equal(a.drive.uploads, 0); assert.ok(a.cacheBox.v);
+  const b = setup(); b.deps.remote.upload = async () => { throw Error('Allow Drive access to sync.'); };
+  const r2 = await b.c.install(env, PASS);
+  assert.equal(r2.status, 'on'); assert.match(r2.driveError, /Allow Drive access/);
+  await assert.rejects(setup().c.install(env, 'wrong passphrase', { upload: false }), /Wrong/);
+});

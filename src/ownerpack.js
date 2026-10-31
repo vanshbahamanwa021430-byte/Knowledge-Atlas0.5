@@ -90,12 +90,14 @@ export function ownerPackController(deps) {
       catch (e) { set({ status: 'locked', error: e.message }); if (!passphrase) await deps.secure.del(PASS_KEY); if (interactive) throw e; return { ok: false, reason: 'bad-pass' }; }
     },
     // Owner installs a pack from a file: checks the passphrase, uploads to their Drive, caches and activates.
-    async install(env, passphrase) {
+    // upload: false = this device only (no Drive needed). A failed Drive upload still installs locally (driveError says why).
+    async install(env, passphrase, { upload = true } = {}) {
       await decryptPack(env, passphrase);
-      if (deps.remote) await deps.remote.upload(env);
+      let driveError = '';
+      if (upload && deps.remote) { try { await deps.remote.upload(env); } catch (e) { driveError = e.message || 'Drive upload failed.'; } }
       await deps.cache.set(env); await deps.secure.set(PASS_KEY, passphrase);
       if (active) await this.deactivate();
-      await load(env, passphrase); return this.status();
+      await load(env, passphrase); return { ...this.status(), driveError };
     },
     async deactivate() { const a = active; active = null; if (a?.handle?.deactivate) await a.handle.deactivate(); set({ status: 'off', error: '' }); },
     async remove() { await this.deactivate(); await deps.cache.del(); await deps.secure.del(PASS_KEY); }

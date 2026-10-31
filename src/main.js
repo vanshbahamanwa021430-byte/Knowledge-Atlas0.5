@@ -37,7 +37,7 @@ import { OWNER_HASHES, isOwnerEmail, addedOwners, addOwner, removeOwner, maskSec
 installLogCapture();
 import { platform as gatePlatform } from './platform.js';
 import { needsWelcome, afterSignIn, afterGuest, afterSignOut } from './gate.js';
-import { cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
+import { cloudAvailable, account, syncStatus, syncPrefs, setSyncPrefs, setPassphrase, hasPassphrase, signIn, signOut, grantDrive, syncNow, deleteCloudData, startAutoSync, onSyncStatus, driveClient } from './cloud.js';
 import { registerPlugin } from '@capacitor/core';
 import { checkForUpdate, AUTO_INTERVAL, RELEASES_PAGE, UPDATE_REPO, setUpdateRepo } from './update.js';
 import { ownerPackController, webSecureStore, nativeSecureStore, memoryStore, isPackEnvelope, OWNER_PACK_NAME } from './ownerpack.js';
@@ -1940,9 +1940,9 @@ function ownerPackHTML() {
 <p><b>Status:</b> ${esc(label)}${st.version ? ` · pack ${esc(st.version)}` : ''}${st.built ? ` · built ${esc(fmtDate(st.built))}` : ''}</p>${st.error ? `<p class="status warn">${esc(st.error)}</p>` : ''}
 <label class="field"><span>Owner-pack passphrase</span><input class="input" type="password" id="pack-pass" autocomplete="off" placeholder="Asked once; kept in secure storage"></label>
 <div class="code-acts"><button class="btn primary" data-action="packUnlock">${icon('shield', 17)}Unlock from my Drive</button>
-<label class="btn outline file-btn">${icon('upload', 17)}<span>Upload owner pack to my Drive</span><input type="file" data-packfile accept=".json,application/json"></label>
+<label class="btn outline file-btn">${icon('upload', 17)}<span>Upload owner pack to my Drive</span><input type="file" data-packfile accept=".json,application/json"></label><label class="btn outline file-btn">${icon('file', 17)}<span>Import owner pack from file</span><input type="file" data-packfile="local" accept=".json,application/json"></label>
 ${ownerPack.isActive() ? `<button class="btn outline" data-action="packRemove">${icon('trash', 17)}Remove from this device</button>` : ''}</div>
-<p class="fine">Build a pack with <code>npm run owner-pack</code>, unzip it and pick <code>owner-pack.json</code>.</p>`;
+<p class="fine">Build a pack with <code>npm run owner-pack</code>, unzip it and pick <code>owner-pack.json</code>. “Import from file” works without Drive and keeps the pack on this device only.</p>`;
 }
 const packPass = () => { const el = document.getElementById('pack-pass'), v = el?.value || ''; if (el) el.value = ''; return v; };
 const SEED = 'seed-';
@@ -1964,7 +1964,7 @@ function accountHTML() {
   if (!a) return `<section class="card" aria-labelledby="acct-h">${head}<p>Optional: sign in with Google to back up and sync your documents, notes and progress across devices. It is stored only in a hidden app folder in <b>your own</b> Google Drive; we have no server and can't see it.</p><button class="btn outline big block g-btn" data-action="cloudSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button><p class="fine">Asks only for your name, email and access to this app's own Drive folder (not your other files).</p></section>`;
   return `<section class="card" aria-labelledby="acct-h">${head}<div class="acct-row">${icon('user', 22)}<div><b>${esc(a.name || a.email)}</b><span class="fine">${esc(a.email)}</span></div></div>
 <p class="sync-line">${st.error ? `${icon('cloudOff', 16)} <span class="bad">${esc(st.error)}</span>` : st.at ? `${icon('cloud', 16)} Last synced ${new Date(st.at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} · ${fmtBytes(st.size)} in your Drive${st.conflicts ? ` · ${st.conflicts} conflict${st.conflicts === 1 ? '' : 's'} resolved (newest kept)` : ''}` : `${icon('cloud', 16)} Not synced yet`}</p>
-<div class="code-acts"><button class="btn primary" data-action="cloudSync"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('refresh', 18)}Sync now</button><button class="btn outline" data-action="cloudSignOut">${icon('logout', 18)}Sign out</button></div>
+${st.reason === 'scope' ? `<div class="code-acts"><button class="btn primary" data-action="cloudGrant"${state.busy ? ' disabled' : ''}>${icon('cloud', 18)}Allow Drive access</button></div><p class="fine">On Google's screen, tick the box that lets Knowledge Atlas see and manage its own app data in your Drive.</p>` : ''}<div class="code-acts"><button class="btn primary" data-action="cloudSync"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('refresh', 18)}Sync now</button><button class="btn outline" data-action="cloudSignOut">${icon('logout', 18)}Sign out</button></div>
 <label class="toggle-row compact"><span><b>Sync automatically</b><span>On open, after changes and every 10 minutes while online.</span></span><input type="checkbox" class="switch" id="sync-auto"${p.auto ? ' checked' : ''}></label>
 <label class="toggle-row compact"><span><b>Encrypt my cloud copy</b><span>AES-GCM with a passphrase only you know. If you forget it, the cloud copy can't be read.</span></span><input type="checkbox" class="switch" id="sync-encrypt"${p.encrypt ? ' checked' : ''}></label>
 ${p.encrypt ? `<div class="code-acts"><button class="btn outline sm" data-action="cloudPass">${icon('lock', 16)}${hasPassphrase() ? 'Change passphrase' : 'Enter passphrase'}</button></div><label class="toggle-row compact"><span><b>Include my AI keys</b><span>Only inside the encrypted copy.</span></span><input type="checkbox" class="switch" id="sync-keys"${p.keys ? ' checked' : ''}></label>` : '<p class="fine">AI keys are never synced unless you turn on encryption.</p>'}
@@ -2089,6 +2089,7 @@ const actions = {
   },
   async glassDefault() { state.glassBg = ''; await setSetting('glass-bg', ''); applyGlassBg(); render(); },
   async glassNone() { state.glassBg = 'none'; await setSetting('glass-bg', 'none'); applyGlassBg(); render(); },
+  cloudGrant: () => cloudDo(async () => { await grantDrive(); await refreshOwner(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Drive access allowed. Synced.', 'ok'); }),
   cloudSignIn: () => cloudDo(async () => { await signIn(); await refreshOwner(); startAutoSync(); const s = await syncNow({ interactive: true }); if (!s.error) toast('Signed in. Your data is synced to your Google Drive.', 'ok'); }),
   cloudSync: () => cloudDo(async () => { const s = await syncNow({ interactive: true }); if (s.error) toast(s.error, 'warn'); else { await reloadAll(); toast('Synced.', 'ok'); } }),
   cloudSignOut() { if (!confirm('Sign out of Google? Your data stays on this device and in your Drive.')) return; signOut(); writeJSON('ka-entry', afterSignOut().entry); state.owner = false; ownerPack.remove().finally(() => { state.packStatus = ownerPack.status(); render(); }); render(); },
@@ -2525,7 +2526,9 @@ app.addEventListener('change', e => {
     if (!pass) throw Error('Type the owner-pack passphrase first, then pick the file.');
     let env; try { env = JSON.parse(await f.text()); } catch { throw Error('Pick owner-pack.json (unzip the download first).'); }
     if (!isPackEnvelope(env)) throw Error('This is not a Knowledge Atlas owner pack.');
-    state.packStatus = await ownerPack.install(env, pass); toast('Owner pack uploaded to your Drive and active on this device.');
+    const local = t.dataset.packfile === 'local';
+    const r = await ownerPack.install(env, pass, { upload: !local }); state.packStatus = ownerPack.status();
+    toast(local ? 'Owner pack active on this device.' : r.driveError ? `Owner pack active on this device, but not saved to Drive: ${r.driveError}` : 'Owner pack uploaded to your Drive and active on this device.', r.driveError ? 'warn' : 'ok');
   }); }
   if (t.matches('[data-paperpdf]')) { const files = [...t.files]; t.value = ''; return run(() => addPaperFiles(files)); }
   if (ED.onChange(t)) return;

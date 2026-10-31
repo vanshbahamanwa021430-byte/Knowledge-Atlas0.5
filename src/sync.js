@@ -66,14 +66,34 @@ export const isEncrypted = x => !!x?.encrypted;
 
 // ---- Drive v3 (appDataFolder only). fetchImpl is injectable for tests. ----
 const API = 'https://www.googleapis.com/drive/v3', UP = 'https://www.googleapis.com/upload/drive/v3';
-export class DriveError extends Error { constructor(status, msg) { super(msg); this.status = status; } }
-export function drive(token, fetchImpl = globalThis.fetch) {
+// Granted scopes come back space-separated; on Google's granular consent the Drive box can be left unticked.
+export const DRIVE_APPDATA = 'https://www.googleapis.com/auth/drive.appdata';
+export const hasDriveScope = granted => String(granted || '').split(/[\s,]+/).includes(DRIVE_APPDATA);
+export class DriveError extends Error { constructor(status, msg, reason = '') { super(msg); this.status = status; this.reason = reason; } }
+// Drive error bodies: { error: { code, message, errors: [{ reason }], status, details: [{ reason }] } }.
+const SCOPE_REASONS = /insufficientPermissions|ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficientScopes|insufficient_scope/i;
+const RATE_REASONS = /rateLimitExceeded|userRateLimitExceeded|RATE_LIMIT_EXCEEDED|backendError|internalError/i;
+export function classifyDriveError(status, body) {
+  const e = body?.error || {};
+  const reasons = [...(e.errors || []).map(x => x.reason), ...(e.details || []).map(x => x.reason), e.status, typeof body?.error === 'string' ? body.error : '', e.message].filter(Boolean).join(' ');
+  if (status === 401) return new DriveError(401, 'Google sign-in expired. Sign in again to sync.', 'auth');
+  if (SCOPE_REASONS.test(reasons)) return new DriveError(status, 'Allow Drive access to sync. Google did not give Knowledge Atlas permission to use its app folder in your Drive.', 'scope');
+  if (/storageQuotaExceeded|quotaExceeded/i.test(reasons) && !/rate/i.test(reasons)) return new DriveError(status, 'Your Google Drive storage is full. Free up space in Google Drive, then sync again.', 'quota');
+  if (/accessNotConfigured|SERVICE_DISABLED/i.test(reasons)) return new DriveError(status, 'Google Drive sync is not enabled for this app yet. Please try again later.', 'disabled');
+  if (status === 429 || RATE_REASONS.test(reasons) || status >= 500) return new DriveError(status, 'Google Drive is busy. Sync will retry later.', 'rate');
+  if (status === 403) return new DriveError(403, `Google Drive refused the request${e.message ? ': ' + e.message : ''}.`, 'forbidden');
+  return new DriveError(status, `Google Drive error ${status}.`, '');
+}
+export function drive(token, fetchImpl = globalThis.fetch, { retries = 3, sleep = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
   const call = async (url, opt = {}) => {
-    let r; try { r = await fetchImpl(url, { ...opt, headers: { Authorization: `Bearer ${token}`, ...(opt.headers || {}) } }); } catch { throw new DriveError(0, 'You are offline. Sync will retry when you are back online.'); }
-    if (r.status === 401) throw new DriveError(401, 'Google sign-in expired. Sign in again to sync.');
-    if (r.status === 403 || r.status === 429) throw new DriveError(r.status, 'Google Drive is busy or your storage is full. Sync will retry later.');
-    if (!r.ok && r.status !== 204) throw new DriveError(r.status, `Google Drive error ${r.status}.`);
-    return r.status === 204 ? null : r.json();
+    for (let attempt = 0; ; attempt++) {
+      let r; try { r = await fetchImpl(url, { ...opt, headers: { Authorization: `Bearer ${token}`, ...(opt.headers || {}) } }); } catch { throw new DriveError(0, 'You are offline. Sync will retry when you are back online.', 'offline'); }
+      if (r.ok || r.status === 204) return r.status === 204 ? null : r.json();
+      let body = null; try { body = await r.json(); } catch { /* no JSON body */ }
+      const err = classifyDriveError(r.status, body);
+      if (err.reason === 'rate' && attempt < retries) { await sleep(Math.min(8000, 500 * 2 ** attempt) + Math.floor(Math.random() * 250)); continue; }
+      throw err;
+    }
   };
   const multipart = (meta, body) => { const b = 'ka' + Math.random().toString(36).slice(2); return { headers: { 'Content-Type': `multipart/related; boundary=${b}` }, body: `--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${body}\r\n--${b}--` }; };
   return {
