@@ -20,7 +20,7 @@ import { EXTRA_KINDS, normalizeProfile, buildPlan, scoreQuestion, answerText, co
 import { getUrl } from './net.js';
 import { BACKUP_PREFS, db, saveDocument, getDocuments, saveAttempt, getAttempts, getSetting, setSetting, requestPersistence, exportAll, importAll, getCards, saveCards, deleteCard, getSessions, saveSession, getPlans, savePlan, deletePlan, getDays, bumpDay, getProfiles, saveProfile, deleteProfile, getTraces, saveTrace, clearTraces, saveBlob, getBlob, deleteBlob } from './storage.js';
 import { chunkDocs, buildIndex, retrieve, searchTraces, traceFromAttempt, traceFromPractice, makeTrace, updateProfile, emptyProfile, weakTopics as tutorWeak, strongTopics, levelFor as tutorLevel, profileHint, practiceTargets } from './tutor.js';
-import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice } from './ai.js';
+import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, explainSelection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice } from './ai.js';
 import { matchSections, flatMap } from './aimap.js';
 import { flowchartSVG, defaultCollapsed, childrenMap, chartNodes, levelNames } from './flowchart.js';
 import { gradeMCQ, makeAttempt, isDue, EXAM_MINUTES, QUESTION_COUNT } from './engine.js';
@@ -361,7 +361,7 @@ function shellHTML() {
 ${sidebarHTML()}
 <div class="stage">${topbarHTML()}<main class="main v-${state.view}${examLive() && state.view === 'test' && !shown() ? ' is-exam' : ''}" id="main" tabindex="-1">${body}</main></div>
 <nav class="tabbar" aria-label="Main">${TABS.map(t => tabBtn(t)).join('')}</nav>
-${focusPill()}${toastsHTML()}
+${focusPill()}${toastsHTML()}${selExplainHTML()}
 ${state.showGrid && state.questions ? gridSheetHTML() : ''}${state.update.dialog && state.update.release ? updateDialogHTML() : ''}
 </div>`;
 }
@@ -1845,10 +1845,74 @@ async function findImage(scope, i) {
   try { m.images = await findCommonsImages(q.slice(0, 80)); } finally { state.busy = ''; }
   render();
 }
+/* ---------- Smarty explains a selection (text, notes, or a picture area) ---------- */
+const SEL_AREAS = '.reading, .notes-area, .ocr-text, .doc-text, .pdf-text, .explain-text';
+function blockText(el) { return (el?.innerText || el?.textContent || '').trim(); }
+function readSelection() {
+  const ae = document.activeElement;
+  if (ae && ae.matches?.('textarea.notes-area, textarea.ocr-text')) {
+    const v = ae.value, a = ae.selectionStart, b = ae.selectionEnd; const text = v.slice(a, b).trim();
+    return text.length >= 3 ? { text, before: v.slice(Math.max(0, a - 600), a), after: v.slice(b, b + 600) } : null;
+  }
+  const sel = window.getSelection?.(); if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim(); if (text.length < 3) return null;
+  const r = sel.getRangeAt(0), host = (r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement);
+  if (!host?.closest?.(SEL_AREAS)) return null;
+  const blk = n => (n.nodeType === 1 ? n : n.parentElement)?.closest('p, li, h1, h2, h3, h4, pre, blockquote, td, div.reading > *');
+  const first = blk(r.startContainer), last = blk(r.endContainer);
+  return { text, before: blockText(first?.previousElementSibling), after: blockText(last?.nextElementSibling), rect: r.getBoundingClientRect() };
+}
+function selButton() {
+  let b = document.getElementById('sm-sel-btn');
+  if (!b) { b = document.createElement('button'); b.id = 'sm-sel-btn'; b.className = 'sm-sel-btn'; b.type = 'button'; b.hidden = true; b.innerHTML = `${icon('smarty', 16)} Smarty explains`;
+    b.addEventListener('pointerdown', e => e.preventDefault());   // keep the selection
+    b.addEventListener('click', () => actions.explainSel()); document.body.appendChild(b); }
+  return b;
+}
+document.addEventListener('selectionchange', () => {
+  const s = readSelection(), b = selButton();
+  if (!s) { b.hidden = true; return; }
+  state.sel = { text: s.text, before: s.before, after: s.after };
+  const r = s.rect || document.activeElement?.getBoundingClientRect?.();
+  b.hidden = false;
+  if (r) { b.style.top = Math.max(8, Math.min(innerHeight - 52, (r.bottom || 0) + 8)) + 'px'; b.style.left = Math.max(8, Math.min(innerWidth - 180, (r.left || 0))) + 'px'; }
+});
+function selExplainHTML() {
+  const x = state.selExp; if (!x) return '';
+  return `<div class="zoom-ov sel-exp-ov" role="dialog" aria-modal="true" aria-label="Smarty explains"><div class="card sel-exp"><div class="ask-head"><span class="ask-icon">${icon('smarty', 20)}</span><h2>Smarty explains</h2><button class="icon-btn soft" data-action="selExpClose" aria-label="Close">✕</button></div>
+${x.image ? `<img class="sel-exp-img" src="${x.image}" alt="Selected area">` : `<blockquote class="sel-quote">${esc(x.text.slice(0, 400))}${x.text.length > 400 ? '…' : ''}</blockquote>`}
+${x.busy ? '<p><span class="spin"></span> Smarty is explaining…</p>' : x.error ? `<p class="status warn">${esc(x.error)}</p>` : paras(x.explanation || '')}
+<p class="fine">Made by Smarty from your selection only. Check it against your document.</p></div></div>`;
+}
+async function runSelExplain(sel, images = []) {
+  const ai = requireAi('get explanations');
+  if (!confirm(images.length ? 'Send the selected picture area to Smarty for an explanation?' : 'Send the selected text (and a line of context around it) to Smarty for an explanation?')) return;
+  const doc = current();
+  state.selExp = { ...sel, busy: true }; render();
+  try { state.selExp = { ...sel, explanation: await explainSelection({ title: doc ? docTitle(doc) : '', selection: sel.text || '', before: sel.before || '', after: sel.after || '' }, ai, images) }; }
+  catch (e) { state.selExp = { ...sel, error: e?.message || String(e) }; }
+  render();
+}
+// Drag to select an area of a picture (scans, PDF pages); the crop goes to Smarty with vision.
+function areaSelect(img, done) {
+  const box = img.parentElement; box.classList.add('area-mode'); let st = null; const r = document.createElement('div'); r.className = 'area-rect'; box.appendChild(r);
+  const pt = e => { const b = img.getBoundingClientRect(); return [Math.max(0, Math.min(b.width, e.clientX - b.left)), Math.max(0, Math.min(b.height, e.clientY - b.top)), b]; };
+  const draw = (a, c) => { const ib = img.getBoundingClientRect(), bb = box.getBoundingClientRect(); Object.assign(r.style, { left: ib.left - bb.left + Math.min(a[0], c[0]) + 'px', top: ib.top - bb.top + Math.min(a[1], c[1]) + 'px', width: Math.abs(c[0] - a[0]) + 'px', height: Math.abs(c[1] - a[1]) + 'px' }); };
+  img.addEventListener('pointerdown', e => { e.preventDefault(); st = pt(e); img.setPointerCapture?.(e.pointerId); });
+  img.addEventListener('pointermove', e => { if (st) draw(st, pt(e)); });
+  img.addEventListener('pointerup', e => { if (!st) return; const en = pt(e), b = en[2], sx = img.naturalWidth / b.width, sy = img.naturalHeight / b.height;
+    const x = Math.min(st[0], en[0]), y = Math.min(st[1], en[1]), w = Math.abs(en[0] - st[0]), h = Math.abs(en[1] - st[1]); st = null;
+    if (w < 12 || h < 12) return; const c = document.createElement('canvas'); const scale = Math.min(1, 1400 / Math.max(w * sx, h * sy)); c.width = Math.round(w * sx * scale); c.height = Math.round(h * sy * scale);
+    c.getContext('2d').drawImage(img, x * sx, y * sy, w * sx, h * sy, 0, 0, c.width, c.height); done(c.toDataURL('image/jpeg', 0.85)); });
+}
 function zoomImage(src) {
   const o = document.createElement('div'); o.className = 'zoom-ov'; o.setAttribute('role', 'dialog'); o.innerHTML = `<div class="zoom-in"><img alt="Zoomed picture"></div><button class="icon-btn round zoom-x" aria-label="Close">✕</button>`;
   o.querySelector('img').src = src; o.addEventListener('click', e => { if (e.target === o || e.target.closest('.zoom-x')) o.remove(); });
-  o.querySelector('img').addEventListener('click', e => e.currentTarget.classList.toggle('is-big'));
+  const im = o.querySelector('img'); let area = false;
+  im.addEventListener('click', e => { if (!area) e.currentTarget.classList.toggle('is-big'); });
+  const sb = document.createElement('button'); sb.className = 'btn primary zoom-area'; sb.innerHTML = `${icon('smarty', 16)} Select an area for Smarty`;
+  sb.addEventListener('click', e => { e.stopPropagation(); if (area) return; area = true; sb.textContent = 'Drag over the part to explain'; areaSelect(im, url => { o.remove(); runSelExplain({ text: '', image: url }, [url]).catch(err => toast(err.message, 'error')); }); });
+  o.appendChild(sb);
   document.body.appendChild(o);
 }
 
@@ -2406,9 +2470,14 @@ const actions = {
     const how = await shareText('Prvlar result', `I scored ${a.percent}% (${a.earned}/${a.total} marks) on “${attemptTitle(a)}” in Prvlar.`);
     if (how === 'copied') { state.notice = 'Result copied to the clipboard.'; render(); }
   },
+  async explainSel() { const s = readSelection() || state.sel; selButton().hidden = true; if (!s?.text) return toast('Select some text first (long-press on a phone), then tap Smarty explains.', 'warn'); return runSelExplain({ text: s.text, before: s.before, after: s.after }); },
+  selExpClose() { state.selExp = null; render(); },
   async explain() {
     const doc = current(), node = outline(doc).find(n => n.id === state.selected);
     if (!node?.text || state.busy) return;
+    const s = state.sel?.text && node.text.includes(state.sel.text.slice(0, 40)) ? state.sel : null;
+    if (s) return runSelExplain({ text: s.text, before: s.before, after: s.after });
+    if (!confirm('Tip: select a passage (long-press on a phone) and tap “Smarty explains” to explain just that part.\n\nExplain this whole page instead?')) return;
     const ai = requireAi('get explanations');
     if (!confirm('Send this section’s text to the AI for a plain-language explanation?')) return;
     state.busy = 'explain'; render();

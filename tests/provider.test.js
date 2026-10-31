@@ -59,6 +59,6 @@ test('fallback stops on errors another provider would not fix (400)', async () =
 });
 test('all providers failing reports the last error; empty chain is explained', async () => {
   await assert.rejects(smartyAnswer('q', [{ docName: 'd', ref: 'p', text: 't' }], { chain: [cfg(dead), cfg(base(e429))] }), /429/);
-  await assert.rejects(smartyAnswer('q', [{ docName: 'd', ref: 'p', text: 't' }], { chain: [] }), /Add an AI key/);
+  await assert.rejects(smartyAnswer('q', [{ docName: 'd', ref: 'p', text: 't' }], { chain: [] }), /Set up Smarty’s brain/);
   assert.ok(shouldFallback(Error('Could not reach the AI service.'))); assert.ok(!shouldFallback(Error('AI request failed (400). x')));
 });

@@ -90,7 +90,7 @@ test('self-hosted router: address normalised, model "auto", key optional', async
 });
 test('cloud mode without a key fails before any request', async () => {
   globalThis.fetch = async () => { throw Error('should not be called'); };
-  await assert.rejects(() => explainSection('T', 'x', ''), /Enter an AI key/);
+  await assert.rejects(() => explainSection('T', 'x', ''), /Set up Smarty’s brain/);
 });
 test('router 401 explains which key to use', async () => {
   globalThis.fetch = async () => ({ ok: false, status: 401, json: async () => ({ error: 'Invalid API key' }) });
