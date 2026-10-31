@@ -16,7 +16,8 @@ export function validateQuestions(items, count = QUESTION_COUNT) {
     if (!Number.isInteger(marks) || marks < 1 || marks > 10) throw Error('Invalid marks');
     const source = String(q.source || '');
     if (!source.trim()) throw Error('Missing document evidence reference');
-    const solution = String(q.solution || '');
+    let solution = String(q.solution || q.modelSolution || q.model_solution || q.explanation || q.answer || '');
+    if (solution.trim().length < 8 && q.type === 'mcq' && Array.isArray(q.options) && Number.isInteger(q.correct) && q.options[q.correct]) solution = `The correct answer is: ${q.options[q.correct]}.`;
     if (solution.trim().length < 8) throw Error('Missing model solution');
     const rubric = String(q.rubric || '');
     if (q.type === 'written' && rubric.trim().length < 8) throw Error('Missing written rubric');

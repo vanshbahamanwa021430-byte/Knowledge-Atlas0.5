@@ -2,7 +2,7 @@
   "name": "knowledge-atlas-2",
   "version": "0.9.8",
   "description": "Personal document learning and test centre",
-  "author": "Knowledge Atlas",
+  "author": "Prvlar",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -72,7 +72,7 @@
   },
   "build": {
     "appId": "com.knowledgeatlas.app",
-    "productName": "Knowledge Atlas",
+    "productName": "Prvlar",
     "files": [
       "dist/**/*",
       "electron/**/*",

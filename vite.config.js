@@ -20,7 +20,7 @@ function offlineCache() {
     generateBundle(_, bundle) {
       const files = ['./', './index.html', ...Object.keys(bundle).filter(f => !f.endsWith('.map') && f !== 'index.html').map(f => './' + f), ...publicFiles().filter(f => !LAZY.test(f)).map(f => './' + f)];
       const version = createHash('sha1').update(files.join('|')).digest('hex').slice(0, 10);
-      const source = `// Generated at build time. Offline cache for the installable web version of Knowledge Atlas.
+      const source = `// Generated at build time. Offline cache for the installable web version of Prvlar.
 const CACHE = 'atlas-${version}';
 const FILES = ${JSON.stringify([...new Set(files)])};
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
@@ -56,14 +56,14 @@ function staticPages() {
     name: 'atlas-static-pages', apply: 'build',
     async generateBundle() {
       const { privacyHTML, termsHTML } = await import('./src/legal.js');
-      const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} · Knowledge Atlas</title><link rel="icon" href="../icons/icon-192.png"><meta name="color-scheme" content="light dark"><style>body{font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111827;background:#f8fafc}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}a{color:#1d4ed8}h1{font-size:2rem;margin:.4em 0}h2{font-size:1.2rem;margin-top:1.6em}.fine{color:#4b5563;font-size:.9rem}.btn{display:inline-block;padding:12px 20px;border-radius:999px;background:#111827;color:#fff;text-decoration:none;font-weight:600}.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));padding:0;list-style:none}.grid li{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}@media(prefers-color-scheme:dark){body{background:#0b1020;color:#e5e7eb}a{color:#93c5fd}.fine{color:#9ca3af}.grid li{background:#111827;border-color:#1f2937}.btn{background:#e5e7eb;color:#111827}}</style></head><body><main><header><a href="../">Knowledge Atlas</a><nav><a href="../about/">About</a> · <a href="../privacy/">Privacy</a> · <a href="../terms/">Terms</a></nav></header>${body}</main></body></html>`;
+      const page = (title, body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} · Prvlar</title><link rel="icon" href="../icons/icon-192.png"><meta name="color-scheme" content="light dark"><style>body{font:16px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;color:#111827;background:#f8fafc}main{max-width:760px;margin:0 auto;padding:32px 20px 64px}header{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}a{color:#1d4ed8}h1{font-size:2rem;margin:.4em 0}h2{font-size:1.2rem;margin-top:1.6em}.fine{color:#4b5563;font-size:.9rem}.btn{display:inline-block;padding:12px 20px;border-radius:999px;background:#111827;color:#fff;text-decoration:none;font-weight:600}.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));padding:0;list-style:none}.grid li{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}@media(prefers-color-scheme:dark){body{background:#0b1020;color:#e5e7eb}a{color:#93c5fd}.fine{color:#9ca3af}.grid li{background:#111827;border-color:#1f2937}.btn{background:#e5e7eb;color:#111827}}</style></head><body><main><header><a href="../">Prvlar</a><nav><a href="../about/">About</a> · <a href="../privacy/">Privacy</a> · <a href="../terms/">Terms</a></nav></header>${body}<footer style="margin-top:40px;color:#6b7280;font-size:.9rem">Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES) · Prvlar ©2026</footer></main></body></html>`;
       const v = pkg.version;
       this.emitFile({ type: 'asset', fileName: 'privacy/index.html', source: page('Privacy policy', `<h1>Privacy policy</h1>${privacyHTML({ version: v, updateCheck: false })}`) });
       this.emitFile({ type: 'asset', fileName: 'terms/index.html', source: page('Terms', `<h1>Terms and disclaimer</h1>${termsHTML()}`) });
       // The repo is read from the Pages address at runtime (<owner>.github.io/<repo>/download/), so no account name is baked in.
       const LATEST = '#latest', REL = '#rel';
       this.emitFile({ type: 'asset', fileName: 'download/index.html', source: `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Download Knowledge Atlas</title><meta name="description" content="Download Knowledge Atlas for Android, Windows, iPhone/iPad (web app) or use it in your browser.">
+<title>Download Prvlar</title><meta name="description" content="Download Prvlar for Android, Windows, iPhone/iPad (web app) or use it in your browser.">
 <link rel="icon" href="../icons/icon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="../icons/apple-touch-icon.png"><link rel="manifest" href="../manifest.webmanifest"><meta name="theme-color" content="#F4F7FC"><meta name="color-scheme" content="light dark">
 <style>
 :root{--bg:#F4F7FC;--card:#fff;--text:#0f172a;--muted:#475569;--line:#e2e8f0;--accent:#4f46e5;--accent2:#7c3aed;--ok:#047857}
@@ -82,26 +82,26 @@ main{max-width:920px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 20
 ol{padding-left:1.2em;margin:.6em 0}li{margin:.2em 0}.fine{color:var(--muted);font-size:.88rem}code{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;word-break:break-all;background:rgba(127,127,127,.12);padding:2px 6px;border-radius:6px}
 footer{margin-top:40px;text-align:center;color:var(--muted);font-size:.9rem}footer a{color:inherit;margin:0 8px}
 </style></head><body><main>
-<div class="top"><a class="brand" href="../"><img src="../icons/icon-192.png" alt="">Knowledge Atlas</a><a class="btn" href="../">Open the web app</a></div>
-<section class="hero"><h1>Get Knowledge Atlas</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck. Free, private, works offline.</p><span class="ver" id="ver">Version ${v}</span></section>
+<div class="top"><a class="brand" href="../"><img src="../icons/icon-192.png" alt="">Prvlar</a><a class="btn" href="../">Open the web app</a></div>
+<section class="hero"><h1>Get Prvlar</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck. Free, private, works offline.</p><span class="ver" id="ver">Version ${v}</span></section>
 <section class="primary" id="primary" aria-live="polite"></section>
 <div class="grid">
 <article class="card" id="c-android"><h2>Android</h2><p class="fine">Phones and tablets, Android 6+. <span data-size="apk"></span></p>
-<a class="btn main" id="apk" href="${LATEST}/KnowledgeAtlas-${v}.apk">Download APK</a>
+<a class="btn main" id="apk" href="${LATEST}/Prvlar-${v}.apk">Download APK</a>
 <ol><li>Tap <b>Download APK</b> and open the file.</li><li>If asked, allow <b>Install unknown apps</b> for your browser.</li><li>Tap <b>Install</b>. Updates install over it and keep your data.</li></ol>
 <p class="fine">SHA-256: <code id="sha">see the release page</code></p></article>
 <article class="card" id="c-ios"><h2>iPhone and iPad</h2><p class="fine">Install the web app on your Home Screen. App Store version coming later.</p>
 <a class="btn main" href="../">Open the web app</a>
 <ol><li>Open it in <b>Safari</b>.</li><li>Tap <b>Share</b> (square with an arrow).</li><li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li></ol></article>
 <article class="card" id="c-windows"><h2>Windows</h2><p class="fine">Windows 10 and 11, 64-bit.</p>
-<a class="btn main" href="${LATEST}/KnowledgeAtlas-${v}-windows-setup.exe">Download installer <span data-size="exe"></span></a>
-<a class="btn" href="${LATEST}/KnowledgeAtlas-${v}-windows-x64.zip">Portable zip <span data-size="zip"></span></a>
+<a class="btn main" href="${LATEST}/Prvlar-${v}-windows-setup.exe">Download installer <span data-size="exe"></span></a>
+<a class="btn" href="${LATEST}/Prvlar-${v}-windows-x64.zip">Portable zip <span data-size="zip"></span></a>
 <p class="fine">If SmartScreen warns, choose <b>More info › Run anyway</b> (the app isn’t code-signed yet).</p></article>
 <article class="card" id="c-web"><h2>Web</h2><p class="fine">Any modern browser on any device. Install it from the address bar for offline use.</p>
-<a class="btn main" href="../">Open in browser</a><a class="btn" href="${LATEST}/KnowledgeAtlas-${v}-web.zip">Self-host (web zip) <span data-size="web"></span></a></article>
+<a class="btn main" href="../">Open in browser</a><a class="btn" href="${LATEST}/Prvlar-${v}-web.zip">Self-host (web zip) <span data-size="web"></span></a></article>
 </div>
 <p class="fine" style="text-align:center;margin-top:20px">All files: <a href="${REL}/latest">latest release on GitHub</a></p>
-<footer><a href="../privacy/">Privacy policy</a>·<a href="../terms/">Terms</a>·<a href="../#licenses">Licences</a>·<a href="../about/">About</a></footer>
+<footer><p class="credit">Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES)</p><a href="../privacy/">Privacy policy</a>·<a href="../terms/">Terms</a>·<a href="../#licenses">Licences</a>·<a href="../about/">About</a></footer>
 </main><script>
 (function(){
 var own=location.hostname.split('.')[0],seg=location.pathname.split('/').filter(Boolean),repo=/github\.io$/.test(location.hostname)&&seg.length>1?own+'/'+seg[0]:(document.documentElement.dataset.repo||'');
@@ -124,7 +124,7 @@ if(repo)fetch('https://api.github.com/repos/'+repo+'/releases/latest').then(func
 }).catch(function(){});
 })();
 </script></body></html>` });
-      this.emitFile({ type: 'asset', fileName: 'about/index.html', source: page('About', `<h1>Study smarter with your own notes</h1><p>Knowledge Atlas turns your PDFs, notes and photos into a study map, practice tests in real exam styles, flashcards and a plan. Smarty, the built-in tutor, answers from your documents with citations, and Smarty Code teaches programming step by step.</p><p><a class="btn" href="../">Open the app</a> <a class="btn" href="../download/" style="background:transparent;color:inherit;border:1px solid currentColor">Download for Android, Windows, iPhone</a></p>
+      this.emitFile({ type: 'asset', fileName: 'about/index.html', source: page('About', `<h1>Study smarter with your own notes</h1><p>Prvlar turns your PDFs, notes and photos into a study map, practice tests in real exam styles, flashcards and a plan. Smarty, the built-in tutor, answers from your documents with citations, and Smarty Code teaches programming step by step.</p><p><a class="btn" href="../">Open the app</a> <a class="btn" href="../download/" style="background:transparent;color:inherit;border:1px solid currentColor">Download for Android, Windows, iPhone</a></p>
 <ul class="grid"><li><b>Private by default</b><br>Everything stays on your device. No account needed.</li><li><b>Bring your own AI</b><br>Free Gemini or Groq keys, or your own server.</li><li><b>Works offline</b><br>Install it from your browser; reading, OCR and running Python/JavaScript work without internet.</li><li><b>Optional sync</b><br>Sign in with Google to sync through a private folder in your own Drive.</li></ul>
 <p class="fine">Version ${v}. Free and open-source components; see Licences inside the app.</p>`) });
     }

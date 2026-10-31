@@ -1,5 +1,5 @@
 /**
- * Knowledge Atlas — error report intake (Google Apps Script web app).
+ * Prvlar — error report intake (Google Apps Script web app).
  * Each POST from the app becomes one row in the bound Google Sheet. No other access.
  * Setup: see docs/error-reports.md.
  */
@@ -27,7 +27,7 @@ function doPost(e) {
 }
 function folderId() {
   const p = PropertiesService.getScriptProperties(); let id = p.getProperty('SHOTS');
-  if (!id) { id = DriveApp.createFolder('Knowledge Atlas report screenshots').getId(); p.setProperty('SHOTS', id); }
+  if (!id) { id = DriveApp.createFolder('Prvlar report screenshots').getId(); p.setProperty('SHOTS', id); }
   return id;
 }
 function out(s) { return ContentService.createTextOutput(s).setMimeType(ContentService.MimeType.TEXT); }

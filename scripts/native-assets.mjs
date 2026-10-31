@@ -1,4 +1,4 @@
-// Applies the Knowledge Atlas icon, launch screen and platform settings to the native projects
+// Applies the Prvlar icon, launch screen and platform settings to the native projects
 // that `npx cap add android|ios` generates. The GitHub workflows run this right after `cap add`.
 // Usage: node scripts/native-assets.mjs android|ios
 import { readFileSync, writeFileSync, copyFileSync, readdirSync, existsSync, unlinkSync, mkdirSync, rmSync } from 'node:fs';
@@ -109,6 +109,10 @@ if (platform === 'android') {
   g = g.replace(/versionCode \d+/, m => `versionCode ${100000 + (+m.split(' ')[1] % 100000)}`);
   if (!g.includes('play-services-auth')) g = g.replace(/(    implementation project\(':capacitor-android'\)\n)/, `$1    // Google Authorization API for the optional Drive (appDataFolder) sync sign-in.\n    implementation "com.google.android.gms:play-services-auth:21.3.0"\n`);
   writeFileSync(gradle, g);
+  // Display name (0.9.8: Prvlar) from capacitor.config.json; the package id stays com.knowledgeatlas.app.
+  const strings = R('android/app/src/main/res/values/strings.xml');
+  if (existsSync(strings)) { const appName = JSON.parse(readFileSync(R('capacitor.config.json'), 'utf8')).appName;
+    writeFileSync(strings, readFileSync(strings, 'utf8').replace(/(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g, `$1${appName}$2`)); }
   // On-time reminders (0.9.4): exact alarms on Android 12/12L and 13+.
   if (!readFileSync(manifest, 'utf8').includes('USE_EXACT_ALARM')) patch(manifest, s => s.replace('<uses-permission', '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />\n    <uses-permission'));
   if (!readFileSync(manifest, 'utf8').includes('WAKE_LOCK')) patch(manifest, s => s.replace('<uses-permission', '<uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission'));
@@ -131,7 +135,7 @@ if (platform === 'android') {
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Knowledge Atlas connects to an AI server on your Wi-Fi (for example one running on your PC) only when you choose one in Settings.</string>
+	<string>Prvlar connects to an AI server on your Wi-Fi (for example one running on your PC) only when you choose one in Settings.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

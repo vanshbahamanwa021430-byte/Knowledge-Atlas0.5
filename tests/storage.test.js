@@ -36,5 +36,5 @@ test('format 2 round trip: cards, sessions, plans, days and preferences, never t
 });
 
 test('rejects files that are not backups', async () => {
-  await assert.rejects(importAll({ hello: 1 }), /not a Knowledge Atlas backup/);
+  await assert.rejects(importAll({ hello: 1 }), /not a Prvlar backup/);
 });

@@ -1,4 +1,4 @@
-name: Build Knowledge Atlas Windows installer
+name: Build Prvlar Windows installer
 on:
   workflow_dispatch:
 permissions:
@@ -27,7 +27,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v5
         with:
-          name: Knowledge-Atlas-2-Windows-installer
+          name: Prvlar-Windows-installer
           path: release/*.exe
           if-no-files-found: error
           retention-days: 14

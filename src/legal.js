@@ -2,8 +2,8 @@
 // (the Google OAuth consent screen links to them). Plain strings so the build can write static pages.
 export const privacyHTML = ({ version = '', updateCheck = false } = {}) => {
   const updateLine = updateCheck ? '<li><b>Update check</b>: the Android app can ask GitHub for the latest release number. You can turn this off in About.</li>\n' : '';
-  return `<p class="fine">Last updated 31 October 2026 · Knowledge Atlas ${version}</p>
-<h2 class="h2">The short version</h2><p>Knowledge Atlas has no server of its own and works without an account. Your documents, notes, tests, flashcards, study history, Smarty profile and settings are stored only on this device. We do not collect analytics or advertising IDs. Automatic crash reports (described below) contain no personal data and can be switched off.</p>
+  return `<p class="fine">Last updated 31 October 2026 · Prvlar ${version}</p>
+<h2 class="h2">The short version</h2><p>Prvlar has no server of its own and works without an account. Your documents, notes, tests, flashcards, study history, Smarty profile and settings are stored only on this device. We do not collect analytics or advertising IDs. Automatic crash reports (described below) contain no personal data and can be switched off.</p>
 <h2 class="h2">What leaves your device, and only when you use it</h2><ul>
 <li><b>AI features</b> (explanations, AI Chat, Smarty, test writing and marking, past-paper analysis): the text needed for that request (excerpts of your document, your question, your answers, and for Smarty a short summary of your weak topics) is sent directly from your device to the AI service you chose (for example Google Gemini or Groq) using your own API key. That provider’s privacy policy applies to that request. You are asked before document text is first sent.</li>
 <li><b>Crash reports</b>: when the app hits an error it may send the error message, the first lines of its technical trace, the app version, platform, screen size and theme to the developer’s Google Sheet (through Google Apps Script). Keys, emails and long numbers are removed first, and at most a few are sent per day. Turn this off in More › Report a problem.</li>
@@ -21,7 +21,7 @@ ${updateLine}<li><b>Google sign-in and sync (optional)</b>: if you choose “Sig
 <h2 class="h2">Contact</h2><p>Questions: use “Send a suggestion” in About us.</p>`;
 };
 export const termsHTML = () => `<p class="fine">Last updated 31 October 2026</p>
-<h2 class="h2">Study aid only</h2><p>Knowledge Atlas helps you study. AI-written explanations, questions, marks, exam profiles and predictions can be wrong or incomplete. Check important facts against your course material. Practice tests imitate exam styles; they are not official papers and are not endorsed by any exam board or university.</p>
+<h2 class="h2">Study aid only</h2><p>Prvlar helps you study. AI-written explanations, questions, marks, exam profiles and predictions can be wrong or incomplete. Check important facts against your course material. Practice tests imitate exam styles; they are not official papers and are not endorsed by any exam board or university.</p>
 <h2 class="h2">Your content</h2><p>Import only documents and past papers you have the right to use. You remain responsible for the content you add and for what you send to an AI service.</p>
 <h2 class="h2">AI services</h2><p>You connect your own AI provider account and accept that provider’s terms, limits and any costs. Free tiers can change.</p>
 <h2 class="h2">No warranty</h2><p>The app is provided “as is”, without warranty of any kind. To the extent the law allows, the makers are not liable for any loss arising from its use, including exam results.</p>

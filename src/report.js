@@ -26,7 +26,7 @@ export function issueUrl(repo, r) {
   const title = (r.text || r.error?.message || 'Problem report').split('\n')[0].slice(0, 80);
   return `https://github.com/${repo}/issues/new?template=bug.yml&labels=user-report&title=${encodeURIComponent(title)}&body=${encodeURIComponent(reportText(r).slice(0, 6000))}`;
 }
-export const mailtoUrl = (email, r) => email ? `mailto:${email}?subject=${encodeURIComponent('Knowledge Atlas problem report')}&body=${encodeURIComponent(reportText(r).slice(0, 1800))}` : '';
+export const mailtoUrl = (email, r) => email ? `mailto:${email}?subject=${encodeURIComponent('Prvlar problem report')}&body=${encodeURIComponent(reportText(r).slice(0, 1800))}` : '';
 // Apps Script web apps accept a simple no-cors POST (text/plain avoids a CORS preflight). The response is opaque.
 export async function postReport(url, r, fetchImpl = globalThis.fetch) {
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url || '')) return false;

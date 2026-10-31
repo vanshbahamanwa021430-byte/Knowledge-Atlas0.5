@@ -122,7 +122,7 @@ export async function exportAll() {
 }
 
 export async function importAll(data) {
-  if (!data || data.format !== 'knowledge-atlas-backup' || !Array.isArray(data.documents)) throw Error('This is not a Knowledge Atlas backup file.');
+  if (!data || data.format !== 'knowledge-atlas-backup' || !Array.isArray(data.documents)) throw Error('This is not a Prvlar backup file.');
   const list = k => (Array.isArray(data[k]) ? data[k] : []);
   await db.transaction('rw', [db.documents, db.attempts, db.settings, db.cards, db.sessions, db.plans, db.days, db.profiles], async () => {
     await db.documents.bulkPut(data.documents.filter(d => d && d.id && Array.isArray(d.sections)));

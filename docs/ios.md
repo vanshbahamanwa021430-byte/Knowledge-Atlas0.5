@@ -2,7 +2,7 @@
 
 The repo contains a Capacitor iOS project (`ios/`, bundle ID **com.knowledgeatlas.app**, PUBLIC edition). iOS apps
 cannot be built on Linux, so `.github/workflows/ios.yml` (macos-latest) does it:
-- always: an **unsigned Simulator build** (artifact `KnowledgeAtlas-ios-simulator.zip`);
+- always: an **unsigned Simulator build** (artifact `Prvlar-ios-simulator.zip`);
 - with secrets `IOS_CERT_P12_BASE64`, `IOS_CERT_PASSWORD`, `IOS_PROFILE_BASE64`, `IOS_TEAM_ID`: a signed **.ipa**.
 
 Regenerate locally on a Mac: `npm run ios:sync` (same app id `com.knowledgeatlas.app` and

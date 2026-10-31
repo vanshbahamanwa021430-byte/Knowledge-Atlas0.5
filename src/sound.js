@@ -74,7 +74,7 @@ function keepAlive(c) {
   try {
     if (!mediaEl && c.createMediaStreamDestination) { const dest = c.createMediaStreamDestination(); master.connect(dest); mediaEl = new Audio(); mediaEl.srcObject = dest.stream; mediaEl.muted = false; mediaEl.volume = 0.0001; }
     mediaEl?.play().catch(() => {});
-    if ('mediaSession' in navigator) { navigator.mediaSession.metadata = new MediaMetadata({ title: SOUNDS.find(s => s[0] === wanted?.kind)?.[1] || 'Focus sound', artist: 'Knowledge Atlas · Focus' }); navigator.mediaSession.playbackState = 'playing'; navigator.mediaSession.setActionHandler('pause', () => stopAmbient()); }
+    if ('mediaSession' in navigator) { navigator.mediaSession.metadata = new MediaMetadata({ title: SOUNDS.find(s => s[0] === wanted?.kind)?.[1] || 'Focus sound', artist: 'Prvlar · Focus' }); navigator.mediaSession.playbackState = 'playing'; navigator.mediaSession.setActionHandler('pause', () => stopAmbient()); }
   } catch { /* optional */ }
   globalThis.Capacitor?.Plugins?.AtlasMedia?.setBackgroundAudio({ on: true }).catch?.(() => {});
   clearInterval(watchdog);

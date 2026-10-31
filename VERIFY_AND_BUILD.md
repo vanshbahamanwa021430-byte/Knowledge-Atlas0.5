@@ -4,7 +4,7 @@
 Upload the **contents** of the project folder to the repository root, so `package.json`, `index.html`, `vite.config.js`, `capacitor.config.json`, `src/`, `public/`, `resources/`, `scripts/`, `tests/`, `electron/` and `.github/` are at the top level. If the browser uploader skips the hidden `.github` folder, create each workflow with **Add file > Create new file** using its path, for example `.github/workflows/ios-app.yml`.
 
 ## Android phone or tablet (Android 6.0 or later)
-1. **Actions > Build Knowledge Atlas Android APK > Run workflow.** It also runs by itself on every push to `main`.
+1. **Actions > Build Prvlar Android APK > Run workflow.** It also runs by itself on every push to `main`.
 2. Open the finished run and download **Knowledge-Atlas-2-debug-APK**. Unzip it, copy `app-debug.apk` to the phone, open it and allow installing from that source.
 3. On older phones, first update **Android System WebView** and **Chrome** in the Play Store.
 4. **Updating:** from version 0.4 every build is signed with the same key (a debug key kept outside the public repo), so a new APK (such as 0.5) installs over the old one and keeps your documents, notes and results. Versions built before 0.4 used a random key each time: uninstall that old app once before installing (this deletes its data, so re-import your documents).
@@ -14,7 +14,7 @@ Upload the **contents** of the project folder to the repository root, so `packag
 Apple only runs apps signed with an Apple ID. Choose one route.
 
 **Route A: the app, sideloaded with your Apple ID (free).**
-1. **Actions > Build Knowledge Atlas iPhone app > Run workflow** (about 15–25 minutes). On a private repository, macOS minutes count ten times against the free monthly allowance.
+1. **Actions > Build Prvlar iPhone app > Run workflow** (about 15–25 minutes). On a private repository, macOS minutes count ten times against the free monthly allowance.
 2. Download **Knowledge-Atlas-iOS-unsigned-IPA** and unzip it to get `Knowledge-Atlas-unsigned.ipa`.
 3. On a Windows PC or Mac, install **Sideloadly** (sideloadly.io) and connect the iPhone by cable. On Windows, Sideloadly also needs Apple's iTunes and iCloud from apple.com, not the Microsoft Store versions.
 4. Drag the `.ipa` into Sideloadly, enter your Apple ID, and press Start.
@@ -22,13 +22,13 @@ Apple only runs apps signed with an Apple ID. Choose one route.
 6. With a free Apple ID the app works for 7 days, then you install it again the same way. Your data stays as long as you don't delete the app. A paid Apple Developer account ($99 a year) extends this to a year and allows TestFlight.
 
 **Route B: the web version on your Home Screen (no Apple ID, no expiry).**
-1. **Actions > Build Knowledge Atlas web app > Run workflow.**
+1. **Actions > Build Prvlar web app > Run workflow.**
 2. To publish it on GitHub Pages, first open **Settings > Pages** and set **Build and deployment > Source** to **GitHub Actions** (Pages needs a public repository, or a paid plan for a private one). The run then shows the site's address under **pages**. If Pages is off, the run still succeeds: the **pages** job is skipped with a note, and you can download **Knowledge-Atlas-web** and put its files on any static host, such as Netlify Drop or Cloudflare Pages.
 3. Open the address in **Safari** on the iPhone, tap **Share > Add to Home Screen**. It opens full screen and works offline after the first visit.
 4. Route B also works on any Android phone (Chrome: **⋮ > Install app**) and on computers.
 
 ## Windows
-**Actions > Build Knowledge Atlas Windows installer > Run workflow**, download **Knowledge-Atlas-2-Windows-installer**, and run the `.exe`. It's unsigned, so if SmartScreen warns you, choose **More info > Run anyway**.
+**Actions > Build Prvlar Windows installer > Run workflow**, download **Prvlar-Windows-installer**, and run the `.exe`. It's unsigned, so if SmartScreen warns you, choose **More info > Run anyway**.
 
 ## Every workflow checks before building
 Each one runs `npm run check` (syntax of every source file) and `npm test` (unit tests) first, so a red step tells you exactly where it stopped. Open the red step and copy the first `ERROR` or `What went wrong:` block.

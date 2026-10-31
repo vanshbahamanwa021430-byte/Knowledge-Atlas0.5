@@ -1,4 +1,4 @@
-name: Build Knowledge Atlas Android APK
+name: Build Prvlar Android APK
 # Installs on Android 6.0 (API 23) and newer.
 on:
   workflow_dispatch:

@@ -1,5 +1,5 @@
 name: Problem report
-description: Something in Knowledge Atlas isn't working
+description: Something in Prvlar isn't working
 title: "[Bug] "
 labels: ["user-report"]
 body:

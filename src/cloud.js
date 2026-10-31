@@ -27,7 +27,7 @@ export const hasPassphrase = () => !!passphrase;
 let gis = null;
 const loadGis = () => (gis ??= new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.onload = () => res(window.google); s.onerror = () => { gis = null; rej(Error('Could not load Google sign-in. Check your connection.')); }; document.head.append(s); }));
 const DRIVE_SCOPE = SCOPES[0];
-const scopeError = (tok = '') => Object.assign(Error('Allow Drive access to sync. Google did not give Knowledge Atlas permission to use its app folder in your Drive.'), { reason: 'scope', token: tok });
+const scopeError = (tok = '') => Object.assign(Error('Allow Drive access to sync. Google did not give Prvlar permission to use its app folder in your Drive.'), { reason: 'scope', token: tok });
 async function getToken(interactive, consent = false) {
   if (!consent && token && Date.now() < tokenExp - 60000) return token;
   if (platform() === 'android') {

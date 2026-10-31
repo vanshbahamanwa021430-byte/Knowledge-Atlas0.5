@@ -53,9 +53,9 @@ if (!app.requestSingleInstanceLock()) {
         let done = false; const finish = r => { if (done) return; done = true; clearTimeout(timer); try { server.close(); } catch {} resolve(r); };
         const server = http.createServer((q, res) => {
           const u = new URL(q.url, redirect);
-          if (u.pathname === '/oauth') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><title>Knowledge Atlas</title><p style="font:16px system-ui;padding:24px">Finishing sign-in…</p><script>location.replace("/done?"+location.hash.slice(1))</script>'); return; }
+          if (u.pathname === '/oauth') { res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><title>Prvlar</title><p style="font:16px system-ui;padding:24px">Finishing sign-in…</p><script>location.replace("/done?"+location.hash.slice(1))</script>'); return; }
           if (u.pathname === '/done') {
-            res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><p style="font:16px system-ui;padding:24px">You can close this tab and return to Knowledge Atlas.</p>');
+            res.writeHead(200, { 'Content-Type': 'text/html' }); res.end('<!doctype html><meta charset="utf-8"><p style="font:16px system-ui;padding:24px">You can close this tab and return to Prvlar.</p>');
             if (u.searchParams.get('state') !== state) return finish({ error: 'State mismatch' });
             if (u.searchParams.get('error')) return finish({ error: u.searchParams.get('error') });
             return finish({ access_token: u.searchParams.get('access_token'), expires_in: Number(u.searchParams.get('expires_in')) || 3600, scope: u.searchParams.get('scope') || '' });

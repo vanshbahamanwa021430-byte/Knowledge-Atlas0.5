@@ -1,4 +1,4 @@
-name: Build Knowledge Atlas web app
+name: Build Prvlar web app
 # The installable web version: works in any current browser and can be added to an iPhone or Android
 # home screen without an app store. Always uploads a zip you can host anywhere. Also publishes to
 # GitHub Pages, but only when Pages is switched on with Source "GitHub Actions"

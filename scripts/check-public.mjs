@@ -3,8 +3,8 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 // Banned words are stored as [length, sha256 prefix] so this public file doesn't itself contain the names it guards
-// against (university, self-hosted router, theme assets, people). Any text substring that hashes to one fails the build.
-const BANNED = [[4,"b53c54a46c37e5b6"],[8,"7f63b04d570bba85"],[10,"8bec29be9ea39502"],[9,"75348dc2f26cf086"],[7,"59d98c516f8b4e28"],[5,"cdaada7c4e52a734"],[7,"77567c4f0cd9d99c"],[5,"8cd4bd3ea7bb2ddd"],[9,"6357522afcdc9b39"],[10,"2aeea9519198f6ea"]];
+// against (0.9.8: developer credits are allowed in public by the owner; usernames/greetings still are not) (university, self-hosted router, theme assets, people). Any text substring that hashes to one fails the build.
+const BANNED = [[8,"7f63b04d570bba85"],[10,"8bec29be9ea39502"],[9,"75348dc2f26cf086"],[7,"59d98c516f8b4e28"],[10,"2aeea9519198f6ea"]];
 const LENS = [...new Set(BANNED.map(b => b[0]))], SET = new Set(BANNED.map(b => b.join(':')));
 const h = t => createHash('sha256').update(t).digest('hex').slice(0, 16);
 const dir = process.argv[2] || 'dist', bad = [/[a-z0-9._%+-]+@gmail\.com/i, /AIza[0-9A-Za-z_-]{30,}/, /gsk_[0-9A-Za-z]{30,}/];

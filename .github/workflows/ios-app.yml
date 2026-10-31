@@ -1,4 +1,4 @@
-name: Build Knowledge Atlas iPhone app
+name: Build Prvlar iPhone app
 # Builds an unsigned .ipa for iPhone and iPad (iOS 14 or later). Install it with Sideloadly or AltStore,
 # which sign it with your own Apple ID (see VERIFY_AND_BUILD.md). Run it from the Actions tab.
 on:

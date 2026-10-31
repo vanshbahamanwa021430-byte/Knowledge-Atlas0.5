@@ -24,7 +24,7 @@ jobs:
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
-          name: KnowledgeAtlas-windows
+          name: Prvlar-windows
           path: |
             release-public/*.exe
             release-public/*.zip

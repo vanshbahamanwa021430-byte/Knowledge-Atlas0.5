@@ -4,7 +4,7 @@ Reports from the app land in a Google Sheet you own, through a small Google Apps
 
 ## One-time setup (about 5 minutes)
 
-1. Open https://sheets.new while signed in to your Google account. Name it **Knowledge Atlas reports**.
+1. Open https://sheets.new while signed in to your Google account. Name it **Prvlar reports**.
 2. In the Sheet, choose **Extensions › Apps Script**. Delete the sample code and paste all of `docs/error-reports.gs`. Click **Save**.
 3. Click **Deploy › New deployment**. Click the gear icon and choose **Web app**.
    - Description: `reports`

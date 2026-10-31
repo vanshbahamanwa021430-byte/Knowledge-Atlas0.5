@@ -153,13 +153,13 @@ const uiSizeSeg = () => `<div class="seg ui-size" role="radiogroup" aria-label="
 // First run: three short screens (name, comfort, AI). Shown once; everything is changeable in Settings.
 function welcomeHTML() {
   const busy = state.busy === 'sync';
-  return `<div class="onboard welcome-gate" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card"><span class="ob-art">${logo()}</span><h1>Welcome to Knowledge Atlas</h1><p>Sign in to back up and sync your study across devices, in your own Google Drive. Or keep everything on this device.</p>${cloudAvailable() ? `<button class="btn primary big block g-btn" data-action="gateSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button>` : `<button class="btn primary big block g-btn" disabled aria-disabled="true">${icon('login', 20)}Sign in with Google</button><p class="fine gate-soon">Google sign-in is coming soon on iPhone and iPad. For now, continue without an account; everything works on this device.</p>`}<button class="btn ghost block" data-action="gateGuest">Continue without account</button><p class="fine">Works fully offline. You can sign in later in Settings.</p></div></div>`;
+  return `<div class="onboard welcome-gate" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card"><span class="ob-art">${logo()}</span><h1>Welcome to Prvlar</h1><p>Sign in to back up and sync your study across devices, in your own Google Drive. Or keep everything on this device.</p>${cloudAvailable() ? `<button class="btn primary big block g-btn" data-action="gateSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button>` : `<button class="btn primary big block g-btn" disabled aria-disabled="true">${icon('login', 20)}Sign in with Google</button><p class="fine gate-soon">Google sign-in is coming soon on iPhone and iPad. For now, continue without an account; everything works on this device.</p>`}<button class="btn ghost block" data-action="gateGuest">Continue without account</button><p class="fine">Works fully offline. You can sign in later in Settings.</p></div></div>`;
 }
 function onboardingHTML() {
   if (needsWelcome({ available: cloudAvailable(), soon: gatePlatform() === 'ios', signedIn: !!account(), entry: readJSON('ka-entry', '') })) return welcomeHTML();
   if (readJSON('ka-onboarded', false)) return '';
   const step = state.onStep || 0;
-  const body = step === 0 ? `<span class="ob-art">${logo()}</span><h1>Welcome to Knowledge Atlas</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck.</p><label class="field"><span>What should we call you?</span><input class="input" id="ob-name" value="${esc(userName())}" placeholder="Your name (optional)" autocomplete="nickname" maxlength="40"></label><label class="field"><span>What do you study?</span><select class="input select" id="ob-stream"><option value="">Choose (optional)</option>${STREAMS.map(([v, l]) => `<option value="${v}"${userStream() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`
+  const body = step === 0 ? `<span class="ob-art">${logo()}</span><h1>Welcome to Prvlar</h1><p>Turn your notes into a study map, practise with tests made for you, and ask Smarty when you’re stuck.</p><label class="field"><span>What should we call you?</span><input class="input" id="ob-name" value="${esc(userName())}" placeholder="Your name (optional)" autocomplete="nickname" maxlength="40"></label><label class="field"><span>What do you study?</span><select class="input select" id="ob-stream"><option value="">Choose (optional)</option>${STREAMS.map(([v, l]) => `<option value="${v}"${userStream() === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>`
     : step === 1 ? `<span class="ob-art">${icon('type', 44)}</span><h1>Make it comfortable</h1><p>Choose a text size. You can change this and the theme any time in Settings.</p>${uiSizeSeg()}`
     : `<span class="ob-art">${icon('lock', 44)}</span><h1>Your study stays with you</h1><p>Documents and progress are saved only on this device. AI features use your own free Gemini or Groq key (or your own server); you can add it now or later.</p>${ED.obAi()}`;
   return `<div class="onboard" role="dialog" aria-modal="true" aria-label="Welcome"><div class="ob-card card">${body}<div class="ob-dots" aria-hidden="true">${[0, 1, 2].map(i => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div><div class="ob-acts">${step ? '<button class="btn outline" data-action="obBack">Back</button>' : '<button class="btn outline" data-action="obDone">Skip</button>'}${step < 2 ? '<button class="btn primary" data-action="obNext">Next</button>' : '<button class="btn outline" data-action="obKey">Add AI key</button><button class="btn primary" data-action="obDone">Start</button>'}</div></div></div>`;
@@ -367,7 +367,7 @@ function tabBtn(t) {
 
 function sidebarHTML() {
   return `<nav class="sidebar" aria-label="Main">
-<button class="brand" data-view="home" aria-label="Knowledge Atlas home">${logo()}<span class="wordmark">Knowledge Atlas</span></button>
+<button class="brand" data-view="home" aria-label="Prvlar home">${logo()}<span class="wordmark">Prvlar</span></button>
 <ul class="side-nav">${SIDE.filter(t => t.v !== 'dev' || state.owner).map(t => { const on = SIDE_OF[state.view] === t.v; return `<li${t.head ? ' class="side-head"' : ''}><button class="side-link${on ? ' is-on' : ''}${t.head ? ' is-head' : ''}" data-view="${t.v}"${on ? ' aria-current="page"' : ''}>${icon(t.icon, 21)}<span>${t.label}</span>${t.v === 'test' ? timerBadge() : ''}</button></li>`; }).join('')}</ul>
 ${storageCardHTML()}
 </nav>`;
@@ -414,7 +414,7 @@ const omExtras = () => {
   const tile = ex ? (() => { const dt = new Date(dayStart(ex.date)); return `<button class="om-cal" data-view="planner"><span class="om-cal-m">${dt.toLocaleString('en', { month: 'short' }).toUpperCase()}</span><b>${dt.getDate()}</b><span class="om-cal-d">${daysUntil(ex.date)} days</span><span class="om-cal-t">${esc(ex.title)}</span></button>`; })() : `<button class="om-cal" data-view="planner"><span class="om-cal-m">PLAN</span><b>+</b><span class="om-cal-d">Add exam</span></button>`;
   return `<div class="om-only om-row"><figure class="om-quote"><span class="om-orn">◆</span><blockquote>“${esc(q[0])}”</blockquote><figcaption>— ${esc(q[1])}</figcaption></figure>${tile}</div><div class="om-only om-div"><i></i><span>◆</span><i></i></div>`;
 };
-const brandHead = (title = 'Knowledge Atlas') => `<header class="ph ph-brand"><span class="brand">${logo()}<span class="wordmark">${esc(title)}</span></span><button class="icon-btn round" data-view="settings" aria-label="Settings">${icon('settings', 21)}</button></header>`;
+const brandHead = (title = 'Prvlar') => `<header class="ph ph-brand"><span class="brand">${logo()}<span class="wordmark">${esc(title)}</span></span><button class="icon-btn round" data-view="settings" aria-label="Settings">${icon('settings', 21)}</button></header>`;
 const backHead = (title, actions = '', center = false) => `<header class="ph ph-back${center ? ' is-center' : ''}"><button class="icon-btn" data-action="back" aria-label="Back">${icon('back', 22)}</button><h1 class="ph-title">${esc(title)}</h1><div class="ph-actions">${actions}</div></header>`;
 
 function viewHTML() {
@@ -978,7 +978,7 @@ function weakCard() {
 }
 function viewMore() {
   const g = GROUPS.find(x => x.tab === 'more');
-  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Knowledge Atlas ${esc(VERSION)}</p></div>`;
+  return `${brandHead()}<div class="view narrow hub"><h1 class="title page-title">More</h1>${hubList(g.links)}<p class="fine center">Prvlar ${esc(VERSION)} · Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES)</p></div>`;
 }
 
 function viewResults() {
@@ -1065,7 +1065,7 @@ ${fallbackHTML()}
 <section class="card" aria-labelledby="notif-h"><h2 class="h2" id="notif-h">Notifications</h2><p class="muted">${state.notifPerm === 'granted' ? 'Notifications are on.' : 'Allow notifications to get reminders and focus-timer alerts.'}</p><div class="row"><button class="btn outline" data-view="planner">${icon('bell', 18)}Reminders and goals</button><button class="btn outline" data-view="focus">${icon('timer', 18)}Focus timer alerts</button></div></section>
 <section class="card" aria-labelledby="data-h"><h2 class="h2" id="data-h">Data and backup</h2><p class="muted">Documents, notes, flashcards, planner, study time, progress and results are stored only on this device${state.storage ? ` (${fmtBytes(state.storage.used)} used)` : ''}. Uninstalling the app or clearing its data deletes them, so back up now and then.</p>
 <div class="row"><button class="btn outline" data-action="exportBackup">${icon('download', 18)}Back up</button><label class="btn outline file-btn">${icon('upload', 18)}<span>Restore</span><input type="file" data-restore accept=".json,application/json" aria-label="Restore a backup"></label></div></section>
-<section class="card about"><span class="about-logo">${logo()}</span><div><b>Knowledge Atlas ${esc(VERSION)}</b><p class="fine">Running on this ${where}. Works on Android 6 or later, iPhone and iPad with iOS 14 or later, Windows, and current browsers.</p><button class="link-btn" data-view="about">${icon('info', 16)}About us and suggestions</button></div></section>
+<section class="card about"><span class="about-logo">${logo()}</span><div><b>Prvlar ${esc(VERSION)}</b><p class="fine">Running on this ${where}. Works on Android 6 or later, iPhone and iPad with iOS 14 or later, Windows, and current browsers.</p><button class="link-btn" data-view="about">${icon('info', 16)}About us and suggestions</button></div></section>
 <section class="card" aria-labelledby="legal-h"><h2 class="h2" id="legal-h">About and legal</h2><div class="row"><button class="btn outline sm" data-view="about">About us</button><button class="btn outline sm" data-view="privacy">Privacy policy</button><button class="btn outline sm" data-view="terms">Terms</button><button class="btn outline sm" data-view="licenses">Licences</button></div></section>
 </div>`;
 }
@@ -1079,7 +1079,7 @@ function viewTerms() {
 }
 // About us: the team, what the app does, privacy, version/updates, credits and how to send a suggestion.
 // Contact details are only shown for people who chose to share them.
-let TEAM = [{ name: 'Knowledge Atlas team', role: 'Developers', course: 'Made for students of every age', tone: 'a' }];
+let TEAM = [{ name: 'Prvlar team', role: 'Developers', course: 'Made for students of every age', tone: 'a' }];
 const PUBLIC_TEAM = TEAM;
 const FEATURES = [
   ['map', 'Study map', 'Import notes, textbooks or papers and get a map of every topic and section.'],
@@ -1097,11 +1097,12 @@ function teamCardHTML(m) {
 <span class="team-facts">${[m.course, m.batch].filter(Boolean).map(f => `<span>${esc(f)}</span>`).join('')}</span></div></li>`;
 }
 function viewAbout() {
-  const d = TEAM[0], msg = encodeURIComponent(`Hi ${d.name}, I have a suggestion for Knowledge Atlas: `);
+  const d = TEAM[0], msg = encodeURIComponent(`Hi ${d.name}, I have a suggestion for Prvlar: `);
   return `${backHead('About us')}<div class="view narrow about-view">
-<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Knowledge Atlas</h1><p class="dev-role">Version ${esc(VERSION)}</p></div></section>
-<section class="card" aria-labelledby="ab-what"><h2 class="h2" id="ab-what">About Knowledge Atlas</h2>
-<p class="dev-note">Knowledge Atlas turns your own documents into a study map. Learn one section at a time with simple explanations, then test yourself until it sticks. It is built by students${ED.who}, for students.</p></section>
+<section class="card about-hero"><span class="about-logo">${logo()}</span><div><h1 class="dev-name">Prvlar</h1><p class="dev-role">Version ${esc(VERSION)}</p><p class="dev-credit">Made by Vansh Bahamanwa and Anirudh Behre (B.Tech CSE, UPES)</p><p class="dev-credit beta">Beta testers: Ashish Arora</p></div></section>
+<section class="card" aria-labelledby="ab-what"><h2 class="h2" id="ab-what">About Prvlar</h2>
+<p class="dev-note name-note">Prvlar is named after five siblings of the Bahamanwa family.</p>
+<p class="dev-note">Prvlar turns your own documents into a study map. Learn one section at a time with simple explanations, then test yourself until it sticks. It is built by students${ED.who}, for students.</p></section>
 <section class="card" aria-labelledby="ab-team"><h2 class="h2" id="ab-team">The team</h2><ul class="team-list">${TEAM.map(teamCardHTML).join('')}</ul></section>
 <section class="card" aria-labelledby="ab-feat"><h2 class="h2" id="ab-feat">What you can do</h2><ul class="feat-list">${FEATURES.map(([ic, t, s]) => `<li><span class="feat-ic">${icon(ic, 19)}</span><span><b>${esc(t)}</b><span>${esc(s)}</span></span></li>`).join('')}</ul></section>
 <section class="card" aria-labelledby="ab-priv"><h2 class="h2 with-icon" id="ab-priv">${icon('lock', 19)}Privacy</h2>
@@ -1128,13 +1129,13 @@ const updateNote = () => isNative() && platform() === 'android'
   ? 'Updates install over this app and keep your documents, cards and progress (same signing key, newer version).'
   : 'Opens the download page for the newest version.';
 function updateCardHTML() {
-  if (!UPDATE_REPO || platform() !== 'android') return `<section class="card"><h2 class="h2">Updates</h2><p class="muted">Knowledge Atlas ${esc(VERSION)}. ${isNative() && platform() === 'android' ? 'Updates arrive through the store where you installed the app.' : isNative() ? 'Updates arrive through the App Store.' : 'The website updates itself: reload to get the newest version.'}</p></section>`;
+  if (!UPDATE_REPO || platform() !== 'android') return `<section class="card"><h2 class="h2">Updates</h2><p class="muted">Prvlar ${esc(VERSION)}. ${isNative() && platform() === 'android' ? 'Updates arrive through the store where you installed the app.' : isNative() ? 'Updates arrive through the App Store.' : 'The website updates itself: reload to get the newest version.'}</p></section>`;
   const u = state.update, p = updPrefs(), r = u.release;
   const status = u.busy === 'check' ? '<span class="spin"></span>Checking…' : u.busy === 'download' ? `<span class="spin"></span>Downloading ${u.progress ? u.progress + '%' : '…'}`
     : u.error ? `${icon('alert', 16)}${esc(u.error)}` : u.status === 'current' ? `${icon('checkCircle', 16)}You have the latest version${r ? ` (${esc(r.version)})` : ''}.`
     : u.status === 'newer' ? `${icon('sparkles', 16)}Version ${esc(r.version)} is available.` : p.last ? `Last checked ${esc(new Date(p.last).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }))}.` : '';
   return `<section class="card update-card" aria-labelledby="upd-h"><h2 class="h2" id="upd-h">${icon('download', 20)}App updates</h2>
-<p class="fine">You have Knowledge Atlas <b>${esc(VERSION)}</b>. ${updateNote()}</p>
+<p class="fine">You have Prvlar <b>${esc(VERSION)}</b>. ${updateNote()}</p>
 <div class="row"><button class="btn primary" data-action="checkUpdate"${u.busy ? ' disabled' : ''}>${icon('refresh', 18)}Check for updates</button>${u.status === 'newer' ? `<button class="btn outline" data-action="showUpdate">See what's new</button>` : ''}</div>
 <p class="upd-status${u.error ? ' is-err' : ''}" role="status">${status}</p>
 <label class="toggle-row"><span><b>Check automatically</b><span>At most once a day, when the app opens.</span></span><input type="checkbox" id="autoupdate"${p.auto ? ' checked' : ''}><span class="switch${p.auto ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label></section>`;
@@ -1145,9 +1146,9 @@ function updateDialogHTML() {
   const r = state.update.release, u = state.update, android = isNative() && platform() === 'android';
   return `<div class="sheet-backdrop" data-action="closeUpdate"></div><section class="sheet update-sheet" role="dialog" aria-modal="true" aria-labelledby="updd-h">
 <div class="sheet-head"><h2 id="updd-h">Update available</h2><button class="icon-btn" data-action="closeUpdate" aria-label="Close">${icon('x', 20)}</button></div>
-<p class="muted">Knowledge Atlas <b>${esc(r.version)}</b> is out. You have ${esc(VERSION)}.${r.apk && android ? ` Download ${r.apk.size ? (r.apk.size / 1048576).toFixed(1) + ' MB' : ''}.` : ''}</p>
+<p class="muted">Prvlar <b>${esc(r.version)}</b> is out. You have ${esc(VERSION)}.${r.apk && android ? ` Download ${r.apk.size ? (r.apk.size / 1048576).toFixed(1) + ' MB' : ''}.` : ''}</p>
 ${r.notes ? `<div class="upd-notes">${notesHTML(r.notes)}</div>` : ''}
-<p class="fine with-icon">${icon('lock', 15)}${android ? 'Your data stays: the update installs over this app. If Android asks, allow installs from Knowledge Atlas.' : 'Download the new version from the release page.'}</p>
+<p class="fine with-icon">${icon('lock', 15)}${android ? 'Your data stays: the update installs over this app. If Android asks, allow installs from Prvlar.' : 'Download the new version from the release page.'}</p>
 ${u.error ? `<p class="upd-status is-err">${icon('alert', 16)}${esc(u.error)}</p>` : ''}
 <div class="row"><button class="btn primary big" data-action="doUpdate"${u.busy ? ' disabled' : ''}>${u.busy === 'download' ? `<span class="spin"></span>Downloading ${u.progress ? u.progress + '%' : ''}` : `${icon('download', 19)}Update`}</button><button class="btn outline big" data-action="closeUpdate">Later</button></div></section>`;
 }
@@ -1388,10 +1389,10 @@ async function rescheduleReminders() {
   const r = state.remind, list = [];
   for (const p of state.plans) {
     if (p.kind === 'exam' && r.exams && p.date) {
-      for (const [days, label] of [[7, 'in a week'], [1, 'tomorrow']]) list.push({ id: `${p.id}:${days}`, title: `Exam ${label}: ${p.title}`, body: p.documentId ? `Revise ${titleOf(p.documentId)} in Knowledge Atlas.` : 'Open Knowledge Atlas to revise.', at: atTime(addDays(p.date, -days), '09:00') });
+      for (const [days, label] of [[7, 'in a week'], [1, 'tomorrow']]) list.push({ id: `${p.id}:${days}`, title: `Exam ${label}: ${p.title}`, body: p.documentId ? `Revise ${titleOf(p.documentId)} in Prvlar.` : 'Open Prvlar to revise.', at: atTime(addDays(p.date, -days), '09:00') });
       list.push({ id: `${p.id}:0`, title: `Exam today: ${p.title}`, body: 'Good luck! A quick flashcard review can help.', at: atTime(p.date, '07:30') });
     }
-    if (p.kind === 'todo' && r.todos && p.date && !p.done) list.push({ id: `${p.id}:due`, title: `Due ${p.time ? 'now' : 'today'}: ${p.title}`, body: 'From your Knowledge Atlas planner.', at: atTime(p.date, p.time || '09:00') });
+    if (p.kind === 'todo' && r.todos && p.date && !p.done) list.push({ id: `${p.id}:due`, title: `Due ${p.time ? 'now' : 'today'}: ${p.title}`, body: 'From your Prvlar planner.', at: atTime(p.date, p.time || '09:00') });
   }
   const [h, m] = String(r.time || '19:00').split(':').map(Number);
   const daily = r.daily ? { hour: h || 19, minute: m || 0, title: 'Time to study', body: `Keep your streak going: your goal is ${fmtMin(state.goals.dailyMinutes)} today.` } : null;
@@ -1429,7 +1430,7 @@ ${done.length ? `<h2 class="section-h">Done <span class="count">${done.length}</
 <section class="card"><h2 class="h2">${icon('bell', 20)}Reminders</h2>
 ${perm === 'granted' ? `<div class="status ok">${icon('checkCircle', 20)}<p>Notifications are allowed${isNative() ? '' : ' (they appear while this page is open)'}.</p></div>`
       : perm === 'unsupported' ? `<div class="status warn">${icon('info', 20)}<p>This browser can’t show notifications. Reminders work in the Android and iPhone apps.</p></div>`
-      : `<div class="status warn">${icon('bellOff', 20)}<div><p>${perm === 'denied' ? 'Notifications are blocked. Allow them for Knowledge Atlas in your phone’s Settings › Apps › Notifications.' : 'Allow notifications to get reminders.'}</p>${perm === 'denied' ? '' : `<button class="btn primary sm" data-action="allowNotif">${icon('bell', 17)}Allow notifications</button>`}</div></div>`}
+      : `<div class="status warn">${icon('bellOff', 20)}<div><p>${perm === 'denied' ? 'Notifications are blocked. Allow them for Prvlar in your phone’s Settings › Apps › Notifications.' : 'Allow notifications to get reminders.'}</p>${perm === 'denied' ? '' : `<button class="btn primary sm" data-action="allowNotif">${icon('bell', 17)}Allow notifications</button>`}</div></div>`}
 ${perm === 'granted' && state.exactPerm === 'denied' ? `<div class="status warn">${icon('info', 20)}<div><p>On-time reminders are off, so Android may deliver reminders a few minutes late.</p><button class="btn primary sm" data-action="allowExact">${icon('bell', 17)}Allow on-time reminders</button></div></div>` : ''}
 <label class="toggle-row"><span><b>Daily study reminder</b><span>Every day at the time below.</span></span><input type="checkbox" data-remind="daily"${r.daily ? ' checked' : ''}><span class="switch${r.daily ? ' is-on' : ''}" aria-hidden="true"><span></span></span></label>
 <label class="field"><span>Reminder time</span><input class="input" type="time" id="remind-time" value="${esc(r.time)}"></label>
@@ -1461,7 +1462,7 @@ function focusStart(phase = state.focusRun.phase === 'idle' ? 'focus' : state.fo
   Object.assign(r, { phase, running: true, endsAt: Date.now() + len, left: null, docId: r.docId === undefined ? state.doc : r.docId });
   if (phase === 'focus' && !r.blockStart) r.blockStart = Date.now();
   saveRun();
-  scheduleFocusEnd(r.endsAt, phase === 'focus' ? 'Focus block done' : 'Break over', phase === 'focus' ? 'Time for a break. Open Knowledge Atlas.' : 'Ready for the next focus block?');
+  scheduleFocusEnd(r.endsAt, phase === 'focus' ? 'Focus block done' : 'Break over', phase === 'focus' ? 'Time for a break. Open Prvlar.' : 'Ready for the next focus block?');
   if (phase === 'focus' && state.focusPrefs.sound !== 'off') playAmbient(state.focusPrefs.sound, state.focusPrefs.volume, { sleepMin: state.focusPrefs.sleep });
   if (phase !== 'focus' && state.focusPrefs.stopAtEnd) stopAmbient(true);
   musicTimer(phase === 'focus' ? 'focus-start' : 'break');
@@ -1491,7 +1492,7 @@ async function focusComplete() {
   if (state.focusPrefs.autoNext) {
     focusStart(n.phase);
     const late = Math.max(0, Date.now() - endedAt);                  // the app was in the background or asleep
-    if (late) { r.endsAt -= late; if (r.endsAt <= Date.now()) { Object.assign(r, { running: false, left: null, endsAt: 0 }); stopAmbient(); cancelFocusEnd(); } else scheduleFocusEnd(r.endsAt, r.phase === 'focus' ? 'Focus block done' : 'Break over', 'Open Knowledge Atlas.'); saveRun(); }
+    if (late) { r.endsAt -= late; if (r.endsAt <= Date.now()) { Object.assign(r, { running: false, left: null, endsAt: 0 }); stopAmbient(); cancelFocusEnd(); } else scheduleFocusEnd(r.endsAt, r.phase === 'focus' ? 'Focus block done' : 'Break over', 'Open Prvlar.'); saveRun(); }
   } else saveRun();
   render();
 }
@@ -2079,11 +2080,11 @@ async function devUnseed() {
 function accountHTML() {
   const a = account(), st = syncStatus(), p = syncPrefs(), busy = state.busy === 'sync';
   const head = '<h2 class="h2" id="acct-h">Account and sync</h2>';
-  if (!cloudAvailable()) return `<section class="card" aria-labelledby="acct-h">${head}<p class="fine">Knowledge Atlas works fully without an account. Everything is saved on this device; use Data and backup to move it.${__PUBLIC__ ? '' : ' Google sync is off in this build (no Google client ID configured).'}</p></section>`;
+  if (!cloudAvailable()) return `<section class="card" aria-labelledby="acct-h">${head}<p class="fine">Prvlar works fully without an account. Everything is saved on this device; use Data and backup to move it.${__PUBLIC__ ? '' : ' Google sync is off in this build (no Google client ID configured).'}</p></section>`;
   if (!a) return `<section class="card" aria-labelledby="acct-h">${head}<p>Optional: sign in with Google to back up and sync your documents, notes and progress across devices. It is stored only in a hidden app folder in <b>your own</b> Google Drive; we have no server and can't see it.</p><button class="btn outline big block g-btn" data-action="cloudSignIn"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('login', 20)}Sign in with Google</button><p class="fine">Asks only for your name, email and access to this app's own Drive folder (not your other files).</p></section>`;
   return `<section class="card" aria-labelledby="acct-h">${head}<div class="acct-row">${icon('user', 22)}<div><b>${esc(a.name || a.email)}</b><span class="fine">${esc(a.email)}</span></div></div>
 <p class="sync-line">${st.error ? `${icon('cloudOff', 16)} <span class="bad">${esc(st.error)}</span>` : st.at ? `${icon('cloud', 16)} Last synced ${new Date(st.at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} · ${fmtBytes(st.size)} in your Drive${st.conflicts ? ` · ${st.conflicts} conflict${st.conflicts === 1 ? '' : 's'} resolved (newest kept)` : ''}` : `${icon('cloud', 16)} Not synced yet`}</p>
-${st.reason === 'scope' ? `<div class="code-acts"><button class="btn primary" data-action="cloudGrant"${state.busy ? ' disabled' : ''}>${icon('cloud', 18)}Allow Drive access</button></div><p class="fine">On Google's screen, tick the box that lets Knowledge Atlas see and manage its own app data in your Drive.</p>` : ''}<div class="code-acts"><button class="btn primary" data-action="cloudSync"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('refresh', 18)}Sync now</button><button class="btn outline" data-action="cloudSignOut">${icon('logout', 18)}Sign out</button></div>
+${st.reason === 'scope' ? `<div class="code-acts"><button class="btn primary" data-action="cloudGrant"${state.busy ? ' disabled' : ''}>${icon('cloud', 18)}Allow Drive access</button></div><p class="fine">On Google's screen, tick the box that lets Prvlar see and manage its own app data in your Drive.</p>` : ''}<div class="code-acts"><button class="btn primary" data-action="cloudSync"${state.busy ? ' disabled' : ''}>${busy ? '<span class="spin"></span>' : icon('refresh', 18)}Sync now</button><button class="btn outline" data-action="cloudSignOut">${icon('logout', 18)}Sign out</button></div>
 <label class="toggle-row compact"><span><b>Sync automatically</b><span>On open, after changes and every 10 minutes while online.</span></span><input type="checkbox" class="switch" id="sync-auto"${p.auto ? ' checked' : ''}></label>
 <label class="toggle-row compact"><span><b>Encrypt my cloud copy</b><span>AES-GCM with a passphrase only you know. If you forget it, the cloud copy can't be read.</span></span><input type="checkbox" class="switch" id="sync-encrypt"${p.encrypt ? ' checked' : ''}></label>
 ${p.encrypt ? `<div class="code-acts"><button class="btn outline sm" data-action="cloudPass">${icon('lock', 16)}${hasPassphrase() ? 'Change passphrase' : 'Enter passphrase'}</button></div><label class="toggle-row compact"><span><b>Include my AI keys</b><span>Only inside the encrypted copy.</span></span><input type="checkbox" class="switch" id="sync-keys"${p.keys ? ' checked' : ''}></label>` : '<p class="fine">AI keys are never synced unless you turn on encryption.</p>'}
@@ -2217,7 +2218,7 @@ const actions = {
   devExport() { const b = new Blob([JSON.stringify(maskSecrets(state.devRowsAll || []), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `ka-${state.devTable}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); },
   devSeed: () => devSeed(), devUnseed: () => devUnseed(),
   async devAddOwner() { const v = document.getElementById('dev-owner')?.value || ''; try { await addOwner(v); toast('Owner added (stored as a hash).', 'ok'); } catch (e) { toast(e.message, 'warn'); } render(); },
-  cloudDelete: () => { if (!confirm('Delete everything Knowledge Atlas stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
+  cloudDelete: () => { if (!confirm('Delete everything Prvlar stored in your Google Drive? Data on this device is not touched.')) return; cloudDo(async () => { const n = await deleteCloudData(); toast(`Deleted ${n} file${n === 1 ? '' : 's'} from your Drive.`, 'ok'); }); },
   cloudPass() { const v = prompt('Sync passphrase (at least 8 characters). Use the same one on every device.'); if (v == null) return; if (v.length < 8) return toast('Use at least 8 characters.', 'warn'); setPassphrase(v); render(); },
   musicPlay() { musicPlay(); }, musicPause() { musicPause(); },
   spLogin() { spotifyLogin(); },
@@ -2245,7 +2246,7 @@ const actions = {
   async rpSend() { const rep = reportNow(); if (!allowReport(localStorage, rep)) return toast('You’ve sent a few reports already. Please try again in an hour.', 'warn'); const ok = await postReport(REPORT_URL, { ...rep, screenshot: rep.screenshot ? rep.screenshot.slice(0, 400000) : undefined }); state.reportSent = ok ? 'Thanks! Your report was sent.' : 'Could not send. Use “Copy report” or GitHub instead.'; if (ok) state.reportForm = { text: '', diag: true, shot: '' }; render(); },
   rpIssue() { const rep = reportNow(); window.open(issueUrl(reportRepo(), rep), '_blank', 'noopener'); state.reportSent = rep.screenshot ? 'GitHub opened. Drag your screenshot into the issue before submitting.' : 'GitHub opened in a new tab. Submit the issue there.'; render(); },
   rpMail() { location.href = mailtoUrl(REPORT_EMAIL, reportNow()); },
-  async rpCopy() { const t = reportText(reportNow()); try { await navigator.clipboard.writeText(t); toast('Report copied. Paste it wherever you like.'); } catch { if (navigator.share) navigator.share({ title: 'Knowledge Atlas problem report', text: t }).catch(() => {}); } },
+  async rpCopy() { const t = reportText(reportNow()); try { await navigator.clipboard.writeText(t); toast('Report copied. Paste it wherever you like.'); } catch { if (navigator.share) navigator.share({ title: 'Prvlar problem report', text: t }).catch(() => {}); } },
   rpShotRm() { state.reportForm.shot = ''; render(); },
   smPlus() { state.smPlus = !state.smPlus; state.smPickSkill = false; render(); },
   smUseSkill() { state.smPickSkill = !state.smPickSkill; render(); },
@@ -2365,7 +2366,7 @@ const actions = {
   async newTest() { const doc = state.docs.find(d => d.id === shown()?.documentId); if (doc) selectDoc(doc.id); actions.reset(); if (state.view !== 'test') go('test'); await actions.generate(); },
   async shareResult() {
     const a = shown(); if (!a) return;
-    const how = await shareText('Knowledge Atlas result', `I scored ${a.percent}% (${a.earned}/${a.total} marks) on “${attemptTitle(a)}” in Knowledge Atlas.`);
+    const how = await shareText('Prvlar result', `I scored ${a.percent}% (${a.earned}/${a.total} marks) on “${attemptTitle(a)}” in Prvlar.`);
     if (how === 'copied') { state.notice = 'Result copied to the clipboard.'; render(); }
   },
   async explain() {
@@ -2518,7 +2519,7 @@ async function reloadAll() {
 }
 async function restoreBackup(file) {
   if (!file) return;
-  let data; try { data = JSON.parse(await file.text()); } catch { throw Error('That file is not a Knowledge Atlas backup.'); }
+  let data; try { data = JSON.parse(await file.text()); } catch { throw Error('That file is not a Prvlar backup.'); }
   await importAll(data);
   state.notes = readJSON('ka-notes', {}); state.visited = readJSON('ka-visited', {});
   loadPrefs(); applyTheme(); applyReading();
@@ -2677,7 +2678,7 @@ app.addEventListener('change', e => {
     if (!state.owner) throw Error('Sign in with an owner Google account first.');
     if (!pass) throw Error('Type the owner-pack passphrase first, then pick the file.');
     let env; try { env = JSON.parse(await f.text()); } catch { throw Error('Pick owner-pack.json (unzip the download first).'); }
-    if (!isPackEnvelope(env)) throw Error('This is not a Knowledge Atlas owner pack.');
+    if (!isPackEnvelope(env)) throw Error('This is not a Prvlar owner pack.');
     const local = t.dataset.packfile === 'local';
     const r = await ownerPack.install(env, pass, { upload: !local }); state.packStatus = ownerPack.status();
     toast(local ? 'Owner pack active on this device.' : r.driveError ? `Owner pack active on this device, but not saved to Drive: ${r.driveError}` : 'Owner pack uploaded to your Drive and active on this device.', r.driveError ? 'warn' : 'ok');

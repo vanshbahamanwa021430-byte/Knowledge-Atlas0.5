@@ -1,4 +1,4 @@
-// Smarty (personal tutor): pure, DOM-free helpers (unit-tested in Node). Original code for Knowledge Atlas.
+// Smarty (personal tutor): pure, DOM-free helpers (unit-tested in Node). Original code for Prvlar.
 // Design inspired by the ideas in DeepTutor (HKUDS, Apache-2.0) and the paper by Zhao et al., 2026:
 // learner memory traces, a learner profile, grounded retrieval with citations and verified personalised practice.
 // No code, prompts or text were copied from that project.

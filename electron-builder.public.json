@@ -1,7 +1,7 @@
 {
   "appId": "com.knowledgeatlas.app",
-  "productName": "Knowledge Atlas",
-  "artifactName": "KnowledgeAtlas-${version}-windows-${arch}.${ext}",
+  "productName": "Prvlar",
+  "artifactName": "Prvlar-${version}-windows-${arch}.${ext}",
   "files": [
     {
       "from": "dist-web",
@@ -39,6 +39,6 @@
     "oneClick": false,
     "allowToChangeInstallationDirectory": true,
     "perMachine": false,
-    "artifactName": "KnowledgeAtlas-${version}-windows-setup.${ext}"
+    "artifactName": "Prvlar-${version}-windows-setup.${ext}"
   }
 }

@@ -108,7 +108,7 @@ export function playLocal(i = music.q.at) {
   audio.play().catch(() => {});
   if ('mediaSession' in navigator) {
     try {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: t.name, artist: 'Knowledge Atlas · Focus' });
+      navigator.mediaSession.metadata = new MediaMetadata({ title: t.name, artist: 'Prvlar · Focus' });
       navigator.mediaSession.setActionHandler('nexttrack', () => playLocal(nextIndex(music.q)));
       navigator.mediaSession.setActionHandler('previoustrack', () => playLocal(prevIndex(music.q)));
     } catch { /* older browsers */ }

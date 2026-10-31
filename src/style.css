@@ -1,4 +1,4 @@
-/* Knowledge Atlas — bright study theme.
+/* Prvlar — bright study theme.
    Royal-blue actions, a blue-to-violet call to action, white rounded cards on a soft glowing background,
    blue chapters and green sections on the map. Light and dark (navy) themes.
    Works back to 2019-era Android WebView / iOS 14 Safari: no :has(), :is(), color-mix(), inset or aspect-ratio. */
@@ -198,7 +198,7 @@ textarea.input { resize: vertical; }
 .view.wide { max-width: 1480px; }
 .brand { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 0; margin: 0; border: 0; background: transparent; color: var(--ink); text-align: left; }
 .brand-mark { display: block; flex: none; width: 38px; height: 38px; filter: drop-shadow(0 4px 8px rgba(47, 107, 255, .3)); }
-.wordmark { font: 700 18.5px/1.1 var(--f); letter-spacing: -.015em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wordmark { font: 650 18.5px/1.1 var(--f); letter-spacing: .06em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tabbar { position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; display: flex; height: calc(var(--tab-h) + var(--safe-b)); padding: 0 var(--safe-r) var(--safe-b) var(--safe-l); background: var(--surface); background: var(--glass); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px -18px rgba(15, 26, 61, .25); }
 .tab { position: relative; flex: 1 1 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 6px 2px 4px; border: 0; background: transparent; color: var(--ink-3); font: 600 11.5px/1 var(--f); letter-spacing: .01em; transition: color .15s; }
 .tab:hover { color: var(--ink-1); }
@@ -1737,3 +1737,4 @@ button, .btn, .icon-btn, .seg-btn, .list-row, .option, .tab, .side-link, .chip-b
 .skill-list { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
 .skill-list li { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--line, rgba(127,127,127,.2)); }
 .dev-errs { list-style: none; padding: 0; display: grid; gap: 6px; }
+.dev-credit{margin:4px 0 0;font-size:13px;color:var(--muted)}

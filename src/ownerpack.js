@@ -24,7 +24,7 @@ export async function encryptPack(pack, pass, rounds = 310000) {
 }
 export const isPackEnvelope = x => x?.format === OWNER_PACK_FORMAT && x.encrypted === 'AES-GCM' && typeof x.data === 'string';
 export async function decryptPack(env, pass) {
-  if (!isPackEnvelope(env)) throw Error('This is not a Knowledge Atlas owner pack.');
+  if (!isPackEnvelope(env)) throw Error('This is not a Prvlar owner pack.');
   let pt;
   try { pt = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(env.iv) }, await deriveKey(pass, unb64(env.salt), env.rounds || 310000), unb64(env.data))); }
   catch { throw Error('Wrong owner-pack passphrase, or the pack is damaged.'); }

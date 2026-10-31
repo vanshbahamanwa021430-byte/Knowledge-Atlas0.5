@@ -77,7 +77,7 @@ export function classifyDriveError(status, body) {
   const e = body?.error || {};
   const reasons = [...(e.errors || []).map(x => x.reason), ...(e.details || []).map(x => x.reason), e.status, typeof body?.error === 'string' ? body.error : '', e.message].filter(Boolean).join(' ');
   if (status === 401) return new DriveError(401, 'Google sign-in expired. Sign in again to sync.', 'auth');
-  if (SCOPE_REASONS.test(reasons)) return new DriveError(status, 'Allow Drive access to sync. Google did not give Knowledge Atlas permission to use its app folder in your Drive.', 'scope');
+  if (SCOPE_REASONS.test(reasons)) return new DriveError(status, 'Allow Drive access to sync. Google did not give Prvlar permission to use its app folder in your Drive.', 'scope');
   if (/storageQuotaExceeded|quotaExceeded/i.test(reasons) && !/rate/i.test(reasons)) return new DriveError(status, 'Your Google Drive storage is full. Free up space in Google Drive, then sync again.', 'quota');
   if (/accessNotConfigured|SERVICE_DISABLED/i.test(reasons)) return new DriveError(status, 'Google Drive sync is not enabled for this app yet. Please try again later.', 'disabled');
   if (status === 429 || RATE_REASONS.test(reasons) || status >= 500) return new DriveError(status, 'Google Drive is busy. Sync will retry later.', 'rate');

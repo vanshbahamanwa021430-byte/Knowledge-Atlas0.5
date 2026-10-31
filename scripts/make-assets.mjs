@@ -44,7 +44,7 @@ for (const [d, k] of Object.entries(dens)) {
 
 // iOS launch screen: the icon with the name underneath, centred on the app background (cropped to any screen shape).
 const lockup = tile => `<div style="display:flex;flex-direction:column;align-items:center;gap:${tile * 0.2}px">${sized(markSVG({ tile: 'rounded' }), tile)}
-  <div style="font:800 ${tile * 0.27}px/1 Inter;color:${BRAND.ink};letter-spacing:-.02em;white-space:nowrap">Knowledge Atlas</div></div>`;
+  <div style="font:800 ${tile * 0.27}px/1 Inter;color:${BRAND.ink};letter-spacing:-.02em;white-space:nowrap">Prvlar</div></div>`;
 await shot(`<div style="width:2732px;height:2732px;background:${BRAND.bg};display:flex;align-items:center;justify-content:center">${lockup(300)}</div>`, 2732, 2732, 'resources/ios/splash-2732.png', false);
 
 // Installable web app (PWA) icons.

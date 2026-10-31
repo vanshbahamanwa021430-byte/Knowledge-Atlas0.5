@@ -1,4 +1,4 @@
-# Knowledge Atlas
+# Prvlar
 
 Turn your own documents into a study map, study them section by section, and test yourself. One HTML/CSS/JS app (Vite) packaged for every platform. Your documents, notes, study progress and results stay on the device (IndexedDB/localStorage). No account, no server.
 
@@ -32,7 +32,7 @@ The JavaScript is compiled for 2019-era engines (`es2019`, Chrome 73, Safari 13)
 - **Themes** (Settings › Appearance): Device, Light, Dark, Aesthetic (soft pastels, serif headings), Anime (pink, purple and cyan with CSS sakura and star motifs) and Glass (frosted translucent cards over a gradient; solid cards where the WebView can't blur).
 - **Mind map export** (⋯ menu on the study map): the map with your notes and studied sections as a Markdown outline that Markmap, XMind or Obsidian can open.
 - **More** (on phones): Results (every test, kept even after a document is deleted), Notes (everything you've written), AI Chat, Settings, About us, dark mode, back up and restore.
-- **About us:** made by the Knowledge Atlas team. On phones the backup opens the share sheet, so you can save it to Files or Drive or send it by email.
+- **About us:** made by the Prvlar team. On phones the backup opens the share sheet, so you can save it to Files or Drive or send it by email.
 
 ## Design
 A bright study theme: royal-blue actions, a blue-to-violet "Import a document" button, white rounded cards on a softly glowing background, and a navy dark theme (Settings > Appearance: Device, Light or Dark). Phones get a bottom tab bar (Home, Library, Study, Test, More); tablets in landscape and computers get a sidebar with a storage meter and a search bar. Interface type is Inter (SIL Open Font License) and icons are from Lucide (ISC licence), both bundled so the app looks the same offline (see `THIRD_PARTY_NOTICES.md`). The app icon is a blue gradient tile with a white brain-circuit mark; on Android it is an adaptive icon that also supports themed icons, and the status bar, navigation bar and launch screen follow the phone's dark mode. The icon, splash screens and web-app icons are generated from `src/brand.js` with `npm run assets` (needs Playwright and Python Pillow). The PNGs in `resources/` and `public/icons/` are committed, so builds don't need image tools.
@@ -104,7 +104,7 @@ Add these repository secrets (Settings › Secrets and variables › Actions):
 | `KEY_ALIAS` | `knowledgeatlas` |
 | `KEY_PASSWORD` | the key password (same as the keystore password for this key) |
 
-Then bump `"version"` in `package.json`, commit, and push a matching tag: `git tag v0.8.2 && git push origin v0.8.2`. `.github/workflows/release.yml` builds, signs (v1+v2+v3), verifies and attaches `KnowledgeAtlas-<version>.apk` to a GitHub Release. Optional: put release notes in `RELEASE_NOTES.md`; otherwise GitHub generates them. Every user then sees the update in the app.
+Then bump `"version"` in `package.json`, commit, and push a matching tag: `git tag v0.8.2 && git push origin v0.8.2`. `.github/workflows/release.yml` builds, signs (v1+v2+v3), verifies and attaches `Prvlar-<version>.apk` to a GitHub Release. Optional: put release notes in `RELEASE_NOTES.md`; otherwise GitHub generates them. Every user then sees the update in the app.
 
 ## Privacy
 - Document text goes to the AI only after you confirm: to organise the map (the beginning of each paragraph, about 4–25 KB), to write a test (long documents are sampled across all sections, up to 22,000 characters), to mark written answers (confirmed when you start or submit), for explanations (confirmed each time), and for Ask AI and AI Chat (confirmed once per document each time you open the app; Ask AI sends only the open section).

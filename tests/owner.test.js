@@ -12,7 +12,7 @@ test('built-in owners are hashes; an email matches only by hash, case/space-inse
   assert.equal(h, await sha256Hex('test.owner@googlemail.com')); assert.ok(await isOwnerEmail('  TEST.owner@GoogleMail.com ', s));
 });
 test('the owner email is not in the source code (only its hash)', () => {
-  for (const f of ['src/devlog.js', 'src/main.js', 'src/cloud.js']) assert.ok(!new RegExp(['baha' + 'manwa', '@g' + 'mail\\.com'].join('|'), 'i').test(readFileSync(new URL('../' + f, import.meta.url), 'utf8')), f);
+  for (const f of ['src/devlog.js', 'src/main.js', 'src/cloud.js']) assert.ok(!new RegExp(['[a-z0-9._]*baha' + 'manwa[a-z0-9._]*@', '[a-z0-9._]+@g' + 'mail\\.com'].join('|'), 'i').test(readFileSync(new URL('../' + f, import.meta.url), 'utf8')), f);
 });
 test('owners manager: add Gmail as hash, remove it, built-in cannot be removed', async () => {
   const s = mem();

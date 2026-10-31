@@ -1,6 +1,6 @@
 # Google sign-in and Drive sync — setup
 
-Knowledge Atlas can optionally sync to the user's **own** Google Drive, in the hidden *appDataFolder*
+Prvlar can optionally sync to the user's **own** Google Drive, in the hidden *appDataFolder*
 (scope `drive.appdata`, plus `openid email profile`). There is no server of ours. Client IDs are public
 configuration, not secrets; they live in `.env`:
 

@@ -1,6 +1,6 @@
 # Third-party notices
 
-Knowledge Atlas bundles the following into the app it builds. Their licences are reproduced or referenced here.
+Prvlar bundles the following into the app it builds. Their licences are reproduced or referenced here.
 
 ## Lucide icons (ISC License)
 ```
@@ -261,11 +261,11 @@ Cormorant Garamond, Playfair Display and Dancing Script (Old Money theme) and Co
 Full licence texts for the libraries are in each package under node_modules after npm install.
 
 ## Smarty tutor design credit (no code included)
-Smarty, the personal tutor added in 0.9.5, is original code written for Knowledge Atlas. Its design (learner memory traces, a learner profile, retrieval with source citations, and practice questions checked by a second pass) is inspired by:
+Smarty, the personal tutor added in 0.9.5, is original code written for Prvlar. Its design (learner memory traces, a learner profile, retrieval with source citations, and practice questions checked by a second pass) is inspired by:
 - DeepTutor by HKUDS, The University of Hong Kong. https://github.com/HKUDS/DeepTutor. Licensed under the Apache License 2.0.
 - The DeepTutor paper by Zhao et al., 2026, arXiv:2604.26962. https://arxiv.org/abs/2604.26962
 
-No source code, prompts, text, logos or names from DeepTutor are included in Knowledge Atlas. "DeepTutor" is named here only as an attribution.
+No source code, prompts, text, logos or names from DeepTutor are included in Prvlar. "DeepTutor" is named here only as an attribution.
 
 ## On-device OCR (Apache License 2.0)
 - tesseract.js and tesseract.js-core, Copyright (c) 2015-2026 the tesseract.js contributors (Naptha). https://github.com/naptha/tesseract.js

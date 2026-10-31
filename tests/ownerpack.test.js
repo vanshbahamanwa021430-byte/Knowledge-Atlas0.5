@@ -16,7 +16,7 @@ test('encrypt/decrypt round-trip, wrong passphrase and tampering are rejected', 
   await assert.rejects(decryptPack(env, 'wrong passphrase'), /Wrong owner-pack passphrase/);
   const bad = { ...env, data: env.data.slice(0, -8) + 'AAAAAAAA' };
   await assert.rejects(decryptPack(bad, PASS), /Wrong|damaged/);
-  await assert.rejects(decryptPack({ format: 'x' }, PASS), /not a Knowledge Atlas owner pack/);
+  await assert.rejects(decryptPack({ format: 'x' }, PASS), /not a Prvlar owner pack/);
   await assert.rejects(encryptPack(PACK, 'short'), /at least 8/);
 });
 

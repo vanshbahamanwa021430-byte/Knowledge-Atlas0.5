@@ -24,8 +24,8 @@ test('versionCode always grows with the version', () => {
   assert.ok(versionCode('0.10.0') > versionCode('0.9.99'));
   assert.ok(versionCode('1.0.0') > versionCode('0.99.99'));
 });
-const rel = { tag_name: 'v0.9.0', name: 'Knowledge Atlas 0.9.0', body: '## New\n- Stuff', html_url: 'https://github.com/x/y/releases/tag/v0.9.0', draft: false, prerelease: false,
-  assets: [{ name: 'KnowledgeAtlas-0.9.0-debug.apk', browser_download_url: 'https://d/debug.apk', size: 1 }, { name: 'KnowledgeAtlas-0.9.0.apk', browser_download_url: 'https://d/rel.apk', size: 5 }, { name: 'notes.txt', browser_download_url: 'https://d/n' }] };
+const rel = { tag_name: 'v0.9.0', name: 'Prvlar 0.9.0', body: '## New\n- Stuff', html_url: 'https://github.com/x/y/releases/tag/v0.9.0', draft: false, prerelease: false,
+  assets: [{ name: 'Prvlar-0.9.0-debug.apk', browser_download_url: 'https://d/debug.apk', size: 1 }, { name: 'Prvlar-0.9.0.apk', browser_download_url: 'https://d/rel.apk', size: 5 }, { name: 'notes.txt', browser_download_url: 'https://d/n' }] };
 test('parseRelease picks the release APK and notes', () => {
   const r = parseRelease(rel);
   assert.equal(r.version, '0.9.0'); assert.equal(r.apk.url, 'https://d/rel.apk'); assert.match(r.notes, /Stuff/); assert.match(r.page, /v0\.9\.0/);

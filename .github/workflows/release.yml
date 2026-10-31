@@ -75,7 +75,7 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           IN=android/app/build/outputs/apk/release/app-release-unsigned.apk
-          OUT="KnowledgeAtlas-$VERSION.apk"
+          OUT="Prvlar-$VERSION.apk"
           "$BT/zipalign" -f -P 16 4 "$IN" aligned.apk
           "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-key-alias "$KEY_ALIAS" \
             --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEY_PASSWORD \
@@ -94,7 +94,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: steps.sec.outputs.ok == 'true'
         with:
-          name: KnowledgeAtlas-android-release
+          name: Prvlar-android-release
           path: ${{ env.APK }}
       - name: Attach APK to the release (replaces the asset with the same name)
         if: steps.sec.outputs.ok == 'true'

@@ -11,7 +11,7 @@ Pages that must be reachable (linked from the Google OAuth consent screen): `/pr
 - **Netlify**: `netlify.toml` (build `npm run build:web`, publish `dist-web`). Import the repo in Netlify.
 - **Vercel**: `vercel.json`. Import the repo; framework "Other".
 - **Firebase Hosting**: `firebase.json`. `npm i -g firebase-tools && firebase init hosting` (keep the file) `&& npm run build:web && firebase deploy`.
-- Or unzip `KnowledgeAtlas-0.9.5-web.zip` onto any static host (HTTPS required for the service worker and sign-in).
+- Or unzip `Prvlar-0.9.5-web.zip` onto any static host (HTTPS required for the service worker and sign-in).
 
 ## After publishing
 1. Add the site origin (e.g. `https://<user>.github.io`) to the **web OAuth client**'s Authorised JavaScript origins.
@@ -29,8 +29,8 @@ Pages that must be reachable (linked from the Google OAuth consent screen): `/pr
 
 # Windows desktop app
 Electron (MIT). `npm run package:win` builds `release-public/` with the public web build inside:
-- `KnowledgeAtlas-<v>-windows-x64.zip` (portable, unzip and run `Knowledge Atlas.exe`), and
-- `KnowledgeAtlas-<v>-windows-setup.exe` (NSIS installer) — **needs Windows or Wine**; the
+- `Prvlar-<v>-windows-x64.zip` (portable, unzip and run `Prvlar.exe`), and
+- `Prvlar-<v>-windows-setup.exe` (NSIS installer) — **needs Windows or Wine**; the
   `.github/workflows/windows.yml` workflow (windows-latest) builds it on tags `v*` or manually and uploads it.
 Google sign-in on Windows opens the system browser and returns through `http://localhost:53682/oauth`
 (add that redirect URI to the web client).

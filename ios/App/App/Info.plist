@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Knowledge Atlas</string>
+        <string>Prvlar</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -53,7 +53,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Knowledge Atlas connects to an AI server on your Wi-Fi (such as LiteRT-LM, a server on your PC) when you choose one in Settings.</string>
+	<string>Prvlar connects to an AI server on your Wi-Fi (such as LiteRT-LM, a server on your PC) when you choose one in Settings.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>

@@ -1,4 +1,4 @@
-// Knowledge Atlas brand: blue gradient tile with a white "brain circuit" glyph, and the Home illustration.
+// Prvlar brand: deep violet-blue tile with a white geometric "P" monogram and a small amber spark, and the Home illustration.
 // Pure SVG strings (no DOM) shared by the app and the icon scripts in scripts/.
 import { iconPaths } from './icons.js';
 
@@ -21,14 +21,13 @@ export function markSVG({ size = 1024, tile = 'rounded', inset = 1, glyph = BRAN
   const bg = tile === 'none' ? '' : `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${BRAND.blueLight}"/><stop offset="1" stop-color="${BRAND.blueDeep}"/></linearGradient>
 <radialGradient id="${id}h" cx="0.25" cy="0.12" r="0.75"><stop offset="0" stop-color="#fff" stop-opacity=".30"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
 <rect width="${size}" height="${size}" rx="${r}" fill="url(#${id})"/><rect width="${size}" height="${size}" rx="${r}" fill="url(#${id}h)"/>`;
-  const route = mono ? '' : `<path d="M14.1 16.3c1.1-.2 1.4-1.6 2.4-1.9 1-.3 1.6.4 2.3-.5" fill="none" stroke="${ink}" stroke-width="1.05" stroke-linecap="round" stroke-dasharray="0.1 1.5"/>
-<path d="M18.9 10.2a1.5 1.5 0 0 0-1.5 1.5c0 1.1 1.5 2.4 1.5 2.4s1.5-1.3 1.5-2.4a1.5 1.5 0 0 0-1.5-1.5z" fill="${ink}"/><circle cx="18.9" cy="11.7" r=".5" fill="${glyph}"/>`;
-  const spark = `<path d="M5.6 1.6c.25 1.35.75 1.85 2.1 2.1-1.35.25-1.85.75-2.1 2.1-.25-1.35-.75-1.85-2.1-2.1 1.35-.25 1.85-.75 2.1-2.1z" fill="${mono ? glyph : BRAND.amber}"/>`;
+  // 0.9.8 Prvlar mark: a geometric serif-free "P" (stem + open bowl) with a thin baseline rule, plus the amber spark.
+  const spark = `<path d="M18.6 13.6c.22 1.15.65 1.58 1.8 1.8-1.15.22-1.58.65-1.8 1.8-.22-1.15-.65-1.58-1.8-1.8 1.15-.22 1.58-.65 1.8-1.8z" fill="${mono ? glyph : BRAND.amber}"/>`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${bg}
 <g transform="translate(${off} ${off}) scale(${k})">
-<path d="M12 7.6C9.7 5.9 6.5 5.5 3.2 6.2v12.6c3.3-.7 6.5-.3 8.8 1.4z" fill="${glyph}"/>
-<path d="M12 7.6c2.3-1.7 5.5-2.1 8.8-1.4v12.6c-3.3-.7-6.5-.3-8.8 1.4z" fill="${glyph}" fill-opacity="${tile === 'none' ? 1 : 0.88}"/>
-${route}${spark}</g></svg>`;
+<g transform="translate(1.1 0)"><rect x="6.4" y="3.6" width="2.9" height="16.8" rx="1.45" fill="${glyph}"/>
+<path d="M9.3 3.6h4.3a5.3 5.3 0 0 1 0 10.6H9.3v-2.9h4.3a2.4 2.4 0 0 0 0-4.8H9.3z" fill="${glyph}"/>
+${spark}</g></g></svg>`;
 }
 
 // Home illustration: a glowing study brain on a platform, with documents orbiting it.
