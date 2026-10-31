@@ -11,7 +11,7 @@
 |---|---|---|---|
 | Age check, DOB not stored | src/age.js:16; src/main.js:217 | tests/compliance099.test.js; fulltest "Age" (2 steps) | 75-age-check.png, 76-age-minor.png |
 | Age gate: online AI / sign-in / reports | src/main.js:243, 2588 (+ gateSignIn), 2623 | fulltest "Age – under-18" (no network request made) | 76-age-minor.png |
-| Proxy rejects missing eligibility | proxy/apps-script/Code.gs:96 | tests/proxygas098.test.js "direct proxy request without the eligibility flag" | – |
+| Server rejects requests without the client's eligibility assertion | proxy/apps-script/Code.gs:96 | tests/proxygas098.test.js "direct proxy request without the eligibility flag" | – |
 | Proxy requires ID token when ALLOWED_AUD set | proxy/apps-script/Code.gs:107 | tests/proxygas098.test.js "ALLOWED_AUD" | – |
 | App sends eligibility flag | src/ai.js:54; src/main.js:3276 | tests/idtoken099.test.js | – |
 | Proxy stores no content | proxy/apps-script/Code.gs (counts only) | tests/proxygas098.test.js "stores no message content" | – |
