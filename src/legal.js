@@ -1,0 +1,24 @@
+// Privacy policy and terms: shown in the app and published as /privacy and /terms on the website
+// (the Google OAuth consent screen links to them). Plain strings so the build can write static pages.
+export const privacyHTML = ({ version = '', updateCheck = false } = {}) => {
+  const updateLine = updateCheck ? '<li><b>Update check</b>: the Android app can ask GitHub for the latest release number. You can turn this off in About.</li>\n' : '';
+  return `<p class="fine">Last updated 31 October 2026 · Knowledge Atlas ${version}</p>
+<h2 class="h2">The short version</h2><p>Knowledge Atlas has no server of its own and works without an account. Your documents, notes, tests, flashcards, study history, Smarty profile and settings are stored only on this device. We do not collect analytics, advertising IDs or crash reports.</p>
+<h2 class="h2">What leaves your device, and only when you use it</h2><ul>
+<li><b>AI features</b> (explanations, AI Chat, Smarty, test writing and marking, past-paper analysis): the text needed for that request (excerpts of your document, your question, your answers, and for Smarty a short summary of your weak topics) is sent directly from your device to the AI service you chose (for example Google Gemini or Groq) using your own API key. That provider’s privacy policy applies to that request. You are asked before document text is first sent.</li>
+<li><b>Links you add</b> (a past-paper link): the app downloads that file directly from the address you typed.</li>
+${updateLine}<li><b>Google sign-in and sync (optional)</b>: if you choose “Sign in with Google”, the app asks Google for your name, email address and access to its own hidden app folder in <b>your</b> Google Drive (scope <code>drive.appdata</code>; it cannot see your other Drive files). Your synced data (documents, notes, progress, Smarty profile and settings, never your AI keys unless you turn on encryption and opt in) is stored only in that folder of your own Drive, sent directly between your device and Google. We have no server and never receive it. Turn on encryption to protect it with a passphrase only you know. Use “Delete cloud data” in Settings › Account to remove it, and sign out or revoke access at myaccount.google.com/permissions. Use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements.</li>
+<li><b>Smarty Code</b>: JavaScript and Python run on your device. If you add your own code runner for C, C++ or Java, your code and test inputs are sent to that runner.</li>
+<li><b>Backups and sharing</b>: only when you export or share a file yourself.</li></ul>
+<h2 class="h2">Your API key</h2><p>Your key is stored on this device and sent only to the provider it belongs to. It is never included in backups. No key is built into the app.</p>
+<h2 class="h2">OCR</h2><p>Scanned pages and photos are read on your device. They are not uploaded for text recognition.</p>
+<h2 class="h2">Deleting your data</h2><p>Delete documents in the Library, delete your cloud copy in Settings › Account, reset Smarty in its Profile tab, or clear the app’s storage or uninstall it to remove everything.</p>
+<h2 class="h2">Children</h2><p>The app does not knowingly collect personal data from anyone. AI providers set their own minimum ages; check them before adding a key.</p>
+<h2 class="h2">Contact</h2><p>Questions: use “Send a suggestion” in About us.</p>`;
+};
+export const termsHTML = () => `<p class="fine">Last updated 31 October 2026</p>
+<h2 class="h2">Study aid only</h2><p>Knowledge Atlas helps you study. AI-written explanations, questions, marks, exam profiles and predictions can be wrong or incomplete. Check important facts against your course material. Practice tests imitate exam styles; they are not official papers and are not endorsed by any exam board or university.</p>
+<h2 class="h2">Your content</h2><p>Import only documents and past papers you have the right to use. You remain responsible for the content you add and for what you send to an AI service.</p>
+<h2 class="h2">AI services</h2><p>You connect your own AI provider account and accept that provider’s terms, limits and any costs. Free tiers can change.</p>
+<h2 class="h2">No warranty</h2><p>The app is provided “as is”, without warranty of any kind. To the extent the law allows, the makers are not liable for any loss arising from its use, including exam results.</p>
+<h2 class="h2">Open source</h2><p>The app includes open-source software under its own licences; see Open-source licences.</p>`;

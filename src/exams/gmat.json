@@ -1,0 +1,114 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "gmat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "GMAT-style",
+  "fullName": "GMAT Focus Edition – generic practice in the style of",
+  "conductedBy": "GMAC",
+  "group": "International",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 135,
+    "totalMarks": 64,
+    "subjects": [
+      "Quantitative Reasoning",
+      "Verbal Reasoning",
+      "Data Insights"
+    ],
+    "sections": [
+      {
+        "name": "Quantitative Reasoning",
+        "type": "mcq",
+        "count": 21,
+        "marks": 1,
+        "negative": 0,
+        "style": ""
+      },
+      {
+        "name": "Verbal Reasoning",
+        "type": "mcq",
+        "count": 23,
+        "marks": 1,
+        "negative": 0,
+        "style": "critical reasoning and reading"
+      },
+      {
+        "name": "Data Insights",
+        "type": "mcq",
+        "count": 20,
+        "marks": 1,
+        "negative": 0,
+        "style": "data sufficiency, table and graphics analysis"
+      }
+    ],
+    "notes": "Real GMAT is adaptive and scored 205–805; here 1 mark each, 45 minutes per section."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Quant",
+      "name": "Arithmetic",
+      "weight": 10
+    },
+    {
+      "subject": "Quant",
+      "name": "Algebra",
+      "weight": 9
+    },
+    {
+      "subject": "Quant",
+      "name": "Word problems",
+      "weight": 8
+    },
+    {
+      "subject": "Verbal",
+      "name": "Critical reasoning",
+      "weight": 10
+    },
+    {
+      "subject": "Verbal",
+      "name": "Reading comprehension",
+      "weight": 9
+    },
+    {
+      "subject": "Data Insights",
+      "name": "Data sufficiency",
+      "weight": 10
+    },
+    {
+      "subject": "Data Insights",
+      "name": "Multi-source reasoning",
+      "weight": 9
+    },
+    {
+      "subject": "Data Insights",
+      "name": "Table analysis",
+      "weight": 8
+    },
+    {
+      "subject": "Data Insights",
+      "name": "Graphics interpretation",
+      "weight": 7
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "GMAC – GMAT exam",
+      "url": "https://www.mba.com/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

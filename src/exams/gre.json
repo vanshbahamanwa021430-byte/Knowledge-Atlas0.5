@@ -1,0 +1,113 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "gre",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "GRE-style",
+  "fullName": "GRE General Test – generic practice in the style of",
+  "conductedBy": "ETS",
+  "group": "International",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 118,
+    "totalMarks": 60,
+    "subjects": [
+      "Analytical Writing",
+      "Verbal Reasoning",
+      "Quantitative Reasoning"
+    ],
+    "sections": [
+      {
+        "name": "Analytical Writing – Analyse an Issue",
+        "type": "written",
+        "count": 1,
+        "marks": 6,
+        "negative": 0,
+        "style": "essay scored 0–6"
+      },
+      {
+        "name": "Verbal Reasoning",
+        "type": "mcq",
+        "count": 27,
+        "marks": 1,
+        "negative": 0,
+        "style": "text completion, sentence equivalence, reading"
+      },
+      {
+        "name": "Quantitative Reasoning – MCQ",
+        "type": "mcq",
+        "count": 21,
+        "marks": 1,
+        "negative": 0,
+        "style": "includes quantitative comparison"
+      },
+      {
+        "name": "Quantitative Reasoning – numeric entry",
+        "type": "numerical",
+        "count": 6,
+        "marks": 1,
+        "negative": 0,
+        "style": "",
+        "answerFormat": "decimal"
+      }
+    ],
+    "notes": "Real GRE scores 130–170 per section; here 1 mark each plus a 6-point essay."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Verbal",
+      "name": "Text completion",
+      "weight": 10
+    },
+    {
+      "subject": "Verbal",
+      "name": "Sentence equivalence",
+      "weight": 9
+    },
+    {
+      "subject": "Verbal",
+      "name": "Reading comprehension",
+      "weight": 8
+    },
+    {
+      "subject": "Quant",
+      "name": "Arithmetic",
+      "weight": 10
+    },
+    {
+      "subject": "Quant",
+      "name": "Algebra",
+      "weight": 9
+    },
+    {
+      "subject": "Quant",
+      "name": "Geometry",
+      "weight": 8
+    },
+    {
+      "subject": "Quant",
+      "name": "Data analysis",
+      "weight": 7
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "ETS – GRE General Test",
+      "url": "https://www.ets.org/gre.html"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

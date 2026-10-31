@@ -1,0 +1,23 @@
+{
+  "appId": "com.knowledgeatlas.app",
+  "appName": "Knowledge Atlas",
+  "webDir": "dist",
+  "backgroundColor": "#F4F7FC",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_atlas",
+      "iconColor": "#2F6BFF"
+    }
+  }
+}

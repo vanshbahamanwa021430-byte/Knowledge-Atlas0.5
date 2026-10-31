@@ -1,0 +1,108 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "upsc-prelims",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "UPSC CSE Prelims (GS I)-style",
+  "fullName": "UPSC Civil Services (Preliminary) – General Studies Paper I",
+  "conductedBy": "Union Public Service Commission",
+  "coverage": {
+    "from": 2018,
+    "to": 2025,
+    "note": "Subject-wise question counts are from PW OnlyIAS's 2025 analysis (topics below); earlier years 2018–2024 from the same page vary a lot (e.g. Environment 7 in 2025, 21 in 2023). Difficulty is only published as labels, so no percentages. Paper II (CSAT) is qualifying (33%) and not modelled. Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 120,
+    "totalMarks": 200,
+    "subjects": [
+      "Polity",
+      "Economy",
+      "History and Culture",
+      "Geography",
+      "Environment",
+      "Science and Technology",
+      "Current Affairs"
+    ],
+    "sections": [
+      {
+        "name": "General Studies I",
+        "type": "mcq",
+        "count": 100,
+        "marks": 2,
+        "negative": 0.66,
+        "style": "multi-statement ('How many of the above…'), assertion–reason and pair-matching"
+      }
+    ],
+    "notes": "One-third of the marks for a question are deducted for a wrong answer (0.66 of 2)."
+  },
+  "difficulty": null,
+  "topics": [
+    {
+      "subject": "GS",
+      "name": "Current Affairs and Miscellaneous",
+      "weight": 23
+    },
+    {
+      "subject": "GS",
+      "name": "History (Ancient, Medieval, Modern) and Art & Culture",
+      "weight": 18
+    },
+    {
+      "subject": "GS",
+      "name": "Indian Polity",
+      "weight": 14
+    },
+    {
+      "subject": "GS",
+      "name": "Indian Economy",
+      "weight": 14
+    },
+    {
+      "subject": "GS",
+      "name": "Geography",
+      "weight": 13
+    },
+    {
+      "subject": "GS",
+      "name": "Science and Technology",
+      "weight": 13
+    },
+    {
+      "subject": "GS",
+      "name": "Environment",
+      "weight": 7
+    }
+  ],
+  "style": {
+    "mix": {
+      "multiStatement": 67
+    },
+    "notes": [
+      "About 67% of 2025 GS I questions were multi-statement formats (PW OnlyIAS).",
+      "Since 2023 the 'how many of the above' format makes elimination harder (PW: 2023 was the toughest paper).",
+      "History is usually considered the toughest GS subject (PW)."
+    ]
+  },
+  "traps": [
+    "'Only one / only two / all three / none' counts — one misjudged statement makes the answer wrong.",
+    "Extreme words (always, only, never) in statements.",
+    "Negative marking of 1/3: avoid blind guesses."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "UPSC – Civil Services Examination notice (scheme of examination)",
+      "url": "https://upsc.gov.in/examinations/active-exams",
+      "years": "2025"
+    },
+    {
+      "kind": "analysis",
+      "title": "PW OnlyIAS – UPSC Prelims exam analysis 2018–2025 (subject-wise questions)",
+      "url": "https://www.pw.live/upsc/exams/upsc-prelims-exam-analysis",
+      "years": "2018–2025"
+    }
+  ],
+  "topicsBasis": "UPSC Prelims 2025 GS Paper I question counts (PW OnlyIAS).",
+  "group": "Civil services"
+}

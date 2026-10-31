@@ -1,0 +1,149 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "rrb-ntpc",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "RRB NTPC CBT 1-style",
+  "fullName": "Railway Recruitment Boards – Non-Technical Popular Categories, first-stage CBT",
+  "conductedBy": "Railway Recruitment Boards",
+  "group": "Government jobs",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 90,
+    "totalMarks": 100,
+    "subjects": [
+      "General Awareness",
+      "Mathematics",
+      "General Intelligence and Reasoning"
+    ],
+    "sections": [
+      {
+        "name": "General Awareness",
+        "type": "mcq",
+        "count": 40,
+        "marks": 1,
+        "negative": 0.33,
+        "style": ""
+      },
+      {
+        "name": "Mathematics",
+        "type": "mcq",
+        "count": 30,
+        "marks": 1,
+        "negative": 0.33,
+        "style": ""
+      },
+      {
+        "name": "General Intelligence and Reasoning",
+        "type": "mcq",
+        "count": 30,
+        "marks": 1,
+        "negative": 0.33,
+        "style": ""
+      }
+    ],
+    "notes": "100 questions in 90 minutes; −1/3 per wrong answer."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "General Awareness",
+      "name": "Current affairs",
+      "weight": 10
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Indian history and culture",
+      "weight": 9
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Geography",
+      "weight": 8
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Polity",
+      "weight": 7
+    },
+    {
+      "subject": "General Awareness",
+      "name": "General science",
+      "weight": 6
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Railways and economy",
+      "weight": 5
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Number system",
+      "weight": 10
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Percentages, ratio and averages",
+      "weight": 9
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Time and work",
+      "weight": 8
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Mensuration",
+      "weight": 7
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Simple and compound interest",
+      "weight": 6
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Analogies",
+      "weight": 10
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Series",
+      "weight": 9
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Coding–decoding",
+      "weight": 8
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Venn diagrams",
+      "weight": 7
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Puzzles",
+      "weight": 6
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "Indian Railways – recruitment",
+      "url": "https://indianrailways.gov.in/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

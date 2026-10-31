@@ -1,0 +1,109 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "sat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "SAT-style",
+  "fullName": "SAT (digital) – generic practice in the style of",
+  "conductedBy": "College Board",
+  "group": "International",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 134,
+    "totalMarks": 98,
+    "subjects": [
+      "Reading and Writing",
+      "Math"
+    ],
+    "sections": [
+      {
+        "name": "Reading and Writing",
+        "type": "mcq",
+        "count": 54,
+        "marks": 1,
+        "negative": 0,
+        "style": "short passages, one question each"
+      },
+      {
+        "name": "Math – multiple choice",
+        "type": "mcq",
+        "count": 33,
+        "marks": 1,
+        "negative": 0,
+        "style": ""
+      },
+      {
+        "name": "Math – student-produced response",
+        "type": "numerical",
+        "count": 11,
+        "marks": 1,
+        "negative": 0,
+        "style": "",
+        "answerFormat": "decimal"
+      }
+    ],
+    "notes": "Real SAT scores 400–1600 with adaptive modules; here every question is 1 mark, no negative marking."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Reading and Writing",
+      "name": "Craft and structure",
+      "weight": 10
+    },
+    {
+      "subject": "Reading and Writing",
+      "name": "Information and ideas",
+      "weight": 9
+    },
+    {
+      "subject": "Reading and Writing",
+      "name": "Standard English conventions",
+      "weight": 8
+    },
+    {
+      "subject": "Reading and Writing",
+      "name": "Expression of ideas",
+      "weight": 7
+    },
+    {
+      "subject": "Math",
+      "name": "Algebra",
+      "weight": 10
+    },
+    {
+      "subject": "Math",
+      "name": "Advanced math",
+      "weight": 9
+    },
+    {
+      "subject": "Math",
+      "name": "Problem solving and data analysis",
+      "weight": 8
+    },
+    {
+      "subject": "Math",
+      "name": "Geometry and trigonometry",
+      "weight": 7
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "College Board – SAT Suite",
+      "url": "https://satsuite.collegeboard.org/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

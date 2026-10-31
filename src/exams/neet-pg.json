@@ -1,0 +1,148 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "neet-pg",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "NEET PG-style",
+  "fullName": "National Eligibility cum Entrance Test (Postgraduate)",
+  "conductedBy": "National Board of Examinations in Medical Sciences",
+  "group": "Medical",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 210,
+    "totalMarks": 800,
+    "subjects": [
+      "Pre-clinical",
+      "Para-clinical",
+      "Clinical"
+    ],
+    "sections": [
+      {
+        "name": "Single best answer – MCQ",
+        "type": "mcq",
+        "count": 200,
+        "marks": 4,
+        "negative": 1,
+        "style": "clinical vignettes and one-liners; single correct of 4"
+      }
+    ],
+    "notes": "200 MCQs, 210 minutes in timed sections; +4/−1."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Pre-clinical",
+      "name": "Anatomy",
+      "weight": 10
+    },
+    {
+      "subject": "Pre-clinical",
+      "name": "Physiology",
+      "weight": 9
+    },
+    {
+      "subject": "Pre-clinical",
+      "name": "Biochemistry",
+      "weight": 8
+    },
+    {
+      "subject": "Para-clinical",
+      "name": "Pathology",
+      "weight": 10
+    },
+    {
+      "subject": "Para-clinical",
+      "name": "Pharmacology",
+      "weight": 9
+    },
+    {
+      "subject": "Para-clinical",
+      "name": "Microbiology",
+      "weight": 8
+    },
+    {
+      "subject": "Para-clinical",
+      "name": "Forensic medicine",
+      "weight": 7
+    },
+    {
+      "subject": "Para-clinical",
+      "name": "Community medicine",
+      "weight": 6
+    },
+    {
+      "subject": "Clinical",
+      "name": "General medicine",
+      "weight": 10
+    },
+    {
+      "subject": "Clinical",
+      "name": "General surgery",
+      "weight": 9
+    },
+    {
+      "subject": "Clinical",
+      "name": "Obstetrics and gynaecology",
+      "weight": 8
+    },
+    {
+      "subject": "Clinical",
+      "name": "Paediatrics",
+      "weight": 7
+    },
+    {
+      "subject": "Clinical",
+      "name": "Ophthalmology",
+      "weight": 6
+    },
+    {
+      "subject": "Clinical",
+      "name": "ENT",
+      "weight": 5
+    },
+    {
+      "subject": "Clinical",
+      "name": "Orthopaedics",
+      "weight": 4
+    },
+    {
+      "subject": "Clinical",
+      "name": "Dermatology",
+      "weight": 3
+    },
+    {
+      "subject": "Clinical",
+      "name": "Psychiatry",
+      "weight": 2
+    },
+    {
+      "subject": "Clinical",
+      "name": "Anaesthesia",
+      "weight": 2
+    },
+    {
+      "subject": "Clinical",
+      "name": "Radiology",
+      "weight": 2
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "National Board of Examinations in Medical Sciences",
+      "url": "https://natboard.edu.in/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

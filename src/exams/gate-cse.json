@@ -1,0 +1,188 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "gate-cse",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "GATE CSE-style",
+  "fullName": "Graduate Aptitude Test in Engineering – Computer Science and IT",
+  "conductedBy": "IISc and IITs (organising institute rotates)",
+  "coverage": {
+    "from": 2025,
+    "to": 2025,
+    "note": "Marks, duration and marking verified from the GATE 2025 question paper pattern page (IIT Roorkee): 100 marks, 3 hours, General Aptitude 15 marks, questions of 1 or 2 marks, −1/3 and −2/3 for wrong MCQs, no negative and no partial marks for MSQ and NAT. The section split below is NOT official: the counts of MCQ/MSQ/NAT vary by paper and year and are an assumption for practice. Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 180,
+    "totalMarks": 100,
+    "subjects": [
+      "General Aptitude",
+      "Subject paper"
+    ],
+    "sections": [
+      {
+        "name": "General Aptitude – 1 mark",
+        "type": "mcq",
+        "count": 5,
+        "marks": 1,
+        "negative": 0.33
+      },
+      {
+        "name": "General Aptitude – 2 marks",
+        "type": "mcq",
+        "count": 5,
+        "marks": 2,
+        "negative": 0.67
+      },
+      {
+        "name": "Subject – MCQ 1 mark",
+        "type": "mcq",
+        "count": 20,
+        "marks": 1,
+        "negative": 0.33
+      },
+      {
+        "name": "Subject – MCQ 2 marks",
+        "type": "mcq",
+        "count": 15,
+        "marks": 2,
+        "negative": 0.67
+      },
+      {
+        "name": "Subject – MSQ",
+        "type": "multi",
+        "count": 5,
+        "marks": 2,
+        "negative": 0,
+        "partial": "none",
+        "style": "one or more correct; no partial credit, no negative"
+      },
+      {
+        "name": "Subject – NAT 1 mark",
+        "type": "numerical",
+        "count": 5,
+        "marks": 1,
+        "negative": 0,
+        "answerFormat": "decimal",
+        "style": "numerical answer within a stated range"
+      },
+      {
+        "name": "Subject – NAT 2 marks",
+        "type": "numerical",
+        "count": 10,
+        "marks": 2,
+        "negative": 0,
+        "answerFormat": "decimal",
+        "style": "numerical answer within a stated range"
+      }
+    ],
+    "notes": "65 questions, 100 marks: General Aptitude 15 marks, subject 85 marks. MCQ wrong answers lose 1/3 (1-mark) or 2/3 (2-mark). The exact MCQ/MSQ/NAT counts here are an assumed typical split."
+  },
+  "difficulty": null,
+  "topics": [
+    {
+      "subject": "General Aptitude",
+      "name": "Verbal ability",
+      "weight": 10
+    },
+    {
+      "subject": "General Aptitude",
+      "name": "Quantitative aptitude",
+      "weight": 9
+    },
+    {
+      "subject": "General Aptitude",
+      "name": "Analytical aptitude",
+      "weight": 8
+    },
+    {
+      "subject": "General Aptitude",
+      "name": "Spatial aptitude",
+      "weight": 7
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Data structures and algorithms",
+      "weight": 10
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Operating systems",
+      "weight": 9
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Databases",
+      "weight": 8
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Computer networks",
+      "weight": 7
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Theory of computation",
+      "weight": 6
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Compiler design",
+      "weight": 5
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Digital logic",
+      "weight": 4
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Computer organisation and architecture",
+      "weight": 3
+    },
+    {
+      "subject": "Computer Science",
+      "name": "Programming in C",
+      "weight": 2
+    },
+    {
+      "subject": "Engineering Mathematics",
+      "name": "Discrete mathematics",
+      "weight": 10
+    },
+    {
+      "subject": "Engineering Mathematics",
+      "name": "Linear algebra",
+      "weight": 9
+    },
+    {
+      "subject": "Engineering Mathematics",
+      "name": "Probability",
+      "weight": 8
+    }
+  ],
+  "style": {
+    "mix": null,
+    "notes": [
+      "Engineering-maths and core-subject application problems; NAT questions need exact numerical work.",
+      "General Aptitude: verbal and quantitative reasoning."
+    ]
+  },
+  "traps": [
+    "NAT answers must fall inside the accepted range (watch rounding).",
+    "MSQ gives zero unless every correct option and no wrong one is chosen.",
+    "Negative marking only on MCQs — never on MSQ or NAT."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "GATE 2025 – Question paper pattern (IIT Roorkee)",
+      "url": "https://gate2025.iitr.ac.in/question-paper-pattern.html",
+      "years": "2025"
+    }
+  ],
+  "assumptions": [
+    "Same section pattern as every GATE paper; topics are the published syllabus areas for this branch."
+  ],
+  "group": "Engineering"
+}

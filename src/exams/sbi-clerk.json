@@ -1,0 +1,154 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "sbi-clerk",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "SBI Clerk Prelims-style",
+  "fullName": "SBI Junior Associate (Clerk) – Preliminary",
+  "conductedBy": "State Bank of India",
+  "group": "Banking",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 60,
+    "totalMarks": 100,
+    "subjects": [
+      "English Language",
+      "Numerical Ability",
+      "Reasoning Ability"
+    ],
+    "sections": [
+      {
+        "name": "English Language",
+        "type": "mcq",
+        "count": 30,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "20-minute sectional timer"
+      },
+      {
+        "name": "Numerical Ability",
+        "type": "mcq",
+        "count": 35,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "20-minute sectional timer"
+      },
+      {
+        "name": "Reasoning Ability",
+        "type": "mcq",
+        "count": 35,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "20-minute sectional timer"
+      }
+    ],
+    "notes": "Preliminary exam: 100 questions, 100 marks, 60 minutes with 20-minute sectional timing; −0.25 per wrong answer.",
+    "sectionalMin": [
+      20,
+      20,
+      20
+    ]
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Reasoning",
+      "name": "Puzzles and seating arrangement",
+      "weight": 10
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Syllogism",
+      "weight": 9
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Inequality",
+      "weight": 8
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Blood relations",
+      "weight": 7
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Coding–decoding",
+      "weight": 6
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Direction sense",
+      "weight": 5
+    },
+    {
+      "subject": "Quant",
+      "name": "Simplification and approximation",
+      "weight": 10
+    },
+    {
+      "subject": "Quant",
+      "name": "Number series",
+      "weight": 9
+    },
+    {
+      "subject": "Quant",
+      "name": "Data interpretation",
+      "weight": 8
+    },
+    {
+      "subject": "Quant",
+      "name": "Quadratic equations",
+      "weight": 7
+    },
+    {
+      "subject": "Quant",
+      "name": "Arithmetic word problems",
+      "weight": 6
+    },
+    {
+      "subject": "English",
+      "name": "Reading comprehension",
+      "weight": 10
+    },
+    {
+      "subject": "English",
+      "name": "Cloze test",
+      "weight": 9
+    },
+    {
+      "subject": "English",
+      "name": "Error detection",
+      "weight": 8
+    },
+    {
+      "subject": "English",
+      "name": "Para jumbles",
+      "weight": 7
+    },
+    {
+      "subject": "English",
+      "name": "Fillers",
+      "weight": 6
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "State Bank of India – careers",
+      "url": "https://sbi.co.in/web/careers"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

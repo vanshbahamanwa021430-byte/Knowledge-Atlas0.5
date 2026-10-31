@@ -1,0 +1,154 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "bitsat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "BITSAT-style",
+  "fullName": "BITS Admission Test",
+  "conductedBy": "BITS Pilani",
+  "group": "Engineering",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 180,
+    "totalMarks": 390,
+    "subjects": [
+      "Physics",
+      "Chemistry",
+      "English Proficiency",
+      "Logical Reasoning",
+      "Mathematics"
+    ],
+    "sections": [
+      {
+        "name": "Physics",
+        "type": "mcq",
+        "count": 30,
+        "marks": 3,
+        "negative": 1,
+        "style": ""
+      },
+      {
+        "name": "Chemistry",
+        "type": "mcq",
+        "count": 30,
+        "marks": 3,
+        "negative": 1,
+        "style": ""
+      },
+      {
+        "name": "English Proficiency",
+        "type": "mcq",
+        "count": 10,
+        "marks": 3,
+        "negative": 1,
+        "style": ""
+      },
+      {
+        "name": "Logical Reasoning",
+        "type": "mcq",
+        "count": 20,
+        "marks": 3,
+        "negative": 1,
+        "style": ""
+      },
+      {
+        "name": "Mathematics",
+        "type": "mcq",
+        "count": 40,
+        "marks": 3,
+        "negative": 1,
+        "style": ""
+      }
+    ],
+    "notes": "130 questions, 390 marks, 180 minutes; +3/−1. Finish all 130 early to unlock 12 bonus questions (not modelled here)."
+  },
+  "difficulty": {
+    "easy": 35,
+    "medium": 50,
+    "hard": 15,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Physics",
+      "name": "Mechanics",
+      "weight": 10
+    },
+    {
+      "subject": "Physics",
+      "name": "Electromagnetism",
+      "weight": 9
+    },
+    {
+      "subject": "Physics",
+      "name": "Optics",
+      "weight": 8
+    },
+    {
+      "subject": "Physics",
+      "name": "Modern physics",
+      "weight": 7
+    },
+    {
+      "subject": "Physics",
+      "name": "Thermodynamics",
+      "weight": 6
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Physical chemistry",
+      "weight": 10
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Organic chemistry",
+      "weight": 9
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Inorganic chemistry",
+      "weight": 8
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Calculus",
+      "weight": 10
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Algebra",
+      "weight": 9
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Coordinate geometry",
+      "weight": 8
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Vectors and 3D",
+      "weight": 7
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Probability",
+      "weight": 6
+    }
+  ],
+  "traps": [
+    "Speed matters: about 80 seconds per question."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "BITS admissions",
+      "url": "https://www.bitsadmission.com/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

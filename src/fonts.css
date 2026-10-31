@@ -1,0 +1,14 @@
+/* Inter (SIL Open Font License), bundled so the app looks the same offline on every device. */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Urbanist'; font-style: normal; font-weight: 500; font-display: swap; src: url('../node_modules/@fontsource/urbanist/files/urbanist-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Urbanist'; font-style: normal; font-weight: 600; font-display: swap; src: url('../node_modules/@fontsource/urbanist/files/urbanist-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Urbanist'; font-style: normal; font-weight: 700; font-display: swap; src: url('../node_modules/@fontsource/urbanist/files/urbanist-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Urbanist'; font-style: normal; font-weight: 800; font-display: swap; src: url('../node_modules/@fontsource/urbanist/files/urbanist-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 500; font-display: swap; src: url('../node_modules/@fontsource/playfair-display/files/playfair-display-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 600; font-display: swap; src: url('../node_modules/@fontsource/playfair-display/files/playfair-display-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 700; font-display: swap; src: url('../node_modules/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Cormorant Garamond'; font-style: italic; font-weight: 500; font-display: swap; src: url('../node_modules/@fontsource/cormorant-garamond/files/cormorant-garamond-latin-500-italic.woff2') format('woff2'); }
+@font-face { font-family: 'Special Elite'; font-weight: 400; font-display: swap; src: url('../node_modules/@fontsource/special-elite/files/special-elite-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Courier Prime'; font-weight: 400; font-display: swap; src: url('../node_modules/@fontsource/courier-prime/files/courier-prime-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Courier Prime'; font-weight: 700; font-display: swap; src: url('../node_modules/@fontsource/courier-prime/files/courier-prime-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Dancing Script'; font-weight: 700; font-display: swap; src: url('../node_modules/@fontsource/dancing-script/files/dancing-script-latin-700-normal.woff2') format('woff2'); }

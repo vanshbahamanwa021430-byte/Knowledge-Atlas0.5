@@ -1,0 +1,149 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "cat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "CAT-style",
+  "fullName": "Common Admission Test (IIMs)",
+  "conductedBy": "IIMs (convening IIM rotates)",
+  "coverage": {
+    "from": 2024,
+    "to": 2024,
+    "note": "Duration, sectional time and questions per section verified from the official CAT 2024 media release (VARC 24, DILR 22, QA 22; 120 min, 40 per section). The MCQ/TITA split and marking (+3, −1 for MCQ, no negative for TITA) are from Career Launcher's Slot 1 analysis, not an official source, and vary by slot. Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 120,
+    "totalMarks": 204,
+    "subjects": [
+      "VARC",
+      "DILR",
+      "QA"
+    ],
+    "sections": [
+      {
+        "name": "VARC – MCQ",
+        "type": "mcq",
+        "count": 22,
+        "marks": 3,
+        "negative": 1,
+        "style": "reading comprehension passages and verbal ability"
+      },
+      {
+        "name": "VARC – TITA",
+        "type": "numerical",
+        "count": 2,
+        "marks": 3,
+        "negative": 0,
+        "answerFormat": "integer",
+        "style": "Type in the answer (e.g. odd one out)"
+      },
+      {
+        "name": "DILR – MCQ",
+        "type": "mcq",
+        "count": 12,
+        "marks": 3,
+        "negative": 1,
+        "style": "set-based data interpretation and logical reasoning"
+      },
+      {
+        "name": "DILR – TITA",
+        "type": "numerical",
+        "count": 10,
+        "marks": 3,
+        "negative": 0,
+        "answerFormat": "decimal"
+      },
+      {
+        "name": "QA – MCQ",
+        "type": "mcq",
+        "count": 14,
+        "marks": 3,
+        "negative": 1
+      },
+      {
+        "name": "QA – TITA",
+        "type": "numerical",
+        "count": 8,
+        "marks": 3,
+        "negative": 0,
+        "answerFormat": "decimal"
+      }
+    ],
+    "notes": "68 questions in 120 minutes with 40 minutes per section (sectional time limit). TITA (type in the answer) has no negative marking."
+  },
+  "difficulty": null,
+  "topics": [
+    {
+      "subject": "VARC",
+      "name": "Reading Comprehension (4 passages × 4)",
+      "weight": 16
+    },
+    {
+      "subject": "VARC",
+      "name": "Para summary / completion / odd one out",
+      "weight": 8
+    },
+    {
+      "subject": "QA",
+      "name": "Arithmetic",
+      "weight": 10
+    },
+    {
+      "subject": "QA",
+      "name": "Algebra",
+      "weight": 5
+    },
+    {
+      "subject": "QA",
+      "name": "Geometry",
+      "weight": 3
+    },
+    {
+      "subject": "QA",
+      "name": "Number System",
+      "weight": 2
+    },
+    {
+      "subject": "QA",
+      "name": "Modern Maths",
+      "weight": 1
+    },
+    {
+      "subject": "DILR",
+      "name": "DI and LR sets (5 sets of 4–5)",
+      "weight": 22
+    }
+  ],
+  "style": {
+    "mix": null,
+    "notes": [
+      "CAT 2024 Slot 1 was rated easier than 2023: VARC easy, DILR easy–moderate, QA moderate (Career Launcher).",
+      "No para-jumbles in 2024 VARC; para-completion questions instead."
+    ]
+  },
+  "traps": [
+    "Sectional timer: unused time does not carry over.",
+    "MCQ negative marking (−1) but none for TITA.",
+    "Long DILR sets that look easy but take 15+ minutes."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "CAT 2024 media release (IIM Calcutta), 25 Nov 2024",
+      "url": "https://cdn.digialm.com/per/g06/pub/32842/EForms/CAT24/CAT_2024_Media_Release_25_Nov_2024_V1.pdf",
+      "years": "2024"
+    },
+    {
+      "kind": "analysis",
+      "title": "Career Launcher – CAT 2024 Slot 1 analysis",
+      "url": "https://www.careerlauncher.com/cat/analysis-cut-off/2024/slot1/",
+      "years": "2024"
+    }
+  ],
+  "assumptions": [
+    "MCQ/TITA split per section and the +3/−1 marking come from Career Launcher's CAT 2024 Slot 1 analysis, not from IIM."
+  ],
+  "topicsBasis": "CAT 2024 Slot 1 question counts (Career Launcher).",
+  "group": "Management"
+}

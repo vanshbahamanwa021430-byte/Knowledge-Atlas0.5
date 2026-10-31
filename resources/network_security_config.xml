@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Knowledge Atlas network policy.
+     Android's network_security_config cannot list IP ranges, only host names, so a rule like "192.168.0.0/16" is
+     impossible here. Cleartext is therefore permitted at the OS level, and the app enforces the real rule itself:
+     every AI request goes through chatEndpoint() in src/ai.js, which refuses http:// unless the host is localhost,
+     *.local or a private/link-local IP (10/8, 172.16/12, 192.168/16, 100.64/10, 169.254/16, 127/8, fc00::/7, fe80::/10).
+     All internet addresses must use https://. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors><certificates src="system" /></trust-anchors>
+    </base-config>
+</network-security-config>

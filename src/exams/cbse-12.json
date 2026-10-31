@@ -1,0 +1,128 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "cbse-12",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "CBSE Class 12 (board)-style",
+  "fullName": "CBSE Class XII board theory paper (Physics/Chemistry/Maths-style 70-mark paper)",
+  "conductedBy": "Central Board of Secondary Education",
+  "coverage": {
+    "from": 2025,
+    "to": 2025,
+    "note": "Pattern verified from the official CBSE Class XII Physics sample question paper 2024-25 (70 marks, 3 hours; A: 12 MCQ + 4 assertion–reason × 1, B: 5 × 2, C: 7 × 3, D: 2 case-based × 4, E: 3 × 5). Other subjects differ; use Custom exam with that subject's sample paper. Difficulty data is not published (generic mix). Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 180,
+    "totalMarks": 70,
+    "subjects": [
+      "Any Class 12 subject"
+    ],
+    "sections": [
+      {
+        "name": "Section A – MCQ and assertion–reason (1 mark)",
+        "type": "mcq",
+        "count": 16,
+        "marks": 1,
+        "negative": 0,
+        "style": "12 MCQ + 4 assertion–reason"
+      },
+      {
+        "name": "Section B – very short answer (2 marks)",
+        "type": "written",
+        "count": 5,
+        "marks": 2,
+        "negative": 0
+      },
+      {
+        "name": "Section C – short answer (3 marks)",
+        "type": "written",
+        "count": 7,
+        "marks": 3,
+        "negative": 0
+      },
+      {
+        "name": "Section D – case-based (4 marks)",
+        "type": "written",
+        "count": 2,
+        "marks": 4,
+        "negative": 0,
+        "style": "a passage followed by sub-questions"
+      },
+      {
+        "name": "Section E – long answer (5 marks)",
+        "type": "written",
+        "count": 3,
+        "marks": 5,
+        "negative": 0
+      }
+    ],
+    "notes": "No negative marking. Internal choice in some questions. Step marking for written answers."
+  },
+  "difficulty": null,
+  "topics": [
+    {
+      "subject": "Physics",
+      "name": "Electrostatics",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Current electricity",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Magnetism and EMI",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Alternating current",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Optics",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Dual nature and atoms",
+      "weight": null
+    },
+    {
+      "subject": "Physics",
+      "name": "Semiconductors",
+      "weight": null
+    }
+  ],
+  "style": {
+    "mix": null,
+    "notes": [
+      "Internal choice in one question in B, one in C, each case-study in D and all of E.",
+      "Derivations, diagrams and stepwise numericals earn step marks."
+    ]
+  },
+  "traps": [
+    "Missing units or labelled diagrams costs step marks.",
+    "Assertion–reason: check whether the reason actually explains the assertion.",
+    "Answering more than the internal choice asks."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "CBSE Class XII Physics sample question paper 2024-25",
+      "url": "https://cbseacademic.nic.in/web_material/SQP/ClassXII_2024_25/Physics-SQP.pdf",
+      "years": "2024-25"
+    },
+    {
+      "kind": "official",
+      "title": "CBSE Class XII Physics marking scheme 2024-25",
+      "url": "https://cbseacademic.nic.in/web_material/SQP/ClassXII_2024_25/Physics-MS.pdf",
+      "years": "2024-25"
+    }
+  ],
+  "group": "School boards",
+  "topicsBasis": "Syllabus areas (no measured weights)."
+}

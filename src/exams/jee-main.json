@@ -1,0 +1,221 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "jee-main",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "JEE Main-style",
+  "fullName": "Joint Entrance Examination (Main) – Paper 1 (B.E./B.Tech.)",
+  "conductedBy": "National Testing Agency (NTA)",
+  "coverage": {
+    "from": 2017,
+    "to": 2026,
+    "note": "Pattern and marking from the NTA JEE (Main) 2025 Information Bulletin. Difficulty, format and topic counts from Lumi's analysis of 8 of 19 JEE Main 2025 shifts (599 questions); Lumi covers 108 of 174 shifts 2017–2026. Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 180,
+    "totalMarks": 300,
+    "subjects": [
+      "Physics",
+      "Chemistry",
+      "Mathematics"
+    ],
+    "sections": [
+      {
+        "name": "Section A – MCQ (20 per subject)",
+        "type": "mcq",
+        "count": 60,
+        "marks": 4,
+        "negative": 1,
+        "style": "single correct of 4; includes statement, assertion–reason and match-the-list formats"
+      },
+      {
+        "name": "Section B – Numerical value (5 per subject)",
+        "type": "numerical",
+        "count": 15,
+        "marks": 4,
+        "negative": 1,
+        "answerFormat": "integer",
+        "style": "answer rounded to the nearest integer"
+      }
+    ],
+    "notes": "All 75 questions compulsory since 2025 (2021–2024 offered 10 numerical per subject, answer any 5). Negative marking applies to Section B too."
+  },
+  "difficulty": {
+    "easy": 27,
+    "medium": 60,
+    "hard": 13,
+    "basis": "JEE Main 2025: 162 easy / 360 medium / 77 hard of 599 questions in 8 analysed shifts (Lumi). Easy share by year: 29% (2017), 27% (2020), 34% (2021), 33% (2022), 34% (2023), 36% (2024), 27% (2025), 26% (2026); hard 10–15% every year."
+  },
+  "topics": [
+    {
+      "subject": "Mathematics",
+      "name": "Conic Sections",
+      "weight": 26
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Organic Chemistry: Some Basic Principles and Techniques",
+      "weight": 22
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Coordination Compounds",
+      "weight": 18
+    },
+    {
+      "subject": "Physics",
+      "name": "Ray Optics and Optical Instruments",
+      "weight": 17
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Three Dimensional Geometry",
+      "weight": 16
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Complex Numbers and Quadratic Equations",
+      "weight": 15
+    },
+    {
+      "subject": "Physics",
+      "name": "System of Particles and Rotational Motion",
+      "weight": 14
+    },
+    {
+      "subject": "Physics",
+      "name": "Units and Measurements",
+      "weight": 14
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Integrals",
+      "weight": 13
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Solutions",
+      "weight": 13
+    },
+    {
+      "subject": "Physics",
+      "name": "Electrostatic Potential and Capacitance",
+      "weight": 12
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Sequences and Series",
+      "weight": 12
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Relations and Functions",
+      "weight": 12
+    },
+    {
+      "subject": "Physics",
+      "name": "Thermodynamics",
+      "weight": 11
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Aldehydes, Ketones and Carboxylic Acids",
+      "weight": 11
+    },
+    {
+      "subject": "Chemistry",
+      "name": "The d- and f-Block Elements",
+      "weight": 11
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Amines",
+      "weight": 11
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Biomolecules",
+      "weight": 11
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Some Basic Concepts of Chemistry",
+      "weight": 11
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Binomial Theorem",
+      "weight": 11
+    },
+    {
+      "subject": "Physics",
+      "name": "Wave Optics",
+      "weight": 10
+    },
+    {
+      "subject": "Physics",
+      "name": "Moving Charges and Magnetism",
+      "weight": 9
+    },
+    {
+      "subject": "Physics",
+      "name": "Electric Charges and Fields",
+      "weight": 9
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Determinants",
+      "weight": 9
+    }
+  ],
+  "style": {
+    "mix": {
+      "singleCorrect": 58,
+      "numerical": 20,
+      "diagramBased": 7,
+      "twoStatements": 4,
+      "matchTheList": 4,
+      "assertionReason": 2,
+      "multiStep": 41,
+      "calculation": 25,
+      "application": 13,
+      "conceptual": 12,
+      "recall": 6
+    },
+    "notes": [
+      "2025 formats: single correct 58%, numerical value 20%, diagram based 7%, two statements 4%, match the list 4%, assertion–reason 2% (Lumi).",
+      "Skills tested in 2025: multi-step 41%, calculation 25%, application 13%, conceptual 12%, recall 6%.",
+      "Mathematics was the hardest subject in most analysed 2025 shifts (up to 12 hard of 25); Chemistry and Physics had few hard questions.",
+      "77% of 2025 questions repeated an exact idea from an earlier analysed year; 23% tested a new idea."
+    ]
+  },
+  "traps": [
+    "Section B answers must be rounded off to the nearest integer (NTA bulletin).",
+    "Negative marking (−1) applies to Section B numerical questions as well as MCQs.",
+    "Two-statement and match-the-list items where one wrong pairing changes the option.",
+    "Long Mathematics calculations eat time; skip and return."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "NTA JEE (Main) 2025 Information Bulletin – Scheme and pattern of examination",
+      "url": "https://cdnbbsr.s3waas.gov.in/s3f8e59f4b2fe7c5705bf878bbd494ccdf/uploads/2024/10/2024102824.pdf",
+      "years": "2025"
+    },
+    {
+      "kind": "analysis",
+      "title": "Lumi – JEE Main previous year questions, chapter-wise (108 shifts 2017–2026)",
+      "url": "https://lumineet.com/past-papers/jee-main",
+      "years": "2017–2026"
+    },
+    {
+      "kind": "analysis",
+      "title": "Lumi – JEE Main 2025 analysis (599 questions, difficulty split)",
+      "url": "https://lumineet.com/past-papers/jee-main/2025",
+      "years": "2025"
+    }
+  ],
+  "topicsBasis": "Question counts across the 8 analysed 2025 shifts (Lumi), top chapters per subject.",
+  "group": "Engineering"
+}

@@ -1,0 +1,44 @@
+{
+  "appId": "com.knowledgeatlas.app",
+  "productName": "Knowledge Atlas",
+  "artifactName": "KnowledgeAtlas-${version}-windows-${arch}.${ext}",
+  "files": [
+    {
+      "from": "dist-web",
+      "to": "dist",
+      "filter": [
+        "**/*"
+      ]
+    },
+    "electron/**/*",
+    "package.json",
+    "!node_modules/**/*"
+  ],
+  "directories": {
+    "output": "release-public"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      },
+      {
+        "target": "zip",
+        "arch": [
+          "x64"
+        ]
+      }
+    ],
+    "icon": "resources/electron/icon.ico",
+    "signAndEditExecutable": false
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": false,
+    "artifactName": "KnowledgeAtlas-${version}-windows-setup.${ext}"
+  }
+}

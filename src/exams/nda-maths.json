@@ -1,0 +1,91 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "nda-maths",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "NDA Mathematics-style",
+  "fullName": "National Defence Academy & Naval Academy – Paper I (Mathematics)",
+  "conductedBy": "Union Public Service Commission",
+  "group": "Defence",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 150,
+    "totalMarks": 300.0,
+    "subjects": [
+      "Mathematics"
+    ],
+    "sections": [
+      {
+        "name": "Mathematics – MCQ",
+        "type": "mcq",
+        "count": 120,
+        "marks": 2.5,
+        "negative": 0.83,
+        "style": "single correct of 4; one-third negative"
+      }
+    ],
+    "notes": "120 questions × 2.5 marks = 300, 150 minutes."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Mathematics",
+      "name": "Algebra",
+      "weight": 10
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Matrices and determinants",
+      "weight": 9
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Trigonometry",
+      "weight": 8
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Analytical geometry (2D and 3D)",
+      "weight": 7
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Differential calculus",
+      "weight": 6
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Integral calculus and differential equations",
+      "weight": 5
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Vectors",
+      "weight": 4
+    },
+    {
+      "subject": "Mathematics",
+      "name": "Statistics and probability",
+      "weight": 3
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "UPSC – active examinations (NDA & NA notice)",
+      "url": "https://upsc.gov.in/examinations/active-exams"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

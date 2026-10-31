@@ -1,0 +1,105 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "nda-gat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "NDA General Ability-style",
+  "fullName": "National Defence Academy & Naval Academy – Paper II (General Ability Test)",
+  "conductedBy": "Union Public Service Commission",
+  "group": "Defence",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 150,
+    "totalMarks": 600,
+    "subjects": [
+      "English",
+      "General Knowledge"
+    ],
+    "sections": [
+      {
+        "name": "Part A – English",
+        "type": "mcq",
+        "count": 50,
+        "marks": 4,
+        "negative": 1.33,
+        "style": ""
+      },
+      {
+        "name": "Part B – General Knowledge",
+        "type": "mcq",
+        "count": 100,
+        "marks": 4,
+        "negative": 1.33,
+        "style": ""
+      }
+    ],
+    "notes": "150 questions × 4 marks = 600, 150 minutes; one-third negative."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "English",
+      "name": "Grammar and usage",
+      "weight": 10
+    },
+    {
+      "subject": "English",
+      "name": "Vocabulary",
+      "weight": 9
+    },
+    {
+      "subject": "English",
+      "name": "Comprehension",
+      "weight": 8
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "Physics",
+      "weight": 10
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "Chemistry",
+      "weight": 9
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "General science",
+      "weight": 8
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "History and freedom movement",
+      "weight": 7
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "Geography",
+      "weight": 6
+    },
+    {
+      "subject": "General Knowledge",
+      "name": "Current events",
+      "weight": 5
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "UPSC – active examinations (NDA & NA notice)",
+      "url": "https://upsc.gov.in/examinations/active-exams"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

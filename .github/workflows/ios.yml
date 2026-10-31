@@ -1,0 +1,52 @@
+# iOS (PUBLIC edition, bundle id com.knowledgeatlas.app). Always builds an unsigned Simulator app.
+# If signing secrets are set (IOS_CERT_P12_BASE64, IOS_CERT_PASSWORD, IOS_PROFILE_BASE64, IOS_TEAM_ID), also an .ipa.
+name: iOS build
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+jobs:
+  ios:
+    runs-on: macos-latest
+    env:
+      HAS_SIGNING: ${{ secrets.IOS_CERT_P12_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run ios:sync
+      - name: Simulator build (unsigned)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+          cd build/Build/Products/Release-iphonesimulator && zip -qry "$GITHUB_WORKSPACE/KnowledgeAtlas-ios-simulator.zip" App.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KnowledgeAtlas-ios-simulator
+          path: KnowledgeAtlas-ios-simulator.zip
+      - name: Signed .ipa (only with signing secrets)
+        if: env.HAS_SIGNING == 'true'
+        env:
+          P12: ${{ secrets.IOS_CERT_P12_BASE64 }}
+          P12_PASS: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROFILE_BASE64 }}
+          TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          KC=$RUNNER_TEMP/build.keychain; security create-keychain -p ci "$KC"; security unlock-keychain -p ci "$KC"; security default-keychain -s "$KC"
+          echo "$P12" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 -k "$KC" -P "$P12_PASS" -T /usr/bin/codesign; security set-key-partition-list -S apple-tool:,apple: -s -k ci "$KC"
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles; echo "$PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/ka.mobileprovision
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath $RUNNER_TEMP/App.xcarchive DEVELOPMENT_TEAM=$TEAM_ID archive
+          /usr/libexec/PlistBuddy -c "Clear dict" -c "Add :method string app-store" -c "Add :teamID string $TEAM_ID" $RUNNER_TEMP/export.plist
+          xcodebuild -exportArchive -archivePath $RUNNER_TEMP/App.xcarchive -exportOptionsPlist $RUNNER_TEMP/export.plist -exportPath $RUNNER_TEMP/ipa
+          cp $RUNNER_TEMP/ipa/*.ipa "$GITHUB_WORKSPACE/KnowledgeAtlas.ipa"
+      - if: env.HAS_SIGNING == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: KnowledgeAtlas-ios-ipa
+          path: KnowledgeAtlas.ipa

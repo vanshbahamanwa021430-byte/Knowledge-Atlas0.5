@@ -1,0 +1,90 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "upsc-csat",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "UPSC Prelims CSAT-style",
+  "fullName": "UPSC Civil Services Preliminary – General Studies Paper II (CSAT)",
+  "conductedBy": "Union Public Service Commission",
+  "group": "Civil services",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 120,
+    "totalMarks": 200.0,
+    "subjects": [
+      "Comprehension",
+      "Reasoning",
+      "Basic numeracy"
+    ],
+    "sections": [
+      {
+        "name": "CSAT – MCQ",
+        "type": "mcq",
+        "count": 80,
+        "marks": 2.5,
+        "negative": 0.83,
+        "style": "single correct of 4; one-third negative"
+      }
+    ],
+    "notes": "Qualifying paper: 33% needed. 80 questions × 2.5 marks; one-third negative marking."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "CSAT",
+      "name": "Reading comprehension",
+      "weight": 10
+    },
+    {
+      "subject": "CSAT",
+      "name": "Interpersonal and communication skills",
+      "weight": 9
+    },
+    {
+      "subject": "CSAT",
+      "name": "Logical reasoning and analytical ability",
+      "weight": 8
+    },
+    {
+      "subject": "CSAT",
+      "name": "Decision making and problem solving",
+      "weight": 7
+    },
+    {
+      "subject": "CSAT",
+      "name": "General mental ability",
+      "weight": 6
+    },
+    {
+      "subject": "CSAT",
+      "name": "Basic numeracy (Class X level)",
+      "weight": 5
+    },
+    {
+      "subject": "CSAT",
+      "name": "Data interpretation",
+      "weight": 4
+    }
+  ],
+  "traps": [
+    "Qualifying only — but failing it voids your GS score."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "UPSC – active examinations (CSE notice and scheme)",
+      "url": "https://upsc.gov.in/examinations/active-exams"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

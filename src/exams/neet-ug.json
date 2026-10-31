@@ -1,0 +1,214 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "neet-ug",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "NEET UG-style",
+  "fullName": "National Eligibility cum Entrance Test (UG)",
+  "conductedBy": "National Testing Agency (NTA)",
+  "coverage": {
+    "from": 2025,
+    "to": 2025,
+    "note": "Pattern from the NTA NEET (UG) 2025 bulletin and PW's 2025 paper analysis (180 compulsory MCQs, +4/−1, 3 hours). Difficulty, question types and chapter counts from PW's NEET 2025 analysis. Verified 29 Oct 2026 against the cited sources."
+  },
+  "pattern": {
+    "durationMin": 180,
+    "totalMarks": 720,
+    "subjects": [
+      "Physics",
+      "Chemistry",
+      "Biology (Botany and Zoology)"
+    ],
+    "sections": [
+      {
+        "name": "Physics (45)",
+        "type": "mcq",
+        "count": 45,
+        "marks": 4,
+        "negative": 1
+      },
+      {
+        "name": "Chemistry (45)",
+        "type": "mcq",
+        "count": 45,
+        "marks": 4,
+        "negative": 1
+      },
+      {
+        "name": "Biology (90)",
+        "type": "mcq",
+        "count": 90,
+        "marks": 4,
+        "negative": 1,
+        "style": "NCERT-line statements, assertion–reason, match the columns"
+      }
+    ],
+    "notes": "Pen-and-paper (OMR). One correct or most appropriate option; marking more than one option counts as wrong."
+  },
+  "difficulty": {
+    "easy": 33,
+    "medium": 38,
+    "hard": 28,
+    "basis": "NEET 2025: 60 easy / 69 medium / 51 hard of 180 (PW). Physics 10/19/16, Chemistry 11/19/15, Botany 19/16/14, Zoology 19/15/6."
+  },
+  "topics": [
+    {
+      "subject": "Biology",
+      "name": "Molecular Basis of Inheritance",
+      "weight": 7
+    },
+    {
+      "subject": "Biology",
+      "name": "Biotechnology – Principles and Processes",
+      "weight": 6
+    },
+    {
+      "subject": "Biology",
+      "name": "Cell: The Unit of Life",
+      "weight": 5
+    },
+    {
+      "subject": "Biology",
+      "name": "Plant Kingdom",
+      "weight": 5
+    },
+    {
+      "subject": "Biology",
+      "name": "Sexual Reproduction in Flowering Plants",
+      "weight": 5
+    },
+    {
+      "subject": "Biology",
+      "name": "Human Reproduction",
+      "weight": 5
+    },
+    {
+      "subject": "Biology",
+      "name": "Biotechnology and its Applications",
+      "weight": 5
+    },
+    {
+      "subject": "Biology",
+      "name": "Ecosystem",
+      "weight": 4
+    },
+    {
+      "subject": "Biology",
+      "name": "Microbes in Human Welfare",
+      "weight": 4
+    },
+    {
+      "subject": "Biology",
+      "name": "Animal Kingdom",
+      "weight": 4
+    },
+    {
+      "subject": "Biology",
+      "name": "Structural Organisation in Animals",
+      "weight": 4
+    },
+    {
+      "subject": "Biology",
+      "name": "Chemical Coordination and Integration",
+      "weight": 4
+    },
+    {
+      "subject": "Biology",
+      "name": "Human Health and Disease",
+      "weight": 4
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Coordination Compounds",
+      "weight": 4
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Organic Chemistry: Some Basic Principles and Techniques",
+      "weight": 4
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Hydrocarbons",
+      "weight": 3
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Equilibrium",
+      "weight": 3
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Chemical Kinetics",
+      "weight": 3
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Solutions",
+      "weight": 3
+    },
+    {
+      "subject": "Chemistry",
+      "name": "Aldehydes, Ketones and Carboxylic Acids",
+      "weight": 3
+    },
+    {
+      "subject": "Physics",
+      "name": "Rotational Motion",
+      "weight": 3
+    },
+    {
+      "subject": "Physics",
+      "name": "Units and Measurements",
+      "weight": 3
+    },
+    {
+      "subject": "Physics",
+      "name": "Moving Charges and Magnetism",
+      "weight": 3
+    },
+    {
+      "subject": "Physics",
+      "name": "Current Electricity",
+      "weight": 3
+    }
+  ],
+  "style": {
+    "mix": {
+      "singleChoice": 66,
+      "multiStatement": 14,
+      "matchTheColumn": 9,
+      "statementIandII": 7,
+      "assertionReason": 3,
+      "diagramBased": 2
+    },
+    "notes": [
+      "NEET 2025 question types (PW): 119 single-choice, 25 multi-statement, 17 match-the-column, 12 Statement I & II, 6 assertion–reason, 3 diagram-based of 180.",
+      "All 45 Physics questions were direct single-choice; statement and matching formats came in Chemistry and Biology.",
+      "Physics was the toughest section; Biology mostly NCERT-based but lengthy."
+    ]
+  },
+  "traps": [
+    "−1 for every wrong answer: guessing among 4 options loses marks on average.",
+    "Statement-based questions where one word differs from the NCERT line.",
+    "Match-the-column options that differ by one pair.",
+    "Unit and power-of-ten slips in Physics numericals."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "NTA NEET (UG) 2025 Information Bulletin – pattern of the test and marking",
+      "url": "https://cdnbbsr.s3waas.gov.in/s37bc1ec1d9c3426357e69acd5bf320061/uploads/2025/02/2025020754.pdf",
+      "years": "2025"
+    },
+    {
+      "kind": "analysis",
+      "title": "PW – NEET 2025 paper analysis (subject-wise easy/medium/hard counts)",
+      "url": "https://www.pw.live/neet/exams/neet-2025-paper-analysis",
+      "years": "2025"
+    }
+  ],
+  "topicsBasis": "Question counts in NEET 2025 (PW chapter-wise analysis).",
+  "group": "Medical"
+}

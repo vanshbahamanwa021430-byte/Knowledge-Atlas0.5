@@ -1,0 +1,71 @@
+name: Build Knowledge Atlas web app
+# The installable web version: works in any current browser and can be added to an iPhone or Android
+# home screen without an app store. Always uploads a zip you can host anywhere. Also publishes to
+# GitHub Pages, but only when Pages is switched on with Source "GitHub Actions"
+# (Settings > Pages; needs a public repository, or a paid plan for private ones). Otherwise the
+# publish job is skipped instead of failing.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      pages: ${{ steps.pages.outputs.enabled }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check source and run tests
+        run: |
+          npm run check
+          npm test
+      - name: Build web app
+        run: npm run build
+      - name: Upload web app files
+        uses: actions/upload-artifact@v5
+        with:
+          name: Knowledge-Atlas-web
+          path: dist
+          if-no-files-found: error
+          retention-days: 14
+      - name: Check whether GitHub Pages is switched on
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TYPE="$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq .build_type 2>/dev/null || true)"
+          if [ "$TYPE" = "workflow" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "GitHub Pages is on with Source: GitHub Actions, so the site will be published."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=GitHub Pages not published::Pages is off for this repository (or its Source is not 'GitHub Actions'). The web app is still in the Knowledge-Atlas-web download above. To publish it, open Settings > Pages and set Source to GitHub Actions (needs a public repository or a paid plan), then run this workflow again."
+          fi
+      - name: Prepare GitHub Pages upload
+        if: steps.pages.outputs.enabled == 'true'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+  pages:
+    needs: build
+    if: needs.build.outputs.pages == 'true'
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Publish to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

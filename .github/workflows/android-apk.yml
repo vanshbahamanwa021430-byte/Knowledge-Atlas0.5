@@ -1,0 +1,88 @@
+name: Build Knowledge Atlas Android APK
+# Installs on Android 6.0 (API 23) and newer.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['**/*.md']
+permissions:
+  contents: read
+jobs:
+  android:
+    # Pinned: ubuntu-latest moves to Ubuntu 26.04 from Oct 19 2026 (runner-images#14748).
+    # 24.04 keeps the preinstalled Android SDK this workflow relies on.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Preflight repository layout
+        run: |
+          ls -la
+          for f in package.json index.html capacitor.config.json vite.config.js src/main.js; do
+            test -f "$f" || { echo "ERROR: $f missing. Upload the extracted folder CONTENTS to the repository root (not the ZIP, not an enclosing folder)."; exit 1; }
+          done
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      # Capacitor 7's Android project is compiled for Java 21.
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      # ubuntu-latest already ships the Android SDK, so no setup action is needed
+      # (android-actions/setup-android@v3 runs on deprecated Node 20 and its old
+      # default asked for the retired 'tools' package). Accept the licences so
+      # Gradle can download any platform/build-tools version it needs.
+      - name: Use the runner's Android SDK
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          test -d "$SDK" || { echo "ERROR: Android SDK not found on this runner"; exit 1; }
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          SDKMANAGER="$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)"
+          echo "Using $SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses > /dev/null || true
+          ls "$SDK/platforms" "$SDK/build-tools"
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check source and run tests
+        run: |
+          npm run check
+          npm test
+      - name: Build web assets
+        run: npm run build
+      - name: Generate native Android project
+        run: |
+          npx cap add android
+          node scripts/native-assets.mjs android
+          npx cap sync android
+          test -f android/gradlew || { echo 'ERROR: Capacitor did not generate the Gradle wrapper'; exit 1; }
+      # Same signing key on every build, so a new APK installs over the old one and keeps your data.
+      # (A debug key for personal installs only; Play Store releases need your own release key.)
+      - name: Use the project's fixed signing key
+        run: |
+          # The Android Gradle plugin looks in ANDROID_USER_HOME, ANDROID_PREFS_ROOT/.android, ANDROID_SDK_HOME/.android, then ~/.android.
+          for d in "$ANDROID_USER_HOME" "${ANDROID_PREFS_ROOT:+$ANDROID_PREFS_ROOT/.android}" "${ANDROID_SDK_HOME:+$ANDROID_SDK_HOME/.android}" "$HOME/.android"; do
+            if [ -n "$d" ] && [ -f resources/android-debug.keystore ]; then mkdir -p "$d" && cp resources/android-debug.keystore "$d/debug.keystore" && echo "Key copied to $d"; fi
+          done
+      - name: Compile Android debug APK
+        working-directory: android
+        run: bash ./gradlew --no-daemon assembleDebug --stacktrace
+      - name: Verify APK exists and show its signing key
+        run: |
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK"
+          ls -lh "$APK"
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner 2>/dev/null | sort -V | tail -1)
+          if [ -n "$APKSIGNER" ]; then "$APKSIGNER" verify --print-certs "$APK" | grep -i "SHA-256" | head -1; fi
+          echo "Project key SHA-256: 4f6d498d9dba3eeda44ddfed862d6bbc9dcc9f97c058dd400f94bbc12803d583"
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v5
+        with:
+          name: Knowledge-Atlas-2-debug-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

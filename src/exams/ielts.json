@@ -1,0 +1,113 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "ielts",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "IELTS Academic (Reading + Writing)-style",
+  "fullName": "IELTS Academic Reading and Writing – generic practice in the style of",
+  "conductedBy": "IELTS partners",
+  "group": "International",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 120,
+    "totalMarks": 58,
+    "subjects": [
+      "Reading",
+      "Writing"
+    ],
+    "sections": [
+      {
+        "name": "Reading – 3 passages",
+        "type": "mcq",
+        "count": 40,
+        "marks": 1,
+        "negative": 0,
+        "style": "true/false/not given, matching, completion as choices"
+      },
+      {
+        "name": "Writing Task 1 – describe a visual",
+        "type": "written",
+        "count": 1,
+        "marks": 9,
+        "negative": 0,
+        "style": "at least 150 words; band 0–9"
+      },
+      {
+        "name": "Writing Task 2 – essay",
+        "type": "written",
+        "count": 1,
+        "marks": 9,
+        "negative": 0,
+        "style": "at least 250 words; band 0–9"
+      }
+    ],
+    "notes": "Reading 60 min + Writing 60 min. Listening and Speaking are not modelled. Real results are bands 0–9."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Reading",
+      "name": "Skimming and scanning",
+      "weight": 10
+    },
+    {
+      "subject": "Reading",
+      "name": "True / False / Not Given",
+      "weight": 9
+    },
+    {
+      "subject": "Reading",
+      "name": "Matching headings",
+      "weight": 8
+    },
+    {
+      "subject": "Reading",
+      "name": "Sentence completion",
+      "weight": 7
+    },
+    {
+      "subject": "Writing",
+      "name": "Describing charts and processes",
+      "weight": 10
+    },
+    {
+      "subject": "Writing",
+      "name": "Opinion and discussion essays",
+      "weight": 9
+    },
+    {
+      "subject": "Writing",
+      "name": "Coherence and cohesion",
+      "weight": 8
+    },
+    {
+      "subject": "Writing",
+      "name": "Lexical resource",
+      "weight": 7
+    },
+    {
+      "subject": "Writing",
+      "name": "Grammatical range",
+      "weight": 6
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "IELTS official site",
+      "url": "https://ielts.org/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

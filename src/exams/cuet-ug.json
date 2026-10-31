@@ -1,0 +1,86 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "cuet-ug",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "CUET UG-style",
+  "fullName": "Common University Entrance Test (UG) – one domain subject test",
+  "conductedBy": "National Testing Agency (NTA)",
+  "group": "University entrance",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 60,
+    "totalMarks": 250,
+    "subjects": [
+      "Domain subject"
+    ],
+    "sections": [
+      {
+        "name": "Domain subject – MCQ",
+        "type": "mcq",
+        "count": 50,
+        "marks": 5,
+        "negative": 1,
+        "style": "single correct of 4; all 50 compulsory"
+      }
+    ],
+    "notes": "Each subject test: 50 compulsory questions in 60 minutes; +5 correct, −1 wrong. Pick your own domain subject in the builder topics."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "General Test",
+      "name": "General knowledge and current affairs",
+      "weight": 10
+    },
+    {
+      "subject": "General Test",
+      "name": "Numerical ability",
+      "weight": 9
+    },
+    {
+      "subject": "General Test",
+      "name": "Logical and analytical reasoning",
+      "weight": 8
+    },
+    {
+      "subject": "General Test",
+      "name": "Quantitative reasoning",
+      "weight": 7
+    },
+    {
+      "subject": "Language",
+      "name": "Reading comprehension",
+      "weight": 10
+    },
+    {
+      "subject": "Language",
+      "name": "Vocabulary",
+      "weight": 9
+    },
+    {
+      "subject": "Language",
+      "name": "Grammar",
+      "weight": 8
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "CUET (UG) official website – NTA",
+      "url": "https://cuet.nta.nic.in/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

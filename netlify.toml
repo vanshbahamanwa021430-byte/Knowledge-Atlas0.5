@@ -1,0 +1,14 @@
+# Netlify: free static hosting of the PUBLIC web edition.
+[build]
+  command = "npm ci && npm run build:web"
+  publish = "dist-web"
+[build.environment]
+  NODE_VERSION = "20"
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Content-Type = "application/wasm"

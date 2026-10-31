@@ -1,0 +1,139 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "clat-ug",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "CLAT UG-style",
+  "fullName": "Common Law Admission Test (UG)",
+  "conductedBy": "Consortium of National Law Universities",
+  "group": "Law",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 120,
+    "totalMarks": 120,
+    "subjects": [
+      "English",
+      "Current Affairs and GK",
+      "Legal Reasoning",
+      "Logical Reasoning",
+      "Quantitative Techniques"
+    ],
+    "sections": [
+      {
+        "name": "English Language",
+        "type": "mcq",
+        "count": 24,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "passage based"
+      },
+      {
+        "name": "Current Affairs incl. GK",
+        "type": "mcq",
+        "count": 28,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "passage based"
+      },
+      {
+        "name": "Legal Reasoning",
+        "type": "mcq",
+        "count": 32,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "passage based; principle → facts"
+      },
+      {
+        "name": "Logical Reasoning",
+        "type": "mcq",
+        "count": 24,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "passage based"
+      },
+      {
+        "name": "Quantitative Techniques",
+        "type": "mcq",
+        "count": 12,
+        "marks": 1,
+        "negative": 0.25,
+        "style": "data sets and graphs"
+      }
+    ],
+    "notes": "120 passage-based questions, 120 minutes; −0.25 per wrong answer. Section split is approximate."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Legal Reasoning",
+      "name": "Law of torts",
+      "weight": 10
+    },
+    {
+      "subject": "Legal Reasoning",
+      "name": "Contract law",
+      "weight": 9
+    },
+    {
+      "subject": "Legal Reasoning",
+      "name": "Criminal law",
+      "weight": 8
+    },
+    {
+      "subject": "Legal Reasoning",
+      "name": "Constitutional law",
+      "weight": 7
+    },
+    {
+      "subject": "Legal Reasoning",
+      "name": "Legal principles applied to facts",
+      "weight": 6
+    },
+    {
+      "subject": "Logical Reasoning",
+      "name": "Arguments, premises and conclusions",
+      "weight": 10
+    },
+    {
+      "subject": "Logical Reasoning",
+      "name": "Inferences",
+      "weight": 9
+    },
+    {
+      "subject": "Logical Reasoning",
+      "name": "Analogies",
+      "weight": 8
+    },
+    {
+      "subject": "English",
+      "name": "Passage comprehension",
+      "weight": 10
+    },
+    {
+      "subject": "English",
+      "name": "Vocabulary in context",
+      "weight": 9
+    }
+  ],
+  "traps": [
+    "Apply only the principle given in the passage, not real-world law."
+  ],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "Consortium of NLUs – CLAT",
+      "url": "https://consortiumofnlus.ac.in/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}

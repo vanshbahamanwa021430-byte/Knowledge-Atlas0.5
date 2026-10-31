@@ -1,0 +1,60 @@
+name: Build Knowledge Atlas iPhone app
+# Builds an unsigned .ipa for iPhone and iPad (iOS 14 or later). Install it with Sideloadly or AltStore,
+# which sign it with your own Apple ID (see VERIFY_AND_BUILD.md). Run it from the Actions tab.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios:
+    # Xcode only runs on macOS. On a private repository, macOS minutes count 10x against the free allowance.
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Install JavaScript dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check source and run tests
+        run: |
+          npm run check
+          npm test
+      - name: Build web assets
+        run: npm run build
+      - name: Generate the Xcode project
+        run: |
+          npx cap add ios
+          node scripts/native-assets.mjs ios
+          npx cap sync ios
+          test -d ios/App/App.xcworkspace || { echo 'ERROR: ios/App/App.xcworkspace missing (CocoaPods install failed?)'; exit 1; }
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build the app without signing
+        shell: bash
+        run: |
+          xcodebuild -quiet \
+            -workspace ios/App/App.xcworkspace -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive
+      - name: Package the unsigned IPA
+        shell: bash
+        run: |
+          APP="$RUNNER_TEMP/App.xcarchive/Products/Applications/App.app"
+          test -d "$APP" || { echo 'ERROR: App.app not found in the archive'; find "$RUNNER_TEMP/App.xcarchive" -maxdepth 4 | head -40; exit 1; }
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/Knowledge-Atlas-unsigned.ipa" Payload)
+          ls -lh Knowledge-Atlas-unsigned.ipa
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v5
+        with:
+          name: Knowledge-Atlas-iOS-unsigned-IPA
+          path: Knowledge-Atlas-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

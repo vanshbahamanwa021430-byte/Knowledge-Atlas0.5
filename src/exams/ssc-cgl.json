@@ -1,0 +1,183 @@
+{
+  "schema": "ka-exam-profile",
+  "schemaVersion": 1,
+  "id": "ssc-cgl",
+  "kind": "builtin",
+  "profileVersion": "2026.10",
+  "name": "SSC CGL Tier 1-style",
+  "fullName": "Staff Selection Commission Combined Graduate Level – Tier I",
+  "conductedBy": "Staff Selection Commission",
+  "group": "Government jobs",
+  "coverage": {
+    "note": "Pattern from the latest public official notice we know of (checked Oct 2026). Patterns change: confirm with the official notice before your exam."
+  },
+  "pattern": {
+    "durationMin": 60,
+    "totalMarks": 200,
+    "subjects": [
+      "General Intelligence and Reasoning",
+      "General Awareness",
+      "Quantitative Aptitude",
+      "English Comprehension"
+    ],
+    "sections": [
+      {
+        "name": "General Intelligence and Reasoning",
+        "type": "mcq",
+        "count": 25,
+        "marks": 2,
+        "negative": 0.5,
+        "style": "single correct of 4"
+      },
+      {
+        "name": "General Awareness",
+        "type": "mcq",
+        "count": 25,
+        "marks": 2,
+        "negative": 0.5,
+        "style": "single correct of 4"
+      },
+      {
+        "name": "Quantitative Aptitude",
+        "type": "mcq",
+        "count": 25,
+        "marks": 2,
+        "negative": 0.5,
+        "style": "single correct of 4"
+      },
+      {
+        "name": "English Comprehension",
+        "type": "mcq",
+        "count": 25,
+        "marks": 2,
+        "negative": 0.5,
+        "style": "single correct of 4"
+      }
+    ],
+    "notes": "100 questions, 200 marks, 60 minutes; −0.5 per wrong answer."
+  },
+  "difficulty": {
+    "easy": 30,
+    "medium": 50,
+    "hard": 20,
+    "basis": "Typical mix; not measured from papers."
+  },
+  "topics": [
+    {
+      "subject": "Reasoning",
+      "name": "Analogy and classification",
+      "weight": 10
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Coding–decoding",
+      "weight": 9
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Series",
+      "weight": 8
+    },
+    {
+      "subject": "Reasoning",
+      "name": "Puzzles and seating",
+      "weight": 7
+    },
+    {
+      "subject": "Quant",
+      "name": "Percentages and ratio",
+      "weight": 10
+    },
+    {
+      "subject": "Quant",
+      "name": "Profit and loss",
+      "weight": 9
+    },
+    {
+      "subject": "Quant",
+      "name": "Algebra",
+      "weight": 8
+    },
+    {
+      "subject": "Quant",
+      "name": "Geometry and mensuration",
+      "weight": 7
+    },
+    {
+      "subject": "Quant",
+      "name": "Trigonometry",
+      "weight": 6
+    },
+    {
+      "subject": "Quant",
+      "name": "Data interpretation",
+      "weight": 5
+    },
+    {
+      "subject": "English",
+      "name": "Reading comprehension",
+      "weight": 10
+    },
+    {
+      "subject": "English",
+      "name": "Error spotting",
+      "weight": 9
+    },
+    {
+      "subject": "English",
+      "name": "Synonyms and antonyms",
+      "weight": 8
+    },
+    {
+      "subject": "English",
+      "name": "Idioms",
+      "weight": 7
+    },
+    {
+      "subject": "English",
+      "name": "Cloze test",
+      "weight": 6
+    },
+    {
+      "subject": "General Awareness",
+      "name": "History",
+      "weight": 10
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Polity",
+      "weight": 9
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Geography",
+      "weight": 8
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Economy",
+      "weight": 7
+    },
+    {
+      "subject": "General Awareness",
+      "name": "General science",
+      "weight": 6
+    },
+    {
+      "subject": "General Awareness",
+      "name": "Current affairs",
+      "weight": 5
+    }
+  ],
+  "traps": [],
+  "sources": [
+    {
+      "kind": "official",
+      "title": "Staff Selection Commission",
+      "url": "https://ssc.gov.in/"
+    }
+  ],
+  "assumptions": [
+    "Questions are AI-generated in the style of this exam, plus anything you import. Not official papers."
+  ]
+}
