@@ -27,6 +27,30 @@ export const SERVER_PRESETS = {
   litertlm: { label: 'Google LiteRT-LM / Gemma (offline, on your PC)', url: 'http://localhost:9379/v1', model: 'gemma,cpu,16384' },
   custom: { label: 'Custom endpoint (OpenAI-compatible)', url: '', model: 'auto' }
 };
+// 0.9.8 no-key option: the owner's Gemini key stays in a small proxy (Google Apps Script web app, docs in proxy/,
+// or a Cloudflare Worker); the app only knows its URL and a public app token. Set at build time
+// (VITE_PRVLAR_PROXY, VITE_PRVLAR_PROXY_TOKEN) or at run time from config.json. Empty = option hidden.
+export const FREE_LABEL = 'Prvlar free (limited)';
+export const FREE = { url: '', token: '' };
+const isGas = u => /^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u);
+export function setFreeProxy(url, token = '') {
+  url = String(url || '').trim().replace(/\/+$/, '');
+  if (!/^https:\/\//.test(url)) { delete SERVER_PRESETS.prvlar; FREE.url = ''; return false; }
+  FREE.url = url; FREE.token = String(token || '');
+  SERVER_PRESETS.prvlar = { label: FREE_LABEL, url: isGas(url) ? url : url + '/v1', model: 'auto', free: true, brand: 'Prvlar free' };
+  return true;
+}
+setFreeProxy((import.meta.env && import.meta.env.VITE_PRVLAR_PROXY) || '', (import.meta.env && import.meta.env.VITE_PRVLAR_PROXY_TOKEN) || '');
+// Apps Script web apps only accept "simple" requests (no custom headers), so the device id and token go in the body.
+async function gasPost(endpoint, device, payload, timeout) {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ token: FREE.token, device, payload }), signal: ctl.signal, redirect: 'follow' });
+    const j = await r.json().catch(() => ({ status: 502, body: { error: { message: 'The free option returned an unreadable reply.' } } }));
+    return new Response(JSON.stringify(j.body ?? {}), { status: Number(j.status) || 502, headers: { 'Content-Type': 'application/json' } });
+  } finally { clearTimeout(t); }
+}
+export const isFreeLimit = e => /PRVLAR_LIMIT/.test(String(e?.message || e || ''));
 
 // Plain http is only allowed to this device or the local network (private IPv4 ranges, localhost, *.local).
 export function isPrivateHost(host) {
@@ -72,6 +96,7 @@ export function resolveAI(ai) {
   if (ai && Array.isArray(ai.chain)) { if (!ai.chain.length) throw Error('Add an AI key or server in Settings first.'); return resolveAI(ai.chain[0]); }
   const cfg = typeof ai === 'string' || ai == null ? { key: ai } : ai;
   const key = String(cfg.key || '').trim();
+  if (cfg.server?.free) return { name: FREE_LABEL, endpoint: isGas(cfg.server.url) ? cfg.server.url : chatEndpoint(cfg.server.url), gas: isGas(cfg.server.url), model: 'auto', temperature: 0.2, key, timeout: 120000, local: false, vision: true, free: true };
   if (cfg.server) {
     return { name: 'Your AI server', endpoint: chatEndpoint(cfg.server.url), model: String(cfg.server.model || '').trim() || 'auto', temperature: 0.2, key, timeout: 600000, local: true, vision: !!cfg.server.vision };
   }
@@ -144,26 +169,27 @@ async function callModel(ai, system, user, images = []) {
     throw last;
   }
   const p = resolveAI(ai);
+  const post = p.gas ? (e, h, pl, t) => gasPost(e, p.key, pl, t) : postJson;
   if (!p.local && modelOverride[p.endpoint]) p.model = modelOverride[p.endpoint];
   const headers = { 'Content-Type': 'application/json' };
   if (p.key) headers.Authorization = 'Bearer ' + p.key;
   const payload = { model: p.model, response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: userContent(p, user, images) }] };
   if (p.temperature != null) payload.temperature = p.temperature;
-  let res = await postJson(p.endpoint, headers, payload, p.timeout);
+  let res = await post(p.endpoint, headers, payload, p.timeout);
   // Busy model (503): wait a moment and try once more before reporting it.
-  if (res.status === 503) { await new Promise(r => setTimeout(r, 2000)); res = await postJson(p.endpoint, headers, payload, p.timeout); }
+  if (res.status === 503) { await new Promise(r => setTimeout(r, 2000)); res = await post(p.endpoint, headers, payload, p.timeout); }
   let detail = res.ok ? '' : await errorDetail(res);
   // If a model rejects JSON mode, retry once without it; the prompts already demand JSON only.
   if ((res.status === 400 || res.status === 422) && /response_format|json/i.test(detail)) {
     delete payload.response_format;
-    res = await postJson(p.endpoint, headers, payload, p.timeout);
+    res = await post(p.endpoint, headers, payload, p.timeout);
     detail = res.ok ? '' : await errorDetail(res);
   }
-  if (res.status === 404 && !p.local && /model/i.test(detail)) {
+  if (res.status === 404 && !p.local && !p.free && /model/i.test(detail)) {
     const list = await getJson(p.endpoint.replace(/chat\/completions$/, 'models'), p.key ? { Authorization: 'Bearer ' + p.key } : {}).catch(() => null);
     const alt = list?.ok ? pickChatModel(list.data?.data || list.data?.models || [], p.model) : null;
     if (alt) {
-      payload.model = alt; res = await postJson(p.endpoint, headers, payload, p.timeout); detail = res.ok ? '' : await errorDetail(res);
+      payload.model = alt; res = await post(p.endpoint, headers, payload, p.timeout); detail = res.ok ? '' : await errorDetail(res);
       if (res.ok) modelOverride[p.endpoint] = alt;
     }
   }
@@ -182,7 +208,7 @@ async function callModel(ai, system, user, images = []) {
   try { return parseJsonReply(content); } catch { /* one automatic retry below */ }
   if (!payload._retried) {
     payload._retried = true; const again = { ...payload }; delete again._retried;
-    const r2 = await postJson(p.endpoint, headers, again, p.timeout).catch(() => null);
+    const r2 = await post(p.endpoint, headers, again, p.timeout).catch(() => null);
     if (r2?.ok) { try { return parseJsonReply((await r2.json()).choices[0].message.content); } catch { /* fall through */ } }
   }
   throw Error('The AI returned unreadable output. Try again.');

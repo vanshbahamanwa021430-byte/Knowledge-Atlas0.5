@@ -20,7 +20,7 @@ import { EXTRA_KINDS, normalizeProfile, buildPlan, scoreQuestion, answerText, co
 import { getUrl } from './net.js';
 import { BACKUP_PREFS, db, saveDocument, getDocuments, saveAttempt, getAttempts, getSetting, setSetting, requestPersistence, exportAll, importAll, getCards, saveCards, deleteCard, getSessions, saveSession, getPlans, savePlan, deletePlan, getDays, bumpDay, getProfiles, saveProfile, deleteProfile, getTraces, saveTrace, clearTraces, saveBlob, getBlob, deleteBlob } from './storage.js';
 import { chunkDocs, buildIndex, retrieve, searchTraces, traceFromAttempt, traceFromPractice, makeTrace, updateProfile, emptyProfile, weakTopics as tutorWeak, strongTopics, levelFor as tutorLevel, profileHint, practiceTargets } from './tutor.js';
-import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, askSection, chatDocument, testConnection, describeAI, providerFor, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice } from './ai.js';
+import { codePlan, codeTests, codeReview, codeExplain, codeLesson, codeSimulate, interviewProblem, generateExam, gradeWritten, explainSection, askSection, chatDocument, testConnection, describeAI, providerFor, isFreeLimit, setFreeProxy, organiseMap, organiseSize, makeFlashcards, SERVER_PRESETS, fetchModels, generatePlanExam, analysePapers, smartyAnswer, smartyPractice } from './ai.js';
 import { matchSections, flatMap } from './aimap.js';
 import { flowchartSVG, defaultCollapsed, childrenMap, chartNodes, levelNames } from './flowchart.js';
 import { gradeMCQ, makeAttempt, isDue, EXAM_MINUTES, QUESTION_COUNT } from './engine.js';
@@ -116,6 +116,8 @@ const writeJSON = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); 
 {
   const v = readJSON('prvlar-ai', {});
   if (SERVER_PRESETS[v.mode] || v.mode === 'cloud') state.ai = { mode: v.mode, url: String(v.url || ''), model: String(v.model || ''), vision: !!v.vision };
+  // New users (nothing chosen, no key) start on the free limited option when the proxy is configured.
+  else if (SERVER_PRESETS.prvlar && !readJSON('prvlar-key', '')) state.ai = { mode: 'prvlar', url: '', model: '', vision: true };
   const fb = readJSON('prvlar-fallback', {}) || {};
   state.fb = { on: fb.on === undefined ? DEFAULT_FB_ON : fb.on === true, order: Array.isArray(fb.order) && fb.order.length === 3 ? fb.order : ['gemini', 'groq', 'custom'], gemini: String(fb.gemini || ''), groq: String(fb.groq || ''), url: String(fb.url || ''), key: String(fb.key || ''), model: String(fb.model || '') || 'auto' };
   const w = readJSON('prvlar-view', {});
@@ -174,7 +176,10 @@ const saveKey = () => { if (PACK_KEYS.has(state.key.trim())) return; if (state.r
 const usingServer = () => state.ai.mode !== 'cloud';
 const preset = () => SERVER_PRESETS[state.ai.mode] || SERVER_PRESETS.custom;
 const aiAvailable = () => usingServer() ? !!(state.ai.url.trim() || preset().url) : !!state.key.trim();
-const primaryConfig = () => usingServer()
+const deviceId = () => { let d = readJSON('prvlar-device', ''); if (!/^[0-9a-f-]{36}$/.test(d)) { d = crypto.randomUUID(); writeJSON('prvlar-device', d); } return d; };
+const primaryConfig = () => state.ai.mode === 'prvlar' && SERVER_PRESETS.prvlar
+  ? { key: 'device-' + deviceId(), server: { url: SERVER_PRESETS.prvlar.url, model: 'auto', free: true } }
+  : usingServer()
   ? { key: state.key.trim(), server: { url: state.ai.url.trim() || preset().url, model: state.ai.model.trim() || preset().model, vision: !!state.ai.vision } }
   : state.key.trim();
 // With fallback on: the main service first, then Gemini, Groq and the custom endpoint in the chosen order (skipping empty ones).
@@ -885,7 +890,8 @@ ${t.mode === 'custom' ? `<div class="field-row"><label class="field"><span>Hours
 <label class="field"><span>Time per question (optional)</span><select class="input select" id="tm-perq">${[[0, 'Off'], [30, '30 s'], [60, '1 min'], [90, '1.5 min'], [120, '2 min'], [180, '3 min'], [300, '5 min']].map(([v, l]) => `<option value="${v}"${t.perQ === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
 <label class="toggle-row compact"><span><b>Practice mode</b><span>Lets you pause a timed test.</span></span><input type="checkbox" class="switch" id="tm-practice"${t.practice ? ' checked' : ''}></label></section>`;
 }
-const toast = (msg, kind = 'ok') => { if (kind === 'error') state.error = msg; else state.notice = msg; render(); };
+const toast = (msg, kind = 'ok') => {
+  if (isFreeLimit(msg)) { state.freeLimit = true; msg = 'You’ve used today’s free Prvlar AI messages. Add your own free Gemini key (takes a minute) to keep going, or come back tomorrow.'; kind = 'warn'; } if (kind === 'error') state.error = msg; else state.notice = msg; render(); };
 const saveTiming = () => { state.timing = normalizeTiming(state.timing); writeJSON('prvlar-timing', state.timing); };
 function timerRing() {
   const left = Math.max(0, timeLeft()), frac = examMinutes() ? Math.max(0, Math.min(1, left / (examMinutes() * 60000))) : 1;
@@ -2003,7 +2009,7 @@ function viewSmarty() {
     const th = state.smartyChat || [];
     body = `<section class="card chat-card">${th.length ? `<div class="thread">${th.map((m, i) => `<div class="msg ${m.role}">${m.role === 'user' ? esc(m.text) : fmtAnswer(m.text, null)}${m.webNote ? `<p class="fine web-note">${icon('info', 13)} ${esc(m.webNote)}</p>` : ''}${m.web?.length ? `<div class="sm-web"><span class="fine">${icon('search', 13)} From the web:</span> ${m.web.map((w, j) => `<a class="chip" href="${esc(w.url)}" target="_blank" rel="noopener">[${j + 1}] ${esc(w.title)}</a>`).join(' ')}</div>` : ''}${m.files?.length ? `<div class="fine">${icon('file', 13)} ${m.files.map(esc).join(', ')}</div>` : ''}${m.sources?.length ? `<div class="sm-src">${m.sources.map(x => `<span class="chip">[${x.n}] ${esc(x.cite)}</span>`).join('')}</div>` : ''}${msgExtras(m, 'smarty', i)}${m.role === 'ai' ? `<div class="msg-acts"><button class="icon-btn soft" data-smact="copy:${i}" aria-label="Copy" title="Copy">${icon('note', 17)}</button><button class="icon-btn soft" data-smact="speak:${i}" aria-label="Read aloud" title="Read aloud">${icon('listen', 17)}</button>${i === th.length - 1 ? `<button class="icon-btn soft" data-smact="regen:${i}" aria-label="Regenerate" title="Regenerate">${icon('refresh', 17)}</button>` : ''}</div>` : ''}</div>`).join('')}${state.busy === 'smarty' ? '<div class="msg ai typing"><span></span><span></span><span></span></div>' : ''}</div>`
       : `<div class="chat-empty"><span class="ask-icon big">${icon('brain', 30)}</span><h2>Hi, I’m Smarty</h2><p class="muted">Ask about anything. I answer from your own notes first, show where each point came from, draw diagrams and explain at your level.</p><div class="prompts">${['Explain my weakest topic simply', 'Make a 5-step revision plan', 'Draw a diagram of the main process', 'Quiz me on one key idea'].map(t => `<button class="prompt" data-smsuggest="${esc(t)}">${icon('sparkles', 16)}<span>${esc(t)}</span></button>`).join('')}</div></div>`}
-${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
+${state.freeLimit && aiAvailable() ? keyHelpHTML() : ''}${!aiAvailable() ? keyHelpHTML() : `<div id="sm-extras-wrap">${smComposerExtras()}</div><div class="composer sm-composer"><button class="icon-btn soft" data-action="smPlus" aria-haspopup="menu" aria-expanded="${!!state.smPlus}" title="Add files, photos or skills" aria-label="Add files, photos or skills">${icon('plus', 20)}</button><textarea class="input" id="smartyq" rows="2" placeholder="Ask Smarty…" aria-label="Ask Smarty">${esc(state.smartyDraft || '')}</textarea><button class="send" data-action="smartySend" aria-label="Send"${state.busy ? ' disabled' : ''}>${state.busy === 'smarty' ? '<span class="spin"></span>' : icon('send', 19)}</button></div>${docsOnlyToggle()}<p class="fine">Searches ${plural(state.docs.length, 'document')} on this device; sends only the matching excerpts to ${esc(aiName())}.</p>`}</section>`;
   } else if (tab === 'skills') {
     body = skillsHTML();
   } else if (tab === 'practice') {
@@ -2440,7 +2446,7 @@ const actions = {
   async khTest() {
     const k = (document.getElementById('kh-key')?.value || '').trim(); if (!k) { state.khRes = { ok: false, text: 'Paste your key first.' }; return render(); }
     state.busy = 'kh'; state.khRes = null; render();
-    try { const r = await testConnection(k); state.key = k; state.ai = { ...state.ai, mode: 'cloud' }; writeJSON('prvlar-ai', state.ai); saveKey(); state.khRes = null; toast(`Key works: ${providerFor(k).name} connected in ${(r.ms / 1000).toFixed(1)} s. Smarty is ready.`, 'ok'); }
+    try { const r = await testConnection(k); state.key = k; state.freeLimit = false; state.ai = { ...state.ai, mode: 'cloud' }; writeJSON('prvlar-ai', state.ai); saveKey(); state.khRes = null; toast(`Key works: ${providerFor(k).name} connected in ${(r.ms / 1000).toFixed(1)} s. Smarty is ready.`, 'ok'); }
     catch (e) { state.khRes = { ok: false, text: e?.message || String(e) }; } finally { state.busy = ''; render(); }
   },
   async testConn() {
@@ -2843,6 +2849,12 @@ applyReading();
 applyUiSize();
 preloadVisuals().then(() => { if (['chat', 'smarty'].includes(state.view)) render(); }).catch(() => {});
 requestPersistence();
+// Run-time config (config.json next to the app): lets the owner switch on the free proxy without a rebuild.
+fetch('./config.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(c => {
+  if (!c?.freeProxy || !setFreeProxy(c.freeProxy, c.freeToken)) return;
+  const v = readJSON('prvlar-ai', {});
+  if (!v.mode && !state.key.trim()) { state.ai = { mode: 'prvlar', url: '', model: '', vision: true }; render(); }
+}).catch(() => {});
 autoCheckUpdate();
 /* ---------- Owner pack: owner-only content, decrypted at runtime from the owner's own Drive (see ownerpack.js) ---------- */
 const undoable = (apply, revert) => { apply(); return revert; };
